@@ -1,6 +1,6 @@
 group "external/SFML"
 
-local sfml_root = 'external/sfml/'
+local sfml_root = "sfml/"
 local src_root = sfml_root .. "src/"
 local incl_root = sfml_root .. "include/"
 

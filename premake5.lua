@@ -1,16 +1,30 @@
 #!lua
 
--- Stolen from https://github.com/premake/premake-core/issues/935#
-function os.winSdkVersion()
-	local reg_arch = iif( os.is64bit(), "\\Wow6432Node\\", "\\" )
-	local sdk_version = os.getWindowsRegistry( "HKLM:SOFTWARE" .. reg_arch .."Microsoft\\Microsoft SDKs\\Windows\\v10.0\\ProductVersion" )
-	if sdk_version ~= nil then return sdk_version end
+function include_self()
+	includedirs {
+		"include/"
+	}
+	files {
+		"include/**",
+		"src/**",
+	}
+end
+
+function include_heart()
+	includedirs {
+		"%{wks.location}/../game/heart-core/include/"
+	}
+end
+
+function set_location()
+	location "%{wks.location}/proj/"
 end
 
 workspace "fun-with-sfml"
 	location "build/"
 	language "C++"
 	cppdialect "c++17"
+	startproject "sfml-demo"
 
 	architecture "x86_64"
 	configurations { "Debug", "Release" }
@@ -36,44 +50,5 @@ workspace "fun-with-sfml"
 	targetdir ("build/bin/%{prj.name}/%{cfg.longname}")
 	objdir ("build/obj/%{prj.name}/%{cfg.longname}")
 
-project "sfml-demo"
-	kind "WindowedApp"
-	-- entrypoint "main"
-
-	files "src/**"
-	includedirs "src/"
-	location "build/proj/"
-	debugdir "src/"
-
-	defines { "SFML_STATIC" }
-	includedirs "external/sfml/include/"
-
-	dependson {
-		"sfml-system",
-		"sfml-graphics",
-		"sfml-window",
-		"sfml-audio",
-	}
-
-	libdirs { "external/sfml/extlibs/libs-msvc-universal/x64" }
-	links {
-		'sfml-system',
-		'sfml-graphics',
-		'sfml-window',
-		'sfml-audio',
-
-		'flac.lib',
-		'freetype.lib',
-		'ogg.lib',
-		'openal32.lib',
-		'vorbis.lib',
-		'vorbisenc.lib',
-		'vorbisfile.lib',
-		'opengl32.lib',
-		'freetype.lib',
-		'winmm.lib',
-		'gdi32.lib',
-	}
-
-
 include "external/"
+include "game/"
