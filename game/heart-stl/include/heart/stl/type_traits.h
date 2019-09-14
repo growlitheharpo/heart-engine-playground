@@ -11,6 +11,10 @@ namespace hrt
 #if HEART_IS_STD
 	using namespace std;
 #else
+
+	template <class... Ts>
+	using void_t = void;
+
 	template <typename T, T val>
 	struct integral_constant
 	{
@@ -29,19 +33,19 @@ namespace hrt
 	using false_type = bool_constant<false>;
 
 	template <class T>
-	struct remove_reference 
+	struct remove_reference
 	{
 		using type = T;
 	};
 
 	template <class T>
-	struct remove_reference<T&> 
+	struct remove_reference<T&>
 	{
 		using type = T;
 	};
 
 	template <class T>
-	struct remove_reference<T&&> 
+	struct remove_reference<T&&>
 	{
 		using type = T;
 	};
@@ -50,21 +54,82 @@ namespace hrt
 	using remove_reference_t = typename remove_reference<T>::type;
 
 	template <class T>
-	constexpr T&& forward(remove_reference_t<T>& arg) noexcept 
+	constexpr T&& forward(remove_reference_t<T>& arg) noexcept
 	{
 		return static_cast<T&&>(arg);
 	}
 
 	template <class T>
-	constexpr T&& forward(remove_reference_t<T>&& arg) noexcept 
+	constexpr T&& forward(remove_reference_t<T>&& arg) noexcept
 	{
 		return static_cast<T&&>(arg);
 	}
 
 	template <class T>
-	constexpr remove_reference_t<T>&& move(T&& _Arg) noexcept 
+	constexpr remove_reference_t<T>&& move(T&& _Arg) noexcept
 	{
 		return static_cast<remove_reference_t<T>&&>(_Arg);
 	}
+
+	template <class T, class = void>
+	struct _add_reference
+	{
+		using l_value = T;
+		using r_value = T;
+	};
+
+	template <class T>
+	struct _add_reference<T, void_t<T&>>
+	{
+		using l_value = T &;
+		using r_value = T &&;
+	};
+
+	template <class T>
+	struct add_lvalue_reference
+	{
+		using type = typename _add_reference<T>::l_value;
+	};
+
+	template <class T>
+	using add_lvalue_reference_t = typename _add_reference<T>::l_value;
+
+	template <class T>
+	struct add_rvalue_reference
+	{
+		using type = typename _add_reference<T>::r_value;
+	};
+
+	template <class _Ty>
+	using add_rvalue_reference_t = typename _add_reference<_Ty>::r_value;
+
+	template <class T>
+	add_rvalue_reference_t<T> declval() noexcept;
+
+	// Boooo, having to use MSVC extensions for these...
+
+	template <class T, class... Args>
+	struct is_constructible : bool_constant<__is_constructible(T, Args...)> { };
+
+	template <class T, class... Args>
+	inline constexpr bool is_constructible_v = __is_constructible(T, Args...);
+
+	template <class T>
+	struct is_copy_constructible : bool_constant<__is_constructible(T, add_lvalue_reference_t<const T>)> {};
+
+	template <class T>
+	inline constexpr bool is_copy_constructible_v = __is_constructible(T, add_lvalue_reference_t<const T>);
+
+	template <class T>
+	struct is_default_constructible : bool_constant<__is_constructible(T)> { };
+
+	template <class T>
+	inline constexpr bool is_default_constructible_v = __is_constructible(T);
+
+	template <class T>
+	struct is_move_constructible : bool_constant<__is_constructible(T, T)> { };
+
+	template <class T>
+	inline constexpr bool is_move_constructible_v = __is_constructible(T, T);
 #endif
 }

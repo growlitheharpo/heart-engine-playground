@@ -64,7 +64,15 @@ namespace hrt
 
 			for (auto iter = original_data; iter < original_val_end && target < new_end; ++iter, ++target)
 			{
-				alloc_traits::construct(allocator_, target, hrt::move(*iter));
+				if constexpr (hrt::is_move_constructible_v<value_type>)
+				{
+					alloc_traits::construct(allocator_, target, hrt::move(*iter));
+				}
+				else
+				{
+					alloc_traits::construct(allocator_, target, *iter);
+				}
+
 				alloc_traits::destroy(allocator_, iter);
 			}
 
@@ -106,7 +114,15 @@ namespace hrt
 
 				for (pointer src = old_back - 1, tgt = new_back - 1; src >= insert_target; --src, --tgt)
 				{
-					alloc_traits::construct(allocator_, tgt, hrt::move(*src));
+					if constexpr (hrt::is_move_constructible_v<value_type>)
+					{
+						alloc_traits::construct(allocator_, tgt, hrt::move(*src));
+					}
+					else
+					{
+						alloc_traits::construct(allocator_, tgt, *src);
+					}
+
 					alloc_traits::destroy(allocator_, src);
 				}
 
@@ -131,7 +147,15 @@ namespace hrt
 				pointer src, tgt;
 				for (src = orig_data, tgt = new_data; src < orig_insert; ++src, ++tgt)
 				{
-					alloc_traits::construct(allocator_, tgt, hrt::move(*src));
+					if constexpr (hrt::is_move_constructible_v<value_type>)
+					{
+						alloc_traits::construct(allocator_, tgt, hrt::move(*src));
+					}
+					else
+					{
+						alloc_traits::construct(allocator_, tgt, *src);
+					}
+
 					alloc_traits::destroy(allocator_, src);
 				}
 
@@ -139,7 +163,15 @@ namespace hrt
 				++tgt;
 				for (; src < orig_end && tgt < new_cap_end; ++src, ++tgt)
 				{
-					alloc_traits::construct(allocator_, tgt, hrt::move(*src));
+					if constexpr (hrt::is_move_constructible_v<value_type>)
+					{
+						alloc_traits::construct(allocator_, tgt, hrt::move(*src));
+					}
+					else
+					{
+						alloc_traits::construct(allocator_, tgt, *src);
+					}
+
 					alloc_traits::destroy(allocator_, src);
 				}
 
