@@ -1,6 +1,6 @@
 #pragma once
 
-#include <heart/stl/util/config.h>
+#include <heart/config.h>
 
 #if HEART_IS_STD
 #include <type_traits>

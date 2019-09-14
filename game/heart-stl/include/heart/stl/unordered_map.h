@@ -1,7 +1,7 @@
 #pragma once
 
 #include <heart/types.h>
-#include <heart/stl/util/config.h>
+#include <heart/config.h>
 
 #define USE_STD_UNORDERED_MAP 1
 

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <heart/stl/util/config.h>
+#include <heart/config.h>
+#include <heart/types.h>
 #include <heart/stl/util/canonical_typedefs.h>
 
 #include <heart/canonical_operators.h>
 #include <heart/copy_move_semantics.h>
-#include <heart/types.h>
 
 #if HEART_IS_STD
 #include <iterator>

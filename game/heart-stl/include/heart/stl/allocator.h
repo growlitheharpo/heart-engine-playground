@@ -1,6 +1,6 @@
 #pragma once
 
-#include <heart/stl/util/config.h>
+#include <heart/config.h>
 #include <heart/stl/type_traits.h>
 
 #define USE_STD_ALLOCATOR 0

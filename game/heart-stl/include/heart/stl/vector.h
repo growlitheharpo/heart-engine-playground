@@ -1,14 +1,17 @@
 #pragma once
 
 #include <heart/types.h>
+#include <heart/config.h>
 #include <heart/canonical_operators.h>
 #include <heart/copy_move_semantics.h>
 
 #include <heart/stl/util/canonical_typedefs.h>
-#include <heart/stl/util/config.h>
 
 #include <heart/stl/allocator.h>
 #include <heart/stl/iterator.h>
+
+// We include initializer_list from STD no matter what
+#include <initializer_list>
 
 #if !HEART_STRICT_PERF
 #include <heart/debug/assert.h>
@@ -189,6 +192,11 @@ namespace hrt
 		explicit vector(size_type initial_capacity) : capacity_(0), size_(0), data_begin_(nullptr)
 		{
 			reserve(initial_capacity);
+		}
+
+		explicit vector(size_type initial_size, const_reference initial_value) : capacity_(0), size_(0), data_begin_(nullptr)
+		{
+			resize(initial_size, initial_value);
 		}
 
 		vector(const std::initializer_list<value_type>& v) : capacity_(0), size_(0), data_begin_(nullptr)
