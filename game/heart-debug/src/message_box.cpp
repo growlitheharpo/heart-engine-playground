@@ -1,4 +1,4 @@
-#include <heart/types.h>
+#include <heart/debug/message_box.h>
 
 #include <heart/stl/vector.h>
 
@@ -13,8 +13,48 @@
 
 typedef WINCOMMCTRLAPI HRESULT(WINAPI* TaskDialogProc)(const TASKDIALOGCONFIG*, int*, int*, BOOL*);
 
-static thread_local bool   s_inside = false;
-static SRWLOCK             s_lock = SRWLOCK_INIT;
+static thread_local bool s_inside = false;
+static SRWLOCK s_lock = SRWLOCK_INIT;
+
+class TaskDialogProcWrapper
+{
+private:
+	HMODULE comctrl32_ = nullptr;
+	ULONG_PTR ulp_activation_cookie = 0;
+
+public:
+	TaskDialogProc procaddr = nullptr;
+
+	bool Load()
+	{
+		ACTCTXW actCtx = {
+			sizeof(actCtx),
+			ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_HMODULE_VALID,
+			nullptr,
+			0,
+			0,
+			nullptr,
+			(LPCTSTR)124,
+			nullptr,
+			GetModuleHandleW(L"SHELL32.dll")
+		};
+		ActivateActCtx(CreateActCtxW(&actCtx), &ulp_activation_cookie);
+
+		comctrl32_ = LoadLibraryW(L"COMCTL32.DLL");
+		if (comctrl32_)
+			procaddr = (TaskDialogProc)GetProcAddress(comctrl32_, "TaskDialogIndirect");
+
+		return procaddr != nullptr;
+	}
+
+	~TaskDialogProcWrapper()
+	{
+		if (comctrl32_ != nullptr)
+			FreeLibrary(comctrl32_);
+
+		DeactivateActCtx(0, ulp_activation_cookie);
+	}
+};
 
 void ConvertToWChar(const char* in, wchar_t** outBuf, size_t* outCount)
 {
@@ -34,7 +74,7 @@ void FreeWChar(wchar_t** buf, size_t* count)
 }
 
 //--------------------------------------------------------------------------------------------------
-bool displayErrorTaskDialog(TaskDialogProc dialogProc, const char* title, const char* expr, const char* msg, const char* file, uint32_t line, bool* ignoreAlways)
+static bool s_DisplayErrorTaskDialog(TaskDialogProc dialogProc, const char* title, const char* expr, const char* msg, const char* file, uint32_t line, bool* ignoreAlways)
 {
 	wchar_t* titleW, * exprW, * msgW;
 	size_t titleWC, exprWC, msgWC;
@@ -98,7 +138,7 @@ bool displayErrorTaskDialog(TaskDialogProc dialogProc, const char* title, const 
 }
 
 //--------------------------------------------------------------------------------------------------
-bool displayError(const char* title, const char* expr, const char* msg, const char* file, uint32_t line, bool* ignoreAlways)
+bool DisplayAssertError(const char* title, const char* expr, const char* msg, const char* file, uint32_t line, bool* ignoreAlways)
 {
 	if (ignoreAlways && *ignoreAlways)
 		return false;
@@ -111,41 +151,21 @@ bool displayError(const char* title, const char* expr, const char* msg, const ch
 	msg = msg ? msg : "";
 	file = file ? file : "";
 
+	bool result = false;
+
 	s_inside = true;
 	AcquireSRWLockExclusive(&s_lock);
 
-	// grab visual styles from shell32
-	// this is a hack courtesy of: https://stackoverflow.com/a/10444161
-	ULONG_PTR ulpActivationCookie = 0;
-	ACTCTXW actCtx = {
-		sizeof(actCtx),
-		ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_HMODULE_VALID,
-		nullptr,
-		0,
-		0,
-		nullptr,
-		(LPCTSTR)124,
-		nullptr,
-		GetModuleHandleW(L"SHELL32.dll")
-	};
-	ActivateActCtx(CreateActCtxW(&actCtx), &ulpActivationCookie);
+	{
+		TaskDialogProcWrapper proc;
+		if (proc.Load())
+		{
+			result = s_DisplayErrorTaskDialog(proc.procaddr, title, expr, msg, file, line, ignoreAlways);
+		}
+	}
 
-	TaskDialogProc taskDialogIndirect = nullptr;
-	HMODULE comctrl32 = LoadLibraryW(L"COMCTL32.DLL");
-	if (comctrl32)
-		taskDialogIndirect = (TaskDialogProc)GetProcAddress(comctrl32, "TaskDialogIndirect");
-	
-	bool result = false;
-	if (taskDialogIndirect)
-		result = displayErrorTaskDialog(taskDialogIndirect, title, expr, msg, file, line, ignoreAlways);
-
-	ReleaseSRWLockExclusive(&s_lock);
 	s_inside = false;
-
-	if (comctrl32)
-		FreeLibrary(comctrl32);
-
-	DeactivateActCtx(0, ulpActivationCookie);
+	ReleaseSRWLockExclusive(&s_lock);
 
 	return result;
 }

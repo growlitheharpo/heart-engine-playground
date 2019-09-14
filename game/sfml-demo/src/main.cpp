@@ -1,6 +1,10 @@
 #include <SFML/Graphics.hpp>
 
 #include <heart/stl/vector.h>
+#include <heart/stl/string.h>
+
+#include <heart/debug/assert.h>
+#include <heart/debug/message_box.h>
 
 int WinMain()
 {
@@ -14,7 +18,9 @@ int WinMain()
 		while (window.pollEvent(event))
 		{
 			if (event.type == sf::Event::Closed)
+			{
 				window.close();
+			}
 		}
 
 		window.clear();
