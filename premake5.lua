@@ -2,7 +2,7 @@
 
 function include_self()
 	includedirs {
-		"include/"
+		"include/",
 	}
 	files {
 		"include/**",
@@ -10,10 +10,19 @@ function include_self()
 	}
 end
 
-function include_heart()
+function include_heart(also_link)
 	includedirs {
-		"%{wks.location}/../game/heart-core/include/"
+		"%{wks.location}/../game/heart-core/include/",
+		"%{wks.location}/../game/heart-debug/include/",
+		"%{wks.location}/../game/heart-stl/include/",
 	}
+	if also_link then
+		links {
+			'heart-core',
+			'heart-debug',
+			-- 'heart-stl', -- does not actually "build", so no need to link
+		}
+	end
 end
 
 function set_location()
@@ -38,7 +47,7 @@ workspace "fun-with-sfml"
 		optimize "On"
 	
 	filter {"system:windows", "action:vs*"}
-		systemversion("10.0.17763.0")
+		systemversion "latest"
 		toolset "v142"
 
 	filter {}

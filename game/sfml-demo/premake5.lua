@@ -3,7 +3,7 @@ project "sfml-demo"
 	set_location()
 
 	include_self()
-	include_heart()
+	include_heart(true)
 	debugdir "src/"
 
 	defines { "SFML_STATIC" }
@@ -15,7 +15,6 @@ project "sfml-demo"
 		'sfml-graphics',
 		'sfml-window',
 		'sfml-audio',
-		'heart-core',
 
 		'flac.lib',
 		'freetype.lib',

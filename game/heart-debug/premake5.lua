@@ -1,4 +1,4 @@
-project "heart-core"
+project "heart-debug"
 	kind "StaticLib"
 	set_location()
 	include_self()
