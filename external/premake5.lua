@@ -29,7 +29,7 @@ function sfml_lib (libName, extra)
 		filter { "system:windows" }
 			files { src_root .. "SFML/" .. libName .. "/Win32/**" }
 
-		location "../build/proj"
+		set_location()
 		debugdir "./"
 
 		if extra then
@@ -62,3 +62,11 @@ sfml_lib("audio", function ()
 	}
 
 end)
+
+group "external"
+
+project "rapidjson"
+	kind "None"
+	set_location()
+	files { "rapidjson/include/**" }
+	includedirs { "rapidjson/include/" }
