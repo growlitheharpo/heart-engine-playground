@@ -6,8 +6,14 @@ project "sfml-demo"
 	include_heart(true)
 	debugdir "src/"
 
-	defines { "SFML_STATIC" }
-	includedirs "../../external/sfml/include/"
+	defines {
+		"SFML_STATIC",
+		"RAPIDJSON_ASSERT=HEART_ASSERT",
+	}
+	includedirs {
+		"../../external/sfml/include/",
+		"../../external/rapidjson/include",
+	}
 
 	libdirs { "../../external/sfml/extlibs/libs-msvc-universal/x64" }
 	links {
