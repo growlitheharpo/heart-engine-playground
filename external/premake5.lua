@@ -70,3 +70,45 @@ project "rapidjson"
 	set_location()
 	files { "rapidjson/include/**" }
 	includedirs { "rapidjson/include/" }
+
+function include_imgui(should_link)
+	includedirs {
+		"%{wks.location}/../external/imgui/",
+		"%{wks.location}/../external/imgui-sfml/",
+		"%{wks.location}/../external/sfml/include/",
+	}
+
+	defines {
+		"IMGUI_USER_CONFIG=\"imconfig-SFML.h\"",
+		"SFML_STATIC",
+	}
+
+	if should_link then
+		links {
+			'imgui',
+			'imgui-sfml',
+		}
+	end
+end
+
+project "imgui"
+	kind "StaticLib"
+	set_location()
+	include_imgui()
+	warnings "Off"
+	files {
+		"imgui/imgui.cpp",
+		"imgui/imgui_widgets.cpp",
+		"imgui/imgui_draw.cpp",
+		"imgui/*.h",
+	}
+
+project "imgui-sfml"
+	kind "StaticLib"
+	set_location()
+	include_imgui()
+	warnings "Off"
+	files {
+		"imgui-sfml/imgui-SFML.cpp",
+		"imgui-sfml/**.h",
+	}

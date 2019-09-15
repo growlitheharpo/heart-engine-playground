@@ -4,7 +4,8 @@ project "sfml-demo"
 
 	include_self()
 	include_heart(true)
-	debugdir "src/"
+	include_imgui(true)
+	debugdir "%{wks.location}/"
 
 	defines {
 		"SFML_STATIC",
