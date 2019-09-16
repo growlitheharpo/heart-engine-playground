@@ -14,6 +14,7 @@ project "sfml-demo"
 	includedirs {
 		"../../external/sfml/include/",
 		"../../external/rapidjson/include",
+		"src/"
 	}
 
 	libdirs { "../../external/sfml/extlibs/libs-msvc-universal/x64" }

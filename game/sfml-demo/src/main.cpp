@@ -10,42 +10,45 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
 
+#include "render/render.h"
+#include "events/events.h"
+
+static bool s_shutdown = false;
+
+bool WindowClosedEvent(sf::Event e)
+{
+	s_shutdown = true;
+	return true;
+}
+
+bool EscapeKeyHitEvent(sf::Event e)
+{
+	if (e.key.code != sf::Keyboard::Escape)
+		return false;
+
+	s_shutdown = true;
+	return true;
+}
 
 int WinMain()
 {
-	sf::RenderWindow window(sf::VideoMode(800, 600), "SFML works!", sf::Style::Titlebar | sf::Style::Close | sf::Style::Resize);
+	Renderer r;
+	r.Initialize();
+
+	EventManager& e = EventManager::Get();
+	e.Initialize(&r);
+
+	r.RegisterEvents();
+	e.RegisterHandler(sf::Event::Closed, WindowClosedEvent);
+	e.RegisterHandler(sf::Event::KeyPressed, EscapeKeyHitEvent);
+
+	sf::Clock deltaClock;
 	sf::CircleShape shape(100.f);
 	shape.setFillColor(sf::Color::Green);
 
-#if IMGUI_ENABLED
-	ImGui::SFML::Init(window);
-#endif
-
-	sf::Clock deltaClock;
-
-	while (window.isOpen())
+	while (!s_shutdown)
 	{
-		sf::Event event;
-		while (window.pollEvent(event))
-		{
-#if IMGUI_ENABLED
-			ImGui::SFML::ProcessEvent(event);
-#endif
-
-			if (event.type == sf::Event::Closed || (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape))
-			{
-				window.close();
-			}
-			else if (event.type == sf::Event::Resized)
-			{
-				sf::FloatRect visibleArea(0, 0, float(event.size.width), float(event.size.height));
-				window.setView(sf::View(visibleArea));
-			}
-		}
-
-#if IMGUI_ENABLED
-		ImGui::SFML::Update(window, deltaClock.restart());
-#endif
+		e.Process();
 
 #if IMGUI_ENABLED
 		ImGui::Begin("Hello, world!");
@@ -53,19 +56,13 @@ int WinMain()
 		ImGui::End();
 #endif
 
-		window.clear();
-		window.draw(shape);
-
-#if IMGUI_ENABLED
-		ImGui::SFML::Render(window);
-#endif
-
-		window.display();
+		r.BeginFrame();
+		r.Draw(shape);
+		r.SubmitFrame();
 	}
 
-#if IMGUI_ENABLED
-	ImGui::SFML::Shutdown();
-#endif
+	e.Dispose();
+	r.Dispose();
 
 	return 0;
 }
