@@ -1,4 +1,5 @@
 #include "render.h"
+#include "imgui_game.h"
 #include "events/events.h"
 
 #include <heart/debug/assert.h>
@@ -18,9 +19,7 @@ void Renderer::Initialize()
 		sf::VideoMode(1280, 720), "SFML works!", sf::Style::Titlebar | sf::Style::Close | sf::Style::Resize);
 	HEART_ASSERT(window_ != nullptr, "Could not initialize window!");
 
-#if IMGUI_ENABLED
-	ImGui::SFML::Init(*window_);
-#endif
+	ImGui::Game::Init(window_);
 }
 
 void Renderer::Dispose()
@@ -29,9 +28,7 @@ void Renderer::Dispose()
 	delete window_;
 	window_ = nullptr;
 
-#if IMGUI_ENABLED
-	ImGui::SFML::Shutdown();
-#endif
+	ImGui::Game::Shutdown();
 }
 
 bool Renderer::HandleResize(sf::Event& e)
@@ -48,10 +45,7 @@ void Renderer::RegisterEvents()
 
 void Renderer::BeginFrame()
 {
-#if IMGUI_ENABLED
-	ImGui::EndFrame();
-#endif
-
+	ImGui::Game::BeginRender();
 	window_->clear();
 }
 
@@ -62,9 +56,6 @@ void Renderer::Draw(sf::Drawable& d)
 
 void Renderer::SubmitFrame()
 {
-#if IMGUI_ENABLED
-	ImGui::SFML::Render(*window_);
-#endif
-
+	ImGui::Game::SubmitRender(window_);
 	window_->display();
 }

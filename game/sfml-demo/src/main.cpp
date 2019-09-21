@@ -12,6 +12,7 @@
 
 #include "events/events.h"
 #include "render/render.h"
+#include "render/imgui_game.h"
 
 static bool s_shutdown = false;
 
@@ -38,6 +39,7 @@ int WinMain()
 	EventManager& e = EventManager::Get();
 	e.Initialize(&r);
 
+	ImGui::Game::RegisterEvents();
 	r.RegisterEvents();
 	e.CreateHandler(sf::Event::Closed).connect<WindowClosedEvent>();
 	e.CreateHandler(sf::Event::KeyPressed).connect<EscapeKeyHitEvent>();
@@ -51,9 +53,12 @@ int WinMain()
 		e.Process();
 
 #if IMGUI_ENABLED
-		ImGui::Begin("Hello, world!");
-		ImGui::Button("Look at this pretty button");
-		ImGui::End();
+		if (ImGui::Game::IsActive())
+		{
+			ImGui::Begin("Hello, world!");
+			ImGui::Button("Look at this pretty button");
+			ImGui::End();
+		}
 #endif
 
 		r.BeginFrame();
