@@ -2,9 +2,10 @@
 
 #include <heart/copy_move_semantics.h>
 
-#include <heart/stl/functional.h>
 #include <heart/stl/unordered_map.h>
 #include <heart/stl/vector.h>
+
+#include <entt/signal/delegate.hpp>
 
 #include <SFML/Graphics.hpp>
 
@@ -25,13 +26,13 @@ public:
 
 	void ProcessAndDispatch();
 
-	using EventFilterFunc = hrt::function<bool(sf::Event)>;
+	using EventFilterFunc = entt::delegate<bool(sf::Event)>;
 
 private:
 	hrt::unordered_map<sf::Event::EventType, hrt::vector<EventFilterFunc>> event_handlers_;
 
 public:
-	void RegisterHandler(sf::Event::EventType e, EventFilterFunc target);
+	EventFilterFunc& CreateHandler(sf::Event::EventType e);
 
 	void Initialize(Renderer* r);
 	void Dispose();

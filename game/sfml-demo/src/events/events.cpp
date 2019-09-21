@@ -15,6 +15,11 @@ EventManager::~EventManager()
 		Dispose();
 }
 
+EventManager::EventFilterFunc& EventManager::CreateHandler(sf::Event::EventType e)
+{
+	return event_handlers_[e].emplace_back();
+}
+
 void EventManager::Initialize(Renderer* r)
 {
 	renderer_ = r;
@@ -24,11 +29,6 @@ void EventManager::Dispose()
 {
 	renderer_ = nullptr;
 	event_handlers_.clear();
-}
-
-void EventManager::RegisterHandler(sf::Event::EventType e, EventManager::EventFilterFunc target)
-{
-	event_handlers_[e].push_back(target);
 }
 
 void EventManager::Process()
@@ -43,7 +43,7 @@ void EventManager::Process()
 		{
 			for (auto& handler : targets->second)
 			{
-				if (handler(e))
+				if (handler && handler(e))
 					break;
 			}
 		}

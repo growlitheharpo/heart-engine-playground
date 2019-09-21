@@ -1,8 +1,6 @@
 group "external/SFML"
 
-local sfml_root = "sfml/"
-local src_root = sfml_root .. "src/"
-local incl_root = sfml_root .. "include/"
+local export_include_root = "%{wks.location}/../external/"
 
 function sfml_lib (libName, extra)
 	project("sfml-" .. libName)
@@ -10,24 +8,24 @@ function sfml_lib (libName, extra)
 		warnings "Off"
 
 		includedirs {
-			sfml_root .. "extlibs/headers/",
-			incl_root,
-			src_root,
+			"sfml/extlibs/headers/",
+			"sfml/include",
+			"sfml/src/",
 		}
 
 		files { 
-			incl_root .. "SFML/" .. libName .. "/**",
-			src_root .. "SFML/" .. libName .. "/**",
+			"sfml/include/SFML/" .. libName .. "/**",
+			"sfml/src/SFML/" .. libName .. "/**",
 		}
 
 		defines { "SFML_STATIC" }
 		
 		removefiles { 
-			src_root .. "SFML/" .. libName .. "/*/**", -- remove the platform folders
+			"sfml/src/SFML/" .. libName .. "/*/**", -- remove the platform folders
 		}
 
 		filter { "system:windows" }
-			files { src_root .. "SFML/" .. libName .. "/Win32/**" }
+			files { "sfml/src/SFML/" .. libName .. "/Win32/**" }
 
 		set_location()
 		debugdir "./"
@@ -41,20 +39,27 @@ sfml_lib("system")
 
 sfml_lib("window", function ()
 	removefiles {
-		src_root .. "SFML/window/EGL**",
+		"sfml/src/SFML/window/EGL**",
 	}
 end)
 
 sfml_lib("graphics", function ()
 	includedirs {
-		sfml_root .. "extlibs/headers/stb_image",
-		sfml_root .. "extlibs/headers/freetype2",
+		"sfml/extlibs/headers/stb_image",
+		"sfml/extlibs/headers/freetype2",
+	}
+	files {
+		"sfml/extlibs/headers/stb_image/**.h",
+		"sfml/extlibs/headers/freetype2/**.h",
 	}
 end)
 
 sfml_lib("audio", function ()
 	includedirs {
-		sfml_root .. "extlibs/headers/AL",
+		"sfml/extlibs/headers/AL",
+	}
+	files {
+		"sfml/extlibs/headers/AL/**.h"
 	}
 
 	defines {
@@ -73,9 +78,9 @@ project "rapidjson"
 
 function include_imgui(should_link)
 	includedirs {
-		"%{wks.location}/../external/imgui/",
-		"%{wks.location}/../external/imgui-sfml/",
-		"%{wks.location}/../external/sfml/include/",
+		export_include_root .. "imgui/",
+		export_include_root .. "imgui-sfml/",
+		export_include_root .. "sfml/include/",
 	}
 
 	defines {
@@ -111,4 +116,24 @@ project "imgui-sfml"
 	files {
 		"imgui-sfml/imgui-SFML.cpp",
 		"imgui-sfml/**.h",
+	}
+
+function include_entt(should_link)
+	includedirs {
+		export_include_root .. "entt/src/",
+	}
+
+	filter { "configurations:Release" }
+		defines { "ENTT_DISABLE_ASSERT=1" }
+	filter {}
+end
+
+project "entt"
+	kind "None" -- entt is header-only
+	set_location()
+	warnings "Off"
+	include_entt()
+	files {
+		"entt/src/**",
+		"entt/README.md",
 	}

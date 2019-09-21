@@ -43,8 +43,7 @@ bool Renderer::HandleResize(sf::Event& e)
 
 void Renderer::RegisterEvents()
 {
-	EventManager::Get().RegisterHandler(
-		sf::Event::Resized, hrt::bind(&Renderer::HandleResize, this, hrt::placeholders::_1));
+	EventManager::Get().CreateHandler(sf::Event::Resized).connect<&Renderer::HandleResize>(*this);
 }
 
 void Renderer::BeginFrame()
