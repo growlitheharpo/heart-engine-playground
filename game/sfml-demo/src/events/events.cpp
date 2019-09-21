@@ -1,5 +1,6 @@
 #include "events.h"
 #include "render/render.h"
+#include "render/imgui_game.h"
 
 #include <heart/debug/imgui.h>
 
@@ -33,10 +34,10 @@ void EventManager::Dispose()
 
 void EventManager::Process()
 {
-	auto& window = *renderer_->GetWindow();
+	auto window = renderer_->GetWindow();
 
 	sf::Event e;
-	while (window.pollEvent(e))
+	while (window->pollEvent(e))
 	{
 		auto targets = event_handlers_.find(e.type);
 		if (targets != event_handlers_.end() && !targets->second.empty())
@@ -48,13 +49,8 @@ void EventManager::Process()
 			}
 		}
 
-#if IMGUI_ENABLED
-		ImGui::SFML::ProcessEvent(e);
-#endif
+		ImGui::Game::ProcessEvent(e);
 	}
 
-#if IMGUI_ENABLED
-	static sf::Clock imGuiClock;
-	ImGui::SFML::Update(window, imGuiClock.restart());
-#endif
+	ImGui::Game::Tick(window);
 }
