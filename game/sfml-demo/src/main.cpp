@@ -1,17 +1,17 @@
 #include <SFML/Graphics.hpp>
 
-#include <heart/stl/vector.h>
 #include <heart/stl/string.h>
+#include <heart/stl/vector.h>
 
 #include <heart/debug/assert.h>
-#include <heart/debug/message_box.h>
 #include <heart/debug/imgui.h>
+#include <heart/debug/message_box.h>
 
-#include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
+#include <rapidjson/rapidjson.h>
 
-#include "render/render.h"
 #include "events/events.h"
+#include "render/render.h"
 
 static bool s_shutdown = false;
 

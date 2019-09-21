@@ -1,9 +1,9 @@
 #pragma once
 
-#include <heart/types.h>
-#include <heart/config.h>
 #include <heart/canonical_operators.h>
+#include <heart/config.h>
 #include <heart/copy_move_semantics.h>
+#include <heart/types.h>
 
 #include <heart/stl/util/canonical_typedefs.h>
 
@@ -26,7 +26,7 @@ namespace hrt
 #if HEART_IS_STD
 	using namespace std;
 #else
-	
+
 	template <typename t, typename alloc = allocator<t>>
 	class vector
 	{
@@ -131,7 +131,8 @@ namespace hrt
 
 				return insert_target;
 			}
-			else // we have to reallocate, but let's do it ourselves (instead of calling reallocate()) so that things don't get moved twice
+			else // we have to reallocate, but let's do it ourselves (instead of calling reallocate()) so that things
+				 // don't get moved twice
 			{
 				size_type new_capacity = capacity_ * GROWTH_RATE;
 				size_type orig_capacity = capacity_;
@@ -188,13 +189,14 @@ namespace hrt
 		vector() noexcept : capacity_(0), size_(0)
 		{
 		}
-		
+
 		explicit vector(size_type initial_capacity) : capacity_(0), size_(0), data_begin_(nullptr)
 		{
 			reserve(initial_capacity);
 		}
 
-		explicit vector(size_type initial_size, const_reference initial_value) : capacity_(0), size_(0), data_begin_(nullptr)
+		explicit vector(size_type initial_size, const_reference initial_value) :
+			capacity_(0), size_(0), data_begin_(nullptr)
 		{
 			resize(initial_size, initial_value);
 		}
@@ -224,7 +226,7 @@ namespace hrt
 		}
 #endif
 
-		vector(vector && other) : capacity_(0), size_(0), data_begin_(nullptr)
+		vector(vector&& other) : capacity_(0), size_(0), data_begin_(nullptr)
 		{
 			swap(other);
 		}
@@ -240,21 +242,65 @@ namespace hrt
 		}
 
 		// **** ITERATORS **** */
-		iterator begin() { return pointer(data_begin_); }
-		const_iterator begin() const { cbegin(); }
-		const_iterator cbegin() const { return const_pointer(data_begin_); }
+		iterator begin()
+		{
+			return pointer(data_begin_);
+		}
 
-		iterator end() { return pointer(data_begin_) + size_; }
-		const_iterator end() const { return cend(); }
-		const_iterator cend() const { return const_pointer(data_begin_) + size_; }
+		const_iterator begin() const
+		{
+			return cbegin();
+		}
 
-		reverse_iterator rbegin() { return { pointer(data_begin_) + size_ - 1}; }
-		const_reverse_iterator rbegin() const { return crbegin(); }
-		const_reverse_iterator crbegin() const { return pointer(data_begin_) + size_ - 1; }
+		const_iterator cbegin() const
+		{
+			return const_pointer(data_begin_);
+		}
 
-		reverse_iterator rend() { return { pointer(data_begin_) - 1 }; }
-		const_reverse_iterator rend() const { return crend(); }
-		const_reverse_iterator crend() const { return pointer(data_begin_) - 1; }
+		iterator end()
+		{
+			return pointer(data_begin_) + size_;
+		}
+
+		const_iterator end() const
+		{
+			return cend();
+		}
+
+		const_iterator cend() const
+		{
+			return const_pointer(data_begin_) + size_;
+		}
+
+		reverse_iterator rbegin()
+		{
+			return {pointer(data_begin_) + size_ - 1};
+		}
+
+		const_reverse_iterator rbegin() const
+		{
+			return crbegin();
+		}
+
+		const_reverse_iterator crbegin() const
+		{
+			return pointer(data_begin_) + size_ - 1;
+		}
+
+		reverse_iterator rend()
+		{
+			return {pointer(data_begin_) - 1};
+		}
+
+		const_reverse_iterator rend() const
+		{
+			return crend();
+		}
+
+		const_reverse_iterator crend() const
+		{
+			return pointer(data_begin_) - 1;
+		}
 
 		// **** ELEMENT ACCESS **** */
 		reference at(size_type index)
@@ -273,24 +319,67 @@ namespace hrt
 			return *(pointer(data_begin_) + index);
 		}
 
-		reference operator[](size_type index) { return at(index); }
-		const_reference operator[](size_type index) const { return at(index); }
+		reference operator[](size_type index)
+		{
+			return at(index);
+		}
 
-		reference front() { return at(0); }
-		const_reference front() const { return at(0); }
+		const_reference operator[](size_type index) const
+		{
+			return at(index);
+		}
 
-		reference back() { return at(size_ - 1); }
-		const_reference back() const { return at(size_ - 1); }
+		reference front()
+		{
+			return at(0);
+		}
 
-		pointer data() { return pointer(data_begin_); }
+		const_reference front() const
+		{
+			return at(0);
+		}
+
+		reference back()
+		{
+			return at(size_ - 1);
+		}
+
+		const_reference back() const
+		{
+			return at(size_ - 1);
+		}
+
+		pointer data()
+		{
+			return pointer(data_begin_);
+		}
 
 		// **** CAPACITY **** */
-		inline size_type size() const { return size_; }
-		inline size_type max_size() const { return std::numeric_limits<size_type>::max(); }
-		inline size_type capacity() const { return capacity_; }
-		inline bool empty() const { return size() == 0; }
-		const_pointer data() const { return const_pointer(data_begin_); }
-		
+		inline size_type size() const
+		{
+			return size_;
+		}
+
+		inline size_type max_size() const
+		{
+			return std::numeric_limits<size_type>::max();
+		}
+
+		inline size_type capacity() const
+		{
+			return capacity_;
+		}
+
+		inline bool empty() const
+		{
+			return size() == 0;
+		}
+
+		const_pointer data() const
+		{
+			return const_pointer(data_begin_);
+		}
+
 		void resize(size_type count)
 		{
 			if (count > size_)
@@ -431,7 +520,7 @@ namespace hrt
 		}
 
 		template <typename... Ts>
-		iterator emplace(const_iterator position, Ts&& ... args)
+		iterator emplace(const_iterator position, Ts&&... args)
 		{
 			pointer loc = insert_get_location(position);
 			alloc_traits::construct(allocator_, loc, hrt::forward<Ts>(args)...);

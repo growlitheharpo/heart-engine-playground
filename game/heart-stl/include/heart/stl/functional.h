@@ -13,6 +13,6 @@ namespace hrt
 #if HEART_IS_STD || HEART_STD_FUNC
 	using namespace std;
 #else
-	static_assert(false, "hrt::string is not implemented!");
+	static_assert(false, "hrt::functional is not implemented!");
 #endif
 }

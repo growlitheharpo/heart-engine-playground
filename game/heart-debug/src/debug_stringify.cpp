@@ -2,9 +2,9 @@
 
 #include <heart/stl/string.h>
 
-#include <string.h>
-#include <stdio.h>
 #include <inttypes.h>
+#include <stdio.h>
+#include <string.h>
 
 namespace heart_priv
 {
