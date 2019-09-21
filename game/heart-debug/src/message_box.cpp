@@ -4,12 +4,14 @@
 
 #define WIN32_LEAN_AND_MEAN 1
 #include <Windows.h>
+
 #include <CommCtrl.h>
-#include <shellapi.h>
 #include <debugapi.h>
+#include <shellapi.h>
 #include <stdio.h>
 
-#pragma comment(linker,"\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version = '6.0.0.0' processorArchitecture = '*' publicKeyToken = '6595b64144ccf1df' language = '*'\"")
+#pragma comment(linker,                                                                                                \
+	"\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version = '6.0.0.0' processorArchitecture = '*' publicKeyToken = '6595b64144ccf1df' language = '*'\"")
 
 typedef WINCOMMCTRLAPI HRESULT(WINAPI* TaskDialogProc)(const TASKDIALOGCONFIG*, int*, int*, BOOL*);
 
@@ -74,9 +76,10 @@ void FreeWChar(wchar_t** buf, size_t* count)
 }
 
 //--------------------------------------------------------------------------------------------------
-static bool s_DisplayErrorTaskDialog(TaskDialogProc dialogProc, const char* title, const char* expr, const char* msg, const char* file, uint32_t line, bool* ignoreAlways)
+static bool s_DisplayErrorTaskDialog(TaskDialogProc dialogProc, const char* title, const char* expr, const char* msg,
+	const char* file, uint32_t line, bool* ignoreAlways)
 {
-	wchar_t* titleW, * exprW, * msgW;
+	wchar_t *titleW, *exprW, *msgW;
 	size_t titleWC, exprWC, msgWC;
 
 	ConvertToWChar(title, &titleW, &titleWC);
@@ -93,11 +96,11 @@ static bool s_DisplayErrorTaskDialog(TaskDialogProc dialogProc, const char* titl
 
 	// Only show extra Debug button when a debugger is attached
 	hrt::vector<TASKDIALOG_BUTTON> buttons;
-	buttons.push_back({ IDOK, L"Quit" });
-	buttons.push_back({ IDIGNORE, L"Ignore" });
+	buttons.push_back({IDOK, L"Quit"});
+	buttons.push_back({IDIGNORE, L"Ignore"});
 
 	if (IsDebuggerPresent())
-		buttons.push_back({ IDRETRY, L"Debug" });
+		buttons.push_back({IDRETRY, L"Debug"});
 
 	TASKDIALOGCONFIG taskConfig = {};
 	taskConfig.cbSize = sizeof(taskConfig);
@@ -132,13 +135,14 @@ static bool s_DisplayErrorTaskDialog(TaskDialogProc dialogProc, const char* titl
 		TerminateProcess(GetCurrentProcess(), 1);
 
 	if (ignoreAlways != nullptr && ignoreAlwaysChecked)
-		* ignoreAlways = true;
+		*ignoreAlways = true;
 
 	return button == IDRETRY;
 }
 
 //--------------------------------------------------------------------------------------------------
-bool DisplayAssertError(const char* title, const char* expr, const char* msg, const char* file, uint32_t line, bool* ignoreAlways)
+bool DisplayAssertError(
+	const char* title, const char* expr, const char* msg, const char* file, uint32_t line, bool* ignoreAlways)
 {
 	if (ignoreAlways && *ignoreAlways)
 		return false;

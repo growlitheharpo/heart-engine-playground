@@ -1,8 +1,8 @@
 #pragma once
 
 #include <heart/config.h>
-#include <heart/types.h>
 #include <heart/stl/util/canonical_typedefs.h>
+#include <heart/types.h>
 
 #include <heart/canonical_operators.h>
 #include <heart/copy_move_semantics.h>
@@ -45,16 +45,31 @@ namespace hrt
 		pointer data_ptr_;
 
 	public:
-		iterator() : data_ptr_(nullptr) { }
-		iterator(pointer l) : data_ptr_(l) { }
+		iterator() : data_ptr_(nullptr)
+		{
+		}
+
+		iterator(pointer l) : data_ptr_(l)
+		{
+		}
 
 		USE_DEFAULT_COPY_SEMANTICS(iterator);
 		USE_DEFAULT_MOVE_SEMANTICS(iterator);
 
 		~iterator() = default;
 
-		inline this_type& operator+=(difference_type offset) { data_ptr_ += offset; return *this; }
-		inline this_type& operator-=(difference_type offset) { data_ptr_ -= offset; return *this; }
+		inline this_type& operator+=(difference_type offset)
+		{
+			data_ptr_ += offset;
+			return *this;
+		}
+
+		inline this_type& operator-=(difference_type offset)
+		{
+			data_ptr_ -= offset;
+			return *this;
+		}
+
 #if HEART_STRICT_PERF
 		DECLARE_CANONICAL_ADDITION_OPERATORS_NOPOST(this_type, difference_type)
 		DECLARE_CANONICAL_SUBTRACTION_OPERATORS_NOPOST(this_type, difference_type)
@@ -63,13 +78,24 @@ namespace hrt
 		DECLARE_CANONICAL_SUBTRACTION_OPERATORS(this_type, difference_type)
 #endif
 
-		difference_type operator - (const this_type& other) { return data_ptr_ - other.data_ptr_; }
+		difference_type operator-(const this_type& other)
+		{
+			return data_ptr_ - other.data_ptr_;
+		}
 
 		REF_AND_CONST_REF(operator*(), { return *data_ptr_; });
 		REF_AND_CONST_REF(operator[](difference_type offset), { return operator+(offset).operator*(); });
 
-		bool operator==(const this_type& o) const { return data_ptr_ == o.data_ptr_; }
-		bool operator< (const this_type& o) const { return data_ptr_ < o.data_ptr_; }
+		bool operator==(const this_type& o) const
+		{
+			return data_ptr_ == o.data_ptr_;
+		}
+
+		bool operator<(const this_type& o) const
+		{
+			return data_ptr_ < o.data_ptr_;
+		}
+
 		DECLARE_CANONICAL_COMPARISON_OPERATORS(this_type);
 	};
 
@@ -88,19 +114,38 @@ namespace hrt
 		const_pointer data_ptr_;
 
 	public:
-		const_iterator() : data_ptr_(nullptr) { }
-		const_iterator(const_pointer l) : data_ptr_(l) { }
+		const_iterator() : data_ptr_(nullptr)
+		{
+		}
+
+		const_iterator(const_pointer l) : data_ptr_(l)
+		{
+		}
 
 		USE_DEFAULT_COPY_SEMANTICS(const_iterator);
 		USE_DEFAULT_MOVE_SEMANTICS(const_iterator);
 
-		const_iterator(const base_iterator& o) noexcept : data_ptr_(o.data_ptr_) { }
-		const_iterator(base_iterator&& o) noexcept : data_ptr_(o.data_ptr_) { }
+		const_iterator(const base_iterator& o) noexcept : data_ptr_(o.data_ptr_)
+		{
+		}
+
+		const_iterator(base_iterator&& o) noexcept : data_ptr_(o.data_ptr_)
+		{
+		}
 
 		~const_iterator() = default;
 
-		inline this_type& operator+=(difference_type offset) { data_ptr_ += offset; return *this; }
-		inline this_type& operator-=(difference_type offset) { data_ptr_ -= offset; return *this; }
+		inline this_type& operator+=(difference_type offset)
+		{
+			data_ptr_ += offset;
+			return *this;
+		}
+
+		inline this_type& operator-=(difference_type offset)
+		{
+			data_ptr_ -= offset;
+			return *this;
+		}
 
 #if HEART_STRICT_PERF
 		DECLARE_CANONICAL_ADDITION_OPERATORS_NOPOST(this_type, difference_type)
@@ -110,17 +155,43 @@ namespace hrt
 		DECLARE_CANONICAL_SUBTRACTION_OPERATORS(this_type, difference_type)
 #endif
 
-		difference_type operator - (const this_type& other) { return data_ptr_ - other.data_ptr_; }
+		difference_type operator-(const this_type& other)
+		{
+			return data_ptr_ - other.data_ptr_;
+		}
 
-		const_reference operator*() const { return *data_ptr_; };
-		const_reference operator[](difference_type offset) const { return operator+(offset).operator*(); };
+		const_reference operator*() const
+		{
+			return *data_ptr_;
+		};
 
-		bool operator==(const this_type& o) const { return data_ptr_ == o.data_ptr_; }
-		bool operator< (const this_type& o) const { return data_ptr_ < o.data_ptr_; }
+		const_reference operator[](difference_type offset) const
+		{
+			return operator+(offset).operator*();
+		};
+
+		bool operator==(const this_type& o) const
+		{
+			return data_ptr_ == o.data_ptr_;
+		}
+
+		bool operator<(const this_type& o) const
+		{
+			return data_ptr_ < o.data_ptr_;
+		}
+
 		DECLARE_CANONICAL_COMPARISON_OPERATORS(this_type);
 
-		bool operator==(const base_iterator& o) const { return data_ptr_ == o.data_ptr_; }
-		bool operator< (const base_iterator& o) const { return data_ptr_ < o.data_ptr_; }
+		bool operator==(const base_iterator& o) const
+		{
+			return data_ptr_ == o.data_ptr_;
+		}
+
+		bool operator<(const base_iterator& o) const
+		{
+			return data_ptr_ < o.data_ptr_;
+		}
+
 		DECLARE_CANONICAL_COMPARISON_OPERATORS(base_iterator);
 	};
 
@@ -138,8 +209,13 @@ namespace hrt
 		iterator data_ptr_;
 
 	public:
-		reverse_iterator() : data_ptr_(nullptr) { }
-		reverse_iterator(pointer d) : data_ptr_(d) { }
+		reverse_iterator() : data_ptr_(nullptr)
+		{
+		}
+
+		reverse_iterator(pointer d) : data_ptr_(d)
+		{
+		}
 
 		USE_DEFAULT_COPY_SEMANTICS(reverse_iterator);
 		USE_DEFAULT_MOVE_SEMANTICS(reverse_iterator);
@@ -147,8 +223,17 @@ namespace hrt
 		~reverse_iterator() = default;
 
 		// The "trick" of reverse iterators is that their + operator calls the internal - operator, and vice-versa
-		inline this_type& operator+=(difference_type offset) { data_ptr_ -= offset; return *this; }
-		inline this_type& operator-=(difference_type offset) { data_ptr_ += offset; return *this; }
+		inline this_type& operator+=(difference_type offset)
+		{
+			data_ptr_ -= offset;
+			return *this;
+		}
+
+		inline this_type& operator-=(difference_type offset)
+		{
+			data_ptr_ += offset;
+			return *this;
+		}
 
 #if HEART_STRICT_PERF
 		DECLARE_CANONICAL_ADDITION_OPERATORS_NOPOST(this_type, difference_type)
@@ -158,12 +243,18 @@ namespace hrt
 		DECLARE_CANONICAL_SUBTRACTION_OPERATORS(this_type, difference_type)
 #endif
 
-		difference_type operator - (const this_type& other) { return data_ptr_ - other.data_ptr_; }
+		difference_type operator-(const this_type& other)
+		{
+			return data_ptr_ - other.data_ptr_;
+		}
 
 		REF_AND_CONST_REF(operator*(), { return *data_ptr_; })
 		REF_AND_CONST_REF(operator[](difference_type offset), { return operator+(offset).operator*(); })
 
-		iterator base() const { return data_ptr_; }
+		iterator base() const
+		{
+			return data_ptr_;
+		}
 	};
 #endif
 }

@@ -14,7 +14,8 @@ Renderer::~Renderer()
 
 void Renderer::Initialize()
 {
-	window_ = new sf::RenderWindow(sf::VideoMode(1280, 720), "SFML works!", sf::Style::Titlebar | sf::Style::Close | sf::Style::Resize);
+	window_ = new sf::RenderWindow(
+		sf::VideoMode(1280, 720), "SFML works!", sf::Style::Titlebar | sf::Style::Close | sf::Style::Resize);
 	HEART_ASSERT(window_ != nullptr, "Could not initialize window!");
 
 #if IMGUI_ENABLED
@@ -42,7 +43,8 @@ bool Renderer::HandleResize(sf::Event& e)
 
 void Renderer::RegisterEvents()
 {
-	EventManager::Get().RegisterHandler(sf::Event::Resized, hrt::bind(&Renderer::HandleResize, this, hrt::placeholders::_1));
+	EventManager::Get().RegisterHandler(
+		sf::Event::Resized, hrt::bind(&Renderer::HandleResize, this, hrt::placeholders::_1));
 }
 
 void Renderer::BeginFrame()

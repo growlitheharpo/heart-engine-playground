@@ -8,7 +8,6 @@
 #endif
 #endif
 
-
 #if !defined(HEART_IS_STD)
 #define HEART_IS_STD 0
 #endif

@@ -2,9 +2,9 @@
 
 #include <heart/copy_move_semantics.h>
 
-#include <heart/stl/vector.h>
-#include <heart/stl/unordered_map.h>
 #include <heart/stl/functional.h>
+#include <heart/stl/unordered_map.h>
+#include <heart/stl/vector.h>
 
 #include <SFML/Graphics.hpp>
 

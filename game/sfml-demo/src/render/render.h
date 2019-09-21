@@ -4,7 +4,8 @@
 
 #include <SFML/System/Clock.hpp>
 
-namespace sf {
+namespace sf
+{
 	class RenderWindow;
 	class Clock;
 	class Event;
@@ -29,14 +30,17 @@ public:
 	void Dispose();
 
 	void RegisterEvents();
-	
+
 	void BeginFrame();
-	
+
 	void Draw(sf::Drawable&);
 
 	void SubmitFrame();
 
 private:
 	friend class EventManager;
-	sf::RenderWindow* GetWindow() { return window_; }
+	sf::RenderWindow* GetWindow()
+	{
+		return window_;
+	}
 };

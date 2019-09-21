@@ -1,7 +1,7 @@
 #pragma once
 
-#include <heart/types.h>
 #include <heart/config.h>
+#include <heart/types.h>
 
 #define USE_STD_STRING 1
 
