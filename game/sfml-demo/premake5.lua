@@ -5,6 +5,7 @@ project "sfml-demo"
 	include_self()
 	include_heart(true)
 	include_imgui(true)
+	include_entt()
 	debugdir "%{wks.location}/"
 
 	defines {

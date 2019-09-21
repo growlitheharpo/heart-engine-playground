@@ -39,8 +39,8 @@ int WinMain()
 	e.Initialize(&r);
 
 	r.RegisterEvents();
-	e.RegisterHandler(sf::Event::Closed, WindowClosedEvent);
-	e.RegisterHandler(sf::Event::KeyPressed, EscapeKeyHitEvent);
+	e.CreateHandler(sf::Event::Closed).connect<WindowClosedEvent>();
+	e.CreateHandler(sf::Event::KeyPressed).connect<EscapeKeyHitEvent>();
 
 	sf::Clock deltaClock;
 	sf::CircleShape shape(100.f);
