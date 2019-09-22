@@ -12,6 +12,7 @@ namespace sf
 	class Clock;
 	class Event;
 	class Drawable;
+	class Texture;
 }
 
 class Renderer
@@ -48,3 +49,8 @@ private:
 		return window_;
 	}
 };
+
+namespace RenderUtils
+{
+	bool LoadTextureFromFile(sf::Texture& outTexture, const char* path);
+}

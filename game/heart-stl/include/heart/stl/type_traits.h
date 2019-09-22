@@ -146,5 +146,13 @@ namespace hrt
 
 	template <class T>
 	inline constexpr bool is_move_constructible_v = __is_constructible(T, T);
+
+	template <class _Ty>
+	struct is_trivially_copyable : bool_constant<__is_trivially_copyable(_Ty)>
+	{
+	};
+
+	template <class _Ty>
+	inline constexpr bool is_trivially_copyable_v = __is_trivially_copyable(_Ty);
 #endif
 }

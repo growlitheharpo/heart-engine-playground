@@ -5,6 +5,8 @@
 #include <heart/debug/assert.h>
 #include <heart/debug/imgui.h>
 
+#include <heart/file.h>
+
 #include <SFML/Graphics.hpp>
 
 Renderer::~Renderer()
@@ -80,4 +82,23 @@ sf::Transform Renderer::GetCameraTransform() const
 	cameraTf.scale(1.0f, -1.0f, 0.0f, 0.0f);
 	cameraTf.translate(0.0f, -height);
 	return cameraTf;
+}
+
+bool RenderUtils::LoadTextureFromFile(sf::Texture& outTexture, const char* path)
+{
+	HeartFile file;
+	if (!HeartOpenFile(file, path, HeartOpenFileMode::ReadExisting))
+		return false;
+
+	uint64_t size;
+	if (!HeartGetFileSize(file, size))
+		return false;
+
+	hrt::vector<uint8_t> data;
+	data.resize(size, 0);
+
+	if (!HeartReadFile(file, data.data(), data.size(), size))
+		return false;
+
+	return outTexture.loadFromMemory(data.data(), data.size());
 }
