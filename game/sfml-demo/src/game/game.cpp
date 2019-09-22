@@ -146,6 +146,20 @@ void InitializeGame()
 		drawable.sprite = rect;
 	}
 
+	// Create the background
+	{
+		auto bg = s_registry.create<EnttTransformable, Drawable>();
+		auto& drawable = std::get<2>(bg);
+
+		drawable.texture = new sf::Texture();
+		HEART_CHECK(RenderUtils::LoadTextureFromFile(*drawable.texture, "bg.png"));
+
+		drawable.sprite = new sf::Sprite(*drawable.texture);
+
+		auto& tf = std::get<1>(bg);
+		tf.position = sf::Vector2f(0.0f, -250.0f);
+	}
+
 	EventManager::Get().CreateHandler(sf::Event::KeyPressed).connect<sPlayerInputDown>();
 	EventManager::Get().CreateHandler(sf::Event::KeyReleased).connect<sPlayerInputUp>();
 }
