@@ -1,5 +1,7 @@
 #pragma once
 
+#include <heart/debug/imgui.h>
+
 namespace sf
 {
 	class RenderWindow;

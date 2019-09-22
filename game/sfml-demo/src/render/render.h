@@ -4,6 +4,8 @@
 
 #include <SFML/System/Clock.hpp>
 
+#include <SFML/Graphics/Transform.hpp>
+
 namespace sf
 {
 	class RenderWindow;
@@ -36,6 +38,8 @@ public:
 	void Draw(sf::Drawable&);
 
 	void SubmitFrame();
+
+	sf::Transform GetCameraTransform() const;
 
 private:
 	friend class EventManager;

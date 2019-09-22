@@ -55,6 +55,7 @@ namespace ImGui
 				return;
 
 			ImGui::EndFrame();
+			ImGui::NewFrame();
 #endif
 		}
 
