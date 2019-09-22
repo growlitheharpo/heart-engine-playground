@@ -126,7 +126,7 @@ void InitializeGame()
 		auto& drawable = std::get<4>(player);
 
 		drawable.texture = new sf::Texture();
-		HEART_CHECK(drawable.texture->loadFromFile("data/player.png"));
+		HEART_CHECK(RenderUtils::LoadTextureFromFile(*drawable.texture, "player.png"));
 
 		drawable.sprite = new sf::Sprite(*drawable.texture);
 	}

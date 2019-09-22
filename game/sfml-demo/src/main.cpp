@@ -4,6 +4,8 @@
 #include "render/imgui_game.h"
 #include "render/render.h"
 
+#include <heart/file.h>
+
 static bool s_shutdown = false;
 
 bool WindowClosedEvent(sf::Event e)
@@ -23,6 +25,9 @@ bool EscapeKeyHitEvent(sf::Event e)
 
 int WinMain()
 {
+	// TODO: Move this to somewhere else (like the command line??)
+	HeartSetRoot("{%cwd}\\..\\data\\");
+
 	Renderer r;
 	r.Initialize();
 

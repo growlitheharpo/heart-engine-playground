@@ -13,6 +13,9 @@
 // We include initializer_list from STD no matter what
 #include <initializer_list>
 
+// we include <string> for memset... bleck
+#include <string.h>
+
 #if !HEART_STRICT_PERF
 #include <heart/debug/assert.h>
 #endif
@@ -382,16 +385,7 @@ namespace hrt
 
 		void resize(size_type count)
 		{
-			if (count > size_)
-			{
-				reallocate(count);
-				while (size_ < capacity_)
-					push_back(value_type());
-			}
-			else if (count < size_)
-			{
-				reserve(count);
-			}
+			resize(count, value_type());
 		}
 
 		void resize(size_type count, const_reference val)
@@ -399,8 +393,25 @@ namespace hrt
 			if (count > size_)
 			{
 				reallocate(count);
-				while (size_ < capacity_)
-					push_back(val);
+
+				if constexpr (hrt::is_trivially_copyable_v<value_type>)
+				{
+					size_ = count;
+					if constexpr (sizeof(value_type) <= sizeof(uint8_t))
+					{
+						std::memset(data_begin_, uint8_t(val), size_);
+					}
+					else
+					{
+						for (size_t i = 0; i < size_; ++i)
+							*(pointer(data_begin_) + i) = val;
+					}
+				}
+				else
+				{
+					while (size_ < capacity_)
+						push_back(val);
+				}
 			}
 			else if (count < size_)
 			{
