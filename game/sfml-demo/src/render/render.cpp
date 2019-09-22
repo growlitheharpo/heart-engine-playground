@@ -20,6 +20,9 @@ void Renderer::Initialize()
 	HEART_ASSERT(window_ != nullptr, "Could not initialize window!");
 
 	ImGui::Game::Init(window_);
+
+	auto view = window_->getView();
+	auto tf = view.getTransform();
 }
 
 void Renderer::Dispose()
@@ -33,8 +36,9 @@ void Renderer::Dispose()
 
 bool Renderer::HandleResize(sf::Event& e)
 {
-	sf::FloatRect visibleArea(0, 0, float(e.size.width), float(e.size.height));
-	window_->setView(sf::View(visibleArea));
+	// sf::FloatRect visibleArea(0, 0, float(e.size.width), float(e.size.height));
+	// window_->setView(sf::View(visibleArea));
+	// return true;
 	return true;
 }
 
@@ -51,11 +55,29 @@ void Renderer::BeginFrame()
 
 void Renderer::Draw(sf::Drawable& d)
 {
-	window_->draw(d);
+	/*
+	auto height = float(window_->getSize().y);
+	auto cameraTf = sf::Transform::Identity;
+	cameraTf.scale(1.0f, -1.0f, 0.0f, 0.0f);
+	cameraTf.translate(0.0f, -height);
+
+	auto state = sf::RenderStates(cameraTf);*/
+	auto state = sf::RenderStates();
+
+	window_->draw(d, state);
 }
 
 void Renderer::SubmitFrame()
 {
 	ImGui::Game::SubmitRender(window_);
 	window_->display();
+}
+
+sf::Transform Renderer::GetCameraTransform() const
+{
+	auto height = float(window_->getSize().y);
+	auto cameraTf = sf::Transform::Identity;
+	cameraTf.scale(1.0f, -1.0f, 0.0f, 0.0f);
+	cameraTf.translate(0.0f, -height);
+	return cameraTf;
 }
