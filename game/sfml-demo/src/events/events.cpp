@@ -42,8 +42,11 @@ void EventManager::Process()
 		auto targets = event_handlers_.find(e.type);
 		if (targets != event_handlers_.end() && !targets->second.empty())
 		{
-			for (auto& handler : targets->second)
+			// We iterate over the list backwards - i.e. the most recent one to register
+			// gets first dibs on handling the event
+			for (auto i = targets->second.rbegin(); i != targets->second.rend(); ++i)
 			{
+				auto& handler = *i;
 				if (handler && handler(e))
 					break;
 			}
