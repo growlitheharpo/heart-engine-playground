@@ -1,4 +1,3 @@
-#!lua
 
 function include_self()
 	includedirs {
