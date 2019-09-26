@@ -243,6 +243,18 @@ namespace hrt
 		DECLARE_CANONICAL_SUBTRACTION_OPERATORS(this_type, difference_type)
 #endif
 
+		bool operator==(this_type other) const
+		{
+			return base() == other.base();
+		}
+
+		bool operator<(this_type other) const
+		{
+			return other.base() < base();
+		}
+
+		DECLARE_CANONICAL_COMPARISON_OPERATORS_BY_VALUE(this_type);
+
 		difference_type operator-(const this_type& other)
 		{
 			return data_ptr_ - other.data_ptr_;
