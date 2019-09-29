@@ -1,0 +1,14 @@
+{
+  "type": "SampleTargetType",
+  "contents": {
+    "intval": 5,
+    "floatval": 16.0,
+    "string": "Hello world, I'm a string and I have a lot to say!",
+    "nestedobject": {
+      "type": "SampleNestedObject",
+      "contents": {
+        "secondintval": 181818
+      }
+    }
+  }
+}
