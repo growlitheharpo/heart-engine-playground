@@ -1,6 +1,7 @@
 #pragma once
 
 #define SERIALIZE_STRUCT()
+#define SERIALIZE_AS_REF
 
 template <size_t N>
 struct SerializedString
