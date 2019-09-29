@@ -8,8 +8,31 @@ using System.Text.RegularExpressions;
 
 static class Program
 {
+    private static bool isErrored = false;
     private static List<string> necessaryIncludes = new List<string>();
     private static HashSet<int> serializedStringLengths = new HashSet<int>();
+
+    struct CurrentContext
+    {
+        public string filename;
+        public int linenumber;
+    }
+
+    struct FieldToken
+    {
+        public string name;
+        public string annotation;
+        public int linenumber;
+
+        public FieldToken(string n, string a, int l)
+        {
+            name = n;
+            annotation = a;
+            linenumber = l;
+        }
+    }
+
+    private static CurrentContext ctx;
 
     static int Main(string[] args)
     {
@@ -22,7 +45,14 @@ static class Program
 
         Console.WriteLine("Completed heart-codegen");
 
-        return 0;
+        return isErrored ? 1 : 0;
+    }
+
+    static void EncounterError(string msg)
+    {
+        Console.Error.WriteLine(msg);
+        Console.Error.WriteLine($"Encountered at: {ctx.filename} ({ctx.linenumber})");
+        isErrored = true;
     }
 
     static void WriteReflectionCodegen(string realLoc)
@@ -42,6 +72,9 @@ static class Program
 
             writer.WriteLine("void ReflectSerializedData()");
             writer.WriteLine("{");
+            writer.WriteLine("\tentt::reflect<int32_t>().conv<uint32_t>().conv<uint16_t>().conv<uint8_t>();");
+            writer.WriteLine("\tentt::reflect<uint32_t>().conv<int32_t>().conv<uint16_t>().conv<uint8_t>();");
+            writer.WriteLine();
             if (serializedStringLengths.Count > 0)
             {
                 foreach (var size in serializedStringLengths)
@@ -65,14 +98,22 @@ static class Program
 
         foreach (var cpp in Directory.GetFiles(dir, "*.cpp", SearchOption.AllDirectories))
         {
+            ctx.filename = cpp;
+            ctx.linenumber = 1;
+
             var result = ProcessFile(cpp);
+
             if (result.Length > 1)
-                throw new InvalidOperationException("Cannot auto-serialize structs in cpp, please move to a header or remove SERIALIZE_STRUCT()!");
+                EncounterError("Cannot auto-serialize structs in cpp, please move to a header or remove SERIALIZE_STRUCT()!");
         }
 
         foreach (var h in Directory.GetFiles(dir, "*.h", SearchOption.AllDirectories))
         {
+            ctx.filename = h;
+            ctx.linenumber = 1;
+
             var result = ProcessFile(h);
+
             if (result.Length == 0)
                 continue;
 
@@ -97,6 +138,8 @@ static class Program
             while (!stream.EndOfStream)
             {
                 var line = stream.ReadLine();
+                ++ctx.linenumber;
+
                 if (line == "SERIALIZE_STRUCT()")
                 {
                     sb.Append(ProcessStruct(stream));
@@ -125,33 +168,42 @@ static class Program
                 ++bracketlevel;
         }
 
-        var fields = new List<string>();
+        var fields = new List<FieldToken>();
 
         {
             int next;
 
             do
             {
-                next = reader.Read();
+                next = reader.Peek();
                 if (next == '{')
                 {
+                    reader.Read();
                     ++bracketlevel;
                     continue;
                 }
                 else if (next == '}')
                 {
+                    reader.Read();
                     --bracketlevel;
                     continue;
                 }
                 else if (bracketlevel > 1)
                 {
+                    reader.Read();
                     continue;
                 }
                 else if (bracketlevel == 0)
                     break;
 
                 if (char.IsWhiteSpace((char)next))
+                {
+                    if (next == '\n')
+                        ++ctx.linenumber;
+
+                    reader.Read();
                     continue;
+                }
 
                 // we're at root level and we just hit something!
                 // we can just consume the rest of the line now; we don't care what the type was, so
@@ -159,6 +211,8 @@ static class Program
                 // note: this will break if you do something stupid (like put the open parenthesis for a function on the next line,
                 // or seperate the type and identifier.
                 var line = reader.ReadLine();
+                ++ctx.linenumber;
+
                 if (line.Contains("(") || line.Contains(")")) // false alarm, this is a function
                 {
                     if (line.Contains("{") && !line.Contains("}"))
@@ -166,21 +220,51 @@ static class Program
                     continue;
                 }
 
-                var tokens = line.Split(' ', ';');
+                var declarations = line.Split(';');
 
-                // Add every other token; that's probably safe, right? i.e struct x { int val; float val2; bool flag; };
-                for (int i = 1; i < tokens.Length; i += 2)
+                foreach (var declaration in declarations)
                 {
-                    fields.Add(tokens[i]);
-                    var r = new Regex("(erializedString<)(\\d+)(>)");
-                    if (r.IsMatch(tokens[i - 1]))
-                    {
-                        var match = r.Match(tokens[i - 1]);
-                        var size = match.Groups[2].Value;
-                        var realSize = int.Parse(size);
+                    if (declaration.Length == 0)
+                        continue;
 
-                        if (!serializedStringLengths.Contains(realSize))
-                            serializedStringLengths.Add(realSize);
+                    var tokens = declaration.Split(' ');
+
+                    string annotation = "";
+                    string type;
+                    string name;
+                    if (tokens.Length == 2)
+                    {
+                        type = tokens[0];
+                        name = tokens[1];
+                    }
+                    else if (tokens.Length == 3)
+                    {
+                        annotation = tokens[0];
+                        type = tokens[1];
+                        name = tokens[2];
+                    }
+                    else
+                    {
+                        EncounterError("Unable to parse - too many tokens in declaration!");
+                        continue;
+                    }
+
+                    var nameArrayRegex = new Regex("(.+?)(\\[\\d+\\])");
+                    if (nameArrayRegex.IsMatch(name))
+                    {
+                        name = nameArrayRegex.Match(name).Groups[1].Value;
+                    }
+
+                    fields.Add(new FieldToken(name, annotation, ctx.linenumber));
+
+                    // Check for our special type that needs extra reflection
+                    var serializedStringRegex = new Regex("(SerializedString<)(\\d+)(>)");
+                    if (serializedStringRegex.IsMatch(type))
+                    {
+                        var stringSize = serializedStringRegex.Match(type).Groups[2].Value;
+                        var realSize = int.Parse(stringSize);
+
+                        serializedStringLengths.Add(realSize);
                     }
                 }
 
@@ -191,7 +275,17 @@ static class Program
         sb.AppendLine($"\tBEGIN_SERIALIZE_TYPE({structname})");
         foreach (var f in fields)
         {
-            sb.AppendLine($"\t\tSERIALIZE_FIELD({structname}, {f})");
+            if (string.IsNullOrEmpty(f.annotation))
+                sb.AppendLine($"\t\tSERIALIZE_FIELD({structname}, {f.name})");
+            else if (f.annotation == "SERIALIZE_AS_REF")
+                sb.AppendLine($"\t\tSERIALIZE_FIELD_ALIAS({structname}, {f.name})");
+            else
+            {
+                int curLine = ctx.linenumber;
+                ctx.linenumber = f.linenumber;
+                EncounterError($"Unknown annotation: {f.annotation}");
+                ctx.linenumber = curLine;
+            }
         }
         sb.AppendLine($"\tEND_SERIALIZE_TYPE({structname})");
         return sb.ToString();
