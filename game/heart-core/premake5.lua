@@ -3,3 +3,8 @@ project "heart-core"
 	set_location()
 	include_self()
 	include_heart()
+	include_entt()
+
+	includedirs {
+		"../../external/rapidjson/include",
+	}
