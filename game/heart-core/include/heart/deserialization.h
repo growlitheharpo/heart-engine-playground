@@ -1,6 +1,7 @@
 #pragma once
 
 #include <heart/debug/assert.h>
+#include <heart/deserialization_fwd.h>
 #include <heart/types.h>
 
 #include <heart/stl/type_traits.h>
@@ -10,52 +11,6 @@
 #include <entt/meta/meta.hpp>
 
 #include <rapidjson/document.h>
-
-template <size_t N>
-struct SerializedString
-{
-	char buffer[N];
-
-	static SerializedString SpecialConvert(const char* str)
-	{
-		SerializedString<N> result;
-		result = str;
-		return result;
-	}
-
-	void Set(const char* c)
-	{
-		strcpy_s(buffer, c);
-	}
-
-	const char* Get()
-	{
-		return buffer;
-	}
-
-	SerializedString& operator=(const char* str)
-	{
-		strcpy_s(buffer, str);
-		return *this;
-	}
-
-	SerializedString(const char* str)
-	{
-		strcpy_s(buffer, str);
-	}
-
-	SerializedString()
-	{
-		// TODO: This isn't ideal... but entt requires that we only reflect a particular
-		// conversion once :(
-		static bool reflected = false;
-		if (!reflected)
-		{
-			entt::reflect<const char*>().conv<SerializedString<N>::SpecialConvert>();
-			reflected = true;
-		}
-	}
-};
 
 template <typename T>
 struct is_entt_meta_any : hrt::false_type
