@@ -22,9 +22,6 @@ void Renderer::Initialize()
 	HEART_ASSERT(window_ != nullptr, "Could not initialize window!");
 
 	ImGui::Game::Init(window_);
-
-	auto view = window_->getView();
-	auto tf = view.getTransform();
 }
 
 void Renderer::Dispose()
@@ -36,7 +33,7 @@ void Renderer::Dispose()
 	ImGui::Game::Shutdown();
 }
 
-bool Renderer::HandleResize(sf::Event& e)
+bool Renderer::HandleResize(const sf::Event& e)
 {
 	// sf::FloatRect visibleArea(0, 0, float(e.size.width), float(e.size.height));
 	// window_->setView(sf::View(visibleArea));
