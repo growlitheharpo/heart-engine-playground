@@ -47,7 +47,6 @@ workspace "fun-with-sfml"
 	
 	filter {"system:windows", "action:vs*"}
 		systemversion "latest"
-		toolset "v142"
 
 	filter {}
 
@@ -60,3 +59,10 @@ workspace "fun-with-sfml"
 
 include "external/"
 include "game/"
+
+project "data"
+	set_location()
+	kind "None"
+	files {
+		"data/**"
+	}
