@@ -4,6 +4,8 @@
 #include "render/imgui_game.h"
 #include "render/render.h"
 
+#include "gen/gen.h"
+
 #include <heart/file.h>
 
 static bool s_shutdown = false;
@@ -27,6 +29,11 @@ int WinMain()
 {
 	// TODO: Move this to somewhere else (like the command line??)
 	HeartSetRoot("{%cwd}\\..\\data\\");
+
+	entt::reflect<int32_t>().conv<uint32_t>().conv<uint16_t>().conv<uint8_t>();
+	entt::reflect<uint32_t>().conv<int32_t>().conv<uint16_t>().conv<uint8_t>();
+
+	ReflectSerializedData();
 
 	Renderer r;
 	r.Initialize();
