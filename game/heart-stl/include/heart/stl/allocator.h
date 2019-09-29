@@ -44,7 +44,7 @@ namespace hrt
 		using allocator_type = alloc_t;
 		using value_type = typename allocator_type::value_type;
 		using pointer = typename allocator_type::value_type*;
-		using const_pointer = typename const allocator_type::value_type*;
+		using const_pointer = const typename allocator_type::value_type*;
 		using void_pointer = void*;
 		using const_void_pointer = const void*;
 

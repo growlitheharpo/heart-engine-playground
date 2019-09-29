@@ -21,7 +21,7 @@ private:
 	sf::RenderWindow* window_ = nullptr;
 	sf::Clock clock_;
 
-	bool HandleResize(sf::Event& e);
+	bool HandleResize(const sf::Event& e);
 
 public:
 	Renderer() = default;

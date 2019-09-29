@@ -89,7 +89,7 @@ namespace ImGui
 		}
 
 #if IMGUI_ENABLED
-		static bool sToggleImGuiEvent(sf::Event& e)
+		static bool sToggleImGuiEvent(sf::Event e)
 		{
 			if (e.key.code != sf::Keyboard::F3)
 				return false;
