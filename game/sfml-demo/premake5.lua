@@ -37,3 +37,12 @@ project "sfml-demo"
 		'winmm.lib',
 		'gdi32.lib',
 	}
+
+	dependson "heart-codegen"
+	prebuildcommands {
+		"%{wks.location}/bin/heart-codegen/%{cfg.longname}/heart-codegen.exe -in %{prj.location}"
+	}
+	-- At premake time, we create an empty generated for heart-codegen to fill; this is so that
+	-- it gets added to the project files and VS knows to build it
+	local tmpgen = io.open("src/gen/reflection.heartgen.cpp", "w")
+	tmpgen.close()
