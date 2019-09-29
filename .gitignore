@@ -13,6 +13,9 @@
 *.userosscache
 *.sln.docstates
 
+# Ignore generated CPPs from heart-codegen
+*.heartgen.cpp
+
 *.sln
 [Pp]roj/
 
