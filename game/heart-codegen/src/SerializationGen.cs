@@ -5,6 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
+using ClangSharp;
+using ClangSharp.Interop;
+
 namespace Heart.Codegen
 {
     public class SerializationGen
@@ -142,176 +145,31 @@ namespace Heart.Codegen
             return sb.ToString();
         }
 
+        private CXChildVisitResult VisitChildren(CXCursor cursor, CXCursor parent, void* client_data)
+        {
+            return CXChildVisitResult.CXChildVisit_Continue;
+        }
+
         private string ProcessCurrentFile()
         {
-            StringBuilder sb = new StringBuilder();
-
-            using (var filestream = File.OpenRead(_currentFile))
-            using (var stream = new CountingStreamReader(filestream))
+            unsafe
             {
-                while (!stream.EndOfStream)
-                {
-                    var line = stream.ReadLine();
+                var index = clang.createIndex(0, 0);
 
-                    if (line == "SERIALIZE_STRUCT()")
-                    {
-                        if (!_mayCurrentlySerialize)
-                        {
-                            EncounterError("Cannot auto-serialize structs in cpp, please move to a header or remove SERIALIZE_STRUCT()!", stream, false);
-                            continue;
-                        }
-                        else
-                        {
-                            sb.Append(ProcessCurrentStruct(stream));
-                            sb.AppendLine();
-                        }
-                    }
-                }
+
+                var file = Convert.ToSByte(_currentFile);
+
+                var rawTranslationUnit = clang.parseTranslationUnit(index, &file, null, 0, null, 0, (uint)CXTranslationUnit_Flags.CXTranslationUnit_None);
+
+                var indexCursor = clang.getTranslationUnitCursor(rawTranslationUnit);
+                indexCursor.VisitChildren(VisitChildren, new CXClientData(IntPtr.Zero));
+
+                clang.disposeTranslationUnit(rawTranslationUnit);
+                clang.disposeIndex(index);
             }
 
-            return sb.ToString();
-        }
 
-        private string ProcessCurrentStruct(CountingStreamReader stream)
-        {
-            int bracketLevel = 0;
-            var structName = ExtractTypeName(stream, ref bracketLevel);
-            if (string.IsNullOrEmpty(structName))
-            {
-                EncounterError("Unable to parse structure name!", stream);
-                return string.Empty;
-            }
-
-            var tokens = ProcessStructFields(stream, bracketLevel);
-
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"\tBEGIN_SERIALIZE_TYPE({structName})");
-            foreach (var t in tokens)
-            {
-                var macro = _annotations[t.annotation];
-                sb.AppendLine($"\t\t{macro}({structName}, {t.name})");
-            }
-            sb.AppendLine($"\tEND_SERIALIZE_TYPE({structName})");
-            return sb.ToString();
-        }
-
-        private List<FieldToken> ProcessStructFields(CountingStreamReader stream, int bracketLevel)
-        {
-            // TODO: This is a very dumb way of reading that can easily be broken by coding styles.
-            // A better idea would be to use libclang or some other actual C++ parser
-
-            var result = new List<FieldToken>();
-            
-            while (true)
-            {
-                int next = stream.Peek();
-                
-                if (next == '{')
-                {
-                    stream.Read();
-                    ++bracketLevel;
-                    continue;
-                }
-                else if (next == '}')
-                {
-                    stream.Read();
-                    --bracketLevel;
-                    continue;
-                }
-
-                if (bracketLevel > 1)
-                {
-                    stream.Read();
-                    continue;
-                }
-                else if (bracketLevel == 0)
-                {
-                    break;
-                }
-
-                if (char.IsWhiteSpace((char)next))
-                {
-                    stream.Read();
-                    continue;
-                }
-
-                // we're at root level and we just hit something!
-                // we can just consume the rest of the line now.
-                // note: this will break if you do something stupid (like put the open parenthesis for a function on the next line,
-                // or seperate the type and identifier.
-                var line = stream.ReadLine();
-                if (line.Contains("(")) // false alarm, this is a function
-                {
-                    if (line.Contains("{") && !line.Contains("}"))
-                        ++bracketLevel;
-                    continue;
-                }
-
-                var declarations = line.Split(';');
-                foreach (var d in declarations)
-                {
-                    if (d.Length == 0)
-                        continue;
-
-                    var tokens = d.Split(' ');
-
-                    string annotation = "", type, identifier;
-                    if (tokens.Length == 2)
-                    {
-                        type = tokens[0];
-                        identifier = tokens[1];
-                    }
-                    else if (tokens.Length == 3)
-                    {
-                        annotation = tokens[0];
-                        type = tokens[1];
-                        identifier = tokens[2];
-                    }
-                    else
-                    {
-                        EncounterError("Unable to parse - too many tokens in declaration!", stream);
-                        continue;
-                    }
-
-                    // Fixup for array declarations (eg. int x[5])
-                    var arrayRegex = new Regex("(.+?)(\\[\\d+\\])");
-                    if (arrayRegex.IsMatch(identifier))
-                    {
-                        identifier = arrayRegex.Match(identifier).Groups[1].Value;
-                    }
-
-                    if (!_annotations.ContainsKey(annotation))
-                    {
-                        EncounterError($"Unknown annotation: \"{annotation}\"", stream);
-                        continue;
-                    }
-
-                    result.Add(new FieldToken(identifier, annotation));
-
-                    // Check for our special type that needs extra reflection
-                    var serializedStringRegex = new Regex("(SerializedString<)(\\d+)(>)");
-                    if (serializedStringRegex.IsMatch(type))
-                    {
-                        var stringSize = serializedStringRegex.Match(type).Groups[2].Value;
-                        _serializedStringSizes.Add(int.Parse(stringSize));
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        private string ExtractTypeName(CountingStreamReader stream, ref int bracketLevel)
-        {
-            var nextLine = stream.ReadLine();
-            if (nextLine.Contains("{") && !nextLine.Contains("}"))
-                ++bracketLevel;
-
-            var tokens = nextLine.Split(' ');
-            if (tokens[0] == "struct" || tokens[1] == "class")
-                return tokens[1];
-
-            return string.Empty;
+            return "";
         }
     }
 }
