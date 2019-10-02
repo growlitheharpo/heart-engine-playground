@@ -37,6 +37,8 @@ int WinMain()
 	EventManager& e = EventManager::Get();
 	e.Initialize(&r);
 
+	EventManager::MyDataType data = {};
+
 	ImGui::Game::RegisterEvents();
 	r.RegisterEvents();
 	e.CreateHandler(sf::Event::Closed).connect<WindowClosedEvent>();

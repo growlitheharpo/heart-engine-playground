@@ -22,7 +22,6 @@ static class Program
         // Insert other systems here?
 
         Console.WriteLine("Completed heart-codegen");
-
         return 0;
     }
 }

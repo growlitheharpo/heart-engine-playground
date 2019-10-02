@@ -5,14 +5,36 @@
 #include <heart/stl/unordered_map.h>
 #include <heart/stl/vector.h>
 
+#include <heart/deserialization_fwd.h>
+
 #include <entt/signal/delegate.hpp>
 
 #include <SFML/Graphics.hpp>
 
 class Renderer;
 
+SERIALIZE_STRUCT()
+struct MyDataTypeOther
+{
+	int x, w;
+	int y;
+	float value;
+	SerializedString<64> wowza;
+};
+
 class EventManager
 {
+public:
+	SERIALIZE_STRUCT()
+	struct MyDataType
+	{
+		int x;
+		int y;
+		float value;
+
+		SERIALIZE_AS_REF() SerializedString<64> wowza;
+	};
+
 private:
 	EventManager() = default;
 	Renderer* renderer_ = nullptr;
