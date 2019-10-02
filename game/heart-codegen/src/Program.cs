@@ -1,10 +1,4 @@
 using System;
-using System.Runtime;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Linq;
-using System.Text.RegularExpressions;
 
 static class Program
 {
@@ -13,6 +7,9 @@ static class Program
         Console.WriteLine("Invoking heart-codegen...");
 
         var location = args[1];
+        if (location.EndsWith("\\"))
+            location = location.Substring(0, location.Length - 1);
+
         var realLoc = $"{location}\\..\\..\\game\\sfml-demo\\src\\";
 
         int serializationResult = Heart.Codegen.SerializationGen.ProcessSourceDirectory(realLoc);

@@ -8,6 +8,8 @@
 
 #include <heart/file.h>
 
+#include <heart/deserialization_file.h>
+
 static bool s_shutdown = false;
 
 bool WindowClosedEvent(sf::Event e)
@@ -30,6 +32,9 @@ int WinMain()
 	// TODO: Move this to somewhere else (like the command line??)
 	HeartSetRoot("{%cwd}\\..\\data\\");
 	ReflectSerializedData();
+
+	SampleTargetType out;
+	DeserializeObjectFromFile(out, "json/test.json");
 
 	Renderer r;
 	r.Initialize();

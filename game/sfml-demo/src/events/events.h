@@ -19,7 +19,23 @@ struct MyDataTypeOther
 	int x, w;
 	int y;
 	float value;
-	SerializedString<64> wowza;
+	SerializedString<32> wowza;
+};
+
+SERIALIZE_STRUCT()
+struct SampleNestedObject
+{
+	int secondintval;
+};
+
+SERIALIZE_STRUCT()
+struct SampleTargetType
+{
+	int intval;
+	float floatval;
+	SerializedString<72> string;
+
+	SampleNestedObject nestedobject;
 };
 
 class EventManager

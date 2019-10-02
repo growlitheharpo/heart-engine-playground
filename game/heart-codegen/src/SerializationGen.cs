@@ -50,6 +50,10 @@ namespace Heart.Codegen
         {
             Console.Error.WriteLine($"heart-codegen error: {msg}");
             Console.Error.WriteLine($"\tEncountered at: {location.ToString()}");
+
+            System.Diagnostics.Debug.WriteLine($"heart-codegen error: {msg}");
+            System.Diagnostics.Debug.WriteLine($"\tEncountered at: {location.ToString()}");
+
             ErrorCode = 1;
         }
 
@@ -85,10 +89,10 @@ namespace Heart.Codegen
                 {
                     foreach (var size in _serializedStringSizes)
                         writer.WriteLine($"\tentt::reflect<const char*>().conv<&SerializedString<{size}>::CreateFromCString>();");
-                    writer.WriteLine();
                 }
                 foreach (var typePair in _typeFields)
                 {
+                    writer.WriteLine();
                     var type = typePair.Key;
                     writer.WriteLine($"\tBEGIN_SERIALIZE_TYPE({type})");
 
@@ -117,6 +121,10 @@ namespace Heart.Codegen
             {
                 var ext = Path.GetExtension(file);
                 if (!codeExtensions.Contains(ext))
+                    continue;
+
+                // We don't parse generated files... duh
+                if (file.Contains(".heartgen.cpp"))
                     continue;
 
                 _currentFile = file;
@@ -195,6 +203,17 @@ namespace Heart.Codegen
 
         private unsafe CXChildVisitResult VisitChildren(CXCursor cursor, CXCursor parent, void* client_data)
         {
+            if (_state.serializedParent != null && _state.serializedParent != parent)
+            {
+                if (_state.state != SerializeState.SerializeCurrentParent)
+                {
+                    EncounterError("Unexpected end of declaration while parsing serialized struct!", cursor.Location);
+                }
+
+                _state.state = SerializeState.Scanning;
+                _state.serializedParent = null;
+            }
+
             if (cursor.Spelling.CString == "HEARTGEN___SERIALIZE_NEXT_SYMBOL_STRUCT")
             {
                 if (_state.state != SerializeState.Scanning)
@@ -225,9 +244,9 @@ namespace Heart.Codegen
 
             if (_state.state == SerializeState.SerializeNextStruct)
             {
-                if (cursor.CXXAccessSpecifier != CX_CXXAccessSpecifier.CX_CXXPublic)
+                if (cursor.CXXAccessSpecifier != CX_CXXAccessSpecifier.CX_CXXPublic && cursor.CXXAccessSpecifier != CX_CXXAccessSpecifier.CX_CXXInvalidAccessSpecifier)
                 {
-                    EncounterError("Ignoring serialized struct - cannot serialize non-public structures!", cursor.Location);
+                    EncounterError($"Ignoring serialized struct {cursor.Spelling.CString} - cannot serialize non-public structures!", cursor.Location);
                     _state.serializedParent = null;
                     _state.state = SerializeState.Scanning;
                     return CXChildVisitResult.CXChildVisit_Continue;
@@ -242,13 +261,6 @@ namespace Heart.Codegen
 
             if (_state.state == SerializeState.Scanning)
                 return CXChildVisitResult.CXChildVisit_Recurse;
-
-            if (parent != _state.serializedParent)
-            {
-                _state.state = SerializeState.Scanning;
-                _state.serializedParent = null;
-                return CXChildVisitResult.CXChildVisit_Recurse;
-            }
 
             // FINALLY we're inside a serialized struct! Let's look at the current cursor!
             if (cursor.Kind == CXCursorKind.CXCursor_FieldDecl && cursor.CXXAccessSpecifier == CX_CXXAccessSpecifier.CX_CXXPublic)
@@ -271,6 +283,14 @@ namespace Heart.Codegen
 
                     _includes.Add(GetRelativePath(file.Name.CString));
                     _typeFields[parentType].Add(new FieldToken(fieldName, asRef));
+                }
+
+                var fieldType = cursor.Type.Spelling.CString;
+                var serializedStringRgx = new Regex("(SerializedString<)(\\d+)(>)");
+                if (serializedStringRgx.IsMatch(fieldType))
+                {
+                    int size = int.Parse(serializedStringRgx.Match(fieldType).Groups[2].Value);
+                    _serializedStringSizes.Add(size);
                 }
 
                 return CXChildVisitResult.CXChildVisit_Continue;
