@@ -1,7 +1,12 @@
 #pragma once
 
+#ifndef __HEART_CODEGEN_ACTIVE
 #define SERIALIZE_STRUCT()
-#define SERIALIZE_AS_REF
+#define SERIALIZE_AS_REF()
+#else
+#define SERIALIZE_STRUCT() void HEARTGEN___SERIALIZE_NEXT_SYMBOL_STRUCT();
+#define SERIALIZE_AS_REF() void HEARTGEN___SERIALIZE_NEXT_SYMBOL_AS_REF();
+#endif
 
 template <size_t N>
 struct SerializedString

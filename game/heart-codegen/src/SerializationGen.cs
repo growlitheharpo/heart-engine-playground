@@ -20,72 +20,50 @@ namespace Heart.Codegen
             return generator.ErrorCode;
         }
 
-        private class CountingStreamReader : StreamReader
-        {
-            public int LineNumber { get; private set; }
-
-            public CountingStreamReader(Stream s) : base(s) 
-            {
-                LineNumber = 1;
-            }
-
-            public override int Read()
-            {
-                int r = base.Read();
-                if (r == '\n')
-                    ++LineNumber;
-                return r;
-            }
-
-            public override string ReadLine()
-            {
-                ++LineNumber;
-                return base.ReadLine();
-            }
-        }
-
         private struct FieldToken
         {
             public string name;
-            public string annotation;
+            public bool asRef;
 
-            public FieldToken(string n, string a)
+            public FieldToken(string n, bool r)
             {
                 name = n;
-                annotation = a;
+                asRef = r;
             }
         }
 
         private int ErrorCode { get; set; }
 
         private string _currentFile;
-        private bool _mayCurrentlySerialize;
 
         private string _directory;
-        private List<string> _includes = new List<string>();
+        private HashSet<string> _includes = new HashSet<string>();
         private HashSet<int> _serializedStringSizes = new HashSet<int>();
-
-        private readonly Dictionary<string, string> _annotations = new Dictionary<string, string>()
-        {
-            { "", "SERIALIZE_FIELD" },
-            { "SERIALIZE_AS_REF", "SERIALIZE_FIELD_ALIAS" }
-        };
+        private Dictionary<string, List<FieldToken>> _typeFields = new Dictionary<string, List<FieldToken>>();
 
         private SerializationGen(string dir) 
         {
             _directory = dir;
         }
 
-        private void EncounterError(string msg, CountingStreamReader reader, bool processingPrevious = true)
+        private void EncounterError(string msg, CXSourceLocation location)
         {
             Console.Error.WriteLine($"heart-codegen error: {msg}");
-            Console.Error.WriteLine($"\tEncountered at: {_currentFile} ({reader.LineNumber + (processingPrevious ? -1 : 0)})");
+            Console.Error.WriteLine($"\tEncountered at: {location.ToString()}");
             ErrorCode = 1;
+        }
+
+        private string GetRelativePath(string target)
+        {
+            var dirUri = new Uri(_directory);
+            return dirUri.MakeRelativeUri(new Uri(target)).OriginalString;
         }
 
         private void Process()
         {
-            string output = TraverseCodebase();
+            TraverseCodebase();
+
+            var dirUri = new Uri(_directory);
 
             using (var writer = File.CreateText($"{_directory}\\gen\\reflection.heartgen.cpp"))
             {
@@ -109,7 +87,20 @@ namespace Heart.Codegen
                         writer.WriteLine($"\tentt::reflect<const char*>().conv<&SerializedString<{size}>::CreateFromCString>();");
                     writer.WriteLine();
                 }
-                writer.Write(output);
+                foreach (var typePair in _typeFields)
+                {
+                    var type = typePair.Key;
+                    writer.WriteLine($"\tBEGIN_SERIALIZE_TYPE({type})");
+
+                    foreach (var field in typePair.Value)
+                    {
+                        if (field.asRef)
+                            writer.WriteLine($"\t\tSERIALIZE_FIELD_ALIAS({type}, {field.name})");
+                        else
+                            writer.WriteLine($"\t\tSERIALIZE_FIELD({type}, {field.name})");
+                    }
+                    writer.WriteLine($"\tEND_SERIALIZE_TYPE({type})");
+                }
                 writer.WriteLine("}");
                 writer.WriteLine();
                 writer.WriteLine("/*   WRITTEN BY HEART-CODEGEN   */");
@@ -118,12 +109,9 @@ namespace Heart.Codegen
             Console.WriteLine("heart-codegen: reflection.heartgen.cpp");
         }
 
-        private string TraverseCodebase()
+        private void TraverseCodebase()
         {
-            StringBuilder sb = new StringBuilder();
-            var dirUri = new Uri(_directory);
             var codeExtensions = new[] { ".cpp", ".c", ".h", ".hpp" };
-            var allowedExtensions = new[] { ".h", ".hpp" };
 
             foreach (var file in Directory.GetFiles(_directory, "*.*", SearchOption.AllDirectories))
             {
@@ -131,45 +119,164 @@ namespace Heart.Codegen
                 if (!codeExtensions.Contains(ext))
                     continue;
 
-                _mayCurrentlySerialize = allowedExtensions.Contains(ext);
                 _currentFile = file;
 
-                string serializations = ProcessCurrentFile();
-                if (serializations.Length > 0)
-                {
-                    sb.Append(serializations);
-                    _includes.Add(dirUri.MakeRelativeUri(new Uri(file)).OriginalString);
-                }
+                ProcessCurrentFile();
             }
-
-            return sb.ToString();
         }
 
-        private CXChildVisitResult VisitChildren(CXCursor cursor, CXCursor parent, void* client_data)
+        private void ProcessCurrentFile()
         {
-            return CXChildVisitResult.CXChildVisit_Continue;
-        }
+            _currentFile = Path.GetFullPath(_currentFile);
 
-        private string ProcessCurrentFile()
-        {
+            _state = new CurrentState();
+
+            var options = new[]
+            {
+                "-x",
+                "c++",
+                "--comments",
+                "--comments-in-macros",
+                "-fparse-all-comments",
+                "-D__HEART_CODEGEN_ACTIVE",
+                "--include-directory=C:\\Users\\James\\source\\repos\\cpp-fun-with-sfml\\game\\heart-core\\include",
+            };
+
+            var optionBytes = options.Select(x => Encoding.ASCII.GetBytes(x)).ToArray();
+
             unsafe
             {
                 var index = clang.createIndex(0, 0);
 
+                var bytes = Encoding.ASCII.GetBytes(_currentFile);
 
-                var file = Convert.ToSByte(_currentFile);
+                sbyte* file;
+                fixed (byte* p = bytes)
+                    file = (sbyte*)p;
 
-                var rawTranslationUnit = clang.parseTranslationUnit(index, &file, null, 0, null, 0, (uint)CXTranslationUnit_Flags.CXTranslationUnit_None);
+                var optionSb = new sbyte*[optionBytes.Length];
+                for (int i = 0; i < optionBytes.Length; ++i)
+                {
+                    fixed (byte* p = optionBytes[i])
+                        optionSb[i] = (sbyte*)p;
+                }
+
+                CXTranslationUnitImpl* rawTranslationUnit;
+
+                fixed (sbyte** sb = optionSb)
+                    rawTranslationUnit = clang.parseTranslationUnit(index, file, sb, optionBytes.Length, null, 0, (uint)CXTranslationUnit_Flags.CXTranslationUnit_None);
 
                 var indexCursor = clang.getTranslationUnitCursor(rawTranslationUnit);
-                indexCursor.VisitChildren(VisitChildren, new CXClientData(IntPtr.Zero));
+                var clientData = new CXClientData(new IntPtr(rawTranslationUnit));
+                indexCursor.VisitChildren(VisitChildren, clientData);
 
                 clang.disposeTranslationUnit(rawTranslationUnit);
                 clang.disposeIndex(index);
             }
 
+            _currentFile = "";
+        }
 
-            return "";
+        private enum SerializeState
+        {
+            Scanning,
+            SerializeNextStruct,
+            SerializeCurrentParent,
+            SerializeCurrentParentNextAsRef,
+        }
+
+        private struct CurrentState
+        {
+            public SerializeState state;
+            public CXCursor? serializedParent;
+        }
+
+        CurrentState _state;
+
+        private unsafe CXChildVisitResult VisitChildren(CXCursor cursor, CXCursor parent, void* client_data)
+        {
+            if (cursor.Spelling.CString == "HEARTGEN___SERIALIZE_NEXT_SYMBOL_STRUCT")
+            {
+                if (_state.state != SerializeState.Scanning)
+                {
+                    EncounterError("Cannot parse nested serialized structures!", cursor.Location);
+                }
+                else
+                {
+                    _state.state = SerializeState.SerializeNextStruct;
+                }
+
+                return CXChildVisitResult.CXChildVisit_Continue;
+            }
+
+            if (cursor.Spelling.CString == "HEARTGEN___SERIALIZE_NEXT_SYMBOL_AS_REF")
+            {
+                if (_state.state != SerializeState.SerializeCurrentParent)
+                {
+                    EncounterError("Unable to parse serialization directive; not inside serialized structure?", cursor.Location);
+                }
+                else
+                {
+                    _state.state = SerializeState.SerializeCurrentParentNextAsRef;
+                }
+
+                return CXChildVisitResult.CXChildVisit_Continue;
+            }
+
+            if (_state.state == SerializeState.SerializeNextStruct)
+            {
+                if (cursor.CXXAccessSpecifier != CX_CXXAccessSpecifier.CX_CXXPublic)
+                {
+                    EncounterError("Ignoring serialized struct - cannot serialize non-public structures!", cursor.Location);
+                    _state.serializedParent = null;
+                    _state.state = SerializeState.Scanning;
+                    return CXChildVisitResult.CXChildVisit_Continue;
+                }
+                else
+                {
+                    _state.serializedParent = cursor;
+                    _state.state = SerializeState.SerializeCurrentParent;
+                    return CXChildVisitResult.CXChildVisit_Recurse;
+                }
+            }
+
+            if (_state.state == SerializeState.Scanning)
+                return CXChildVisitResult.CXChildVisit_Recurse;
+
+            if (parent != _state.serializedParent)
+            {
+                _state.state = SerializeState.Scanning;
+                _state.serializedParent = null;
+                return CXChildVisitResult.CXChildVisit_Recurse;
+            }
+
+            // FINALLY we're inside a serialized struct! Let's look at the current cursor!
+            if (cursor.Kind == CXCursorKind.CXCursor_FieldDecl && cursor.CXXAccessSpecifier == CX_CXXAccessSpecifier.CX_CXXPublic)
+            {
+                var parentType = _state.serializedParent.GetValueOrDefault().Type.CanonicalType.Spelling.CString;
+                var fieldName = cursor.Spelling.CString;
+
+                if (!_typeFields.ContainsKey(parentType))
+                    _typeFields[parentType] = new List<FieldToken>();
+
+                bool asRef = _state.state == SerializeState.SerializeCurrentParentNextAsRef;
+                _state.state = SerializeState.SerializeCurrentParent;
+
+                // TODO: Don't do this linearly?
+                if (!_typeFields[parentType].Any(x => x.name == fieldName))
+                {
+                    CXFile file;
+                    uint line, column, row;
+                    cursor.Location.GetFileLocation(out file, out line, out column, out row);
+
+                    _includes.Add(GetRelativePath(file.Name.CString));
+                    _typeFields[parentType].Add(new FieldToken(fieldName, asRef));
+                }
+
+                return CXChildVisitResult.CXChildVisit_Continue;
+            }
+
+            return CXChildVisitResult.CXChildVisit_Continue;
         }
     }
 }
