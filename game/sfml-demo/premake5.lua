@@ -13,12 +13,12 @@ project "sfml-demo"
 		"RAPIDJSON_ASSERT=HEART_ASSERT",
 	}
 	includedirs {
-		"../../external/sfml/include/",
-		"../../external/rapidjson/include",
+		get_root_location() .. "external/sfml/include/",
+		get_root_location() .. "external/rapidjson/include",
 		"src/"
 	}
 
-	libdirs { "../../external/sfml/extlibs/libs-msvc-universal/x64" }
+	libdirs { get_root_location() .. "external/sfml/extlibs/libs-msvc-universal/x64" }
 	links {
 		'sfml-system',
 		'sfml-graphics',
@@ -40,7 +40,7 @@ project "sfml-demo"
 
 	dependson "heart-codegen"
 	prebuildcommands {
-		"%{wks.location}/bin/heart-codegen/%{cfg.longname}/heart-codegen.exe -in %{prj.location}"
+		"%{wks.location}/bin/heart-codegen/%{cfg.longname}/heart-codegen.exe -in " .. get_root_location() .. "build/proj"
 	}
 	-- At premake time, we create an empty generated for heart-codegen to fill; this is so that
 	-- it gets added to the project files and VS knows to build it
