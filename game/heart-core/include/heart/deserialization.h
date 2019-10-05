@@ -148,5 +148,3 @@ static bool ReadSingleProperty(OutType& outObject, MetaType& metaData, Rapidjson
 #define SERIALIZE_FIELD(type_name, field) .data<&type_name ::field>(#field##_hs)
 #define SERIALIZE_FIELD_ALIAS(type_name, field) .data<&type_name ::field, entt::as_alias_t>(#field##_hs)
 #define END_SERIALIZE_TYPE(type_name) ;
-
-#define SERIALIZE_STRUCT()
