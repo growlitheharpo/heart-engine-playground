@@ -2,6 +2,10 @@ function get_root_location()
 	return "%{wks.location}/../"
 end
 
+function get_output_location(prj_name)
+	return get_root_location() .. "build/bin/" .. prj_name .. "/%{cfg.longname}/"
+end
+
 function include_self()
 	includedirs {
 		"include/",
