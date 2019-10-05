@@ -1,3 +1,6 @@
+function get_root_location()
+	return "%{wks.location}/../"
+end
 
 function include_self()
 	includedirs {
@@ -11,9 +14,9 @@ end
 
 function include_heart(also_link)
 	includedirs {
-		"%{wks.location}/../game/heart-core/include/",
-		"%{wks.location}/../game/heart-debug/include/",
-		"%{wks.location}/../game/heart-stl/include/",
+		get_root_location() .. "game/heart-core/include/",
+		get_root_location() .. "game/heart-debug/include/",
+		get_root_location() .. "game/heart-stl/include/",
 	}
 	if also_link then
 		links {
@@ -25,7 +28,7 @@ function include_heart(also_link)
 end
 
 function set_location()
-	location "%{wks.location}/proj/"
+	location "%{wks.location}/proj/%{prj.name}/"
 end
 
 workspace "fun-with-sfml"
