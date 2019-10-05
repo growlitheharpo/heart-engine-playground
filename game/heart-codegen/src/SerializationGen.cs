@@ -5,6 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
+using ClangSharp;
+using ClangSharp.Interop;
+
 namespace Heart.Codegen
 {
     public class SerializationGen
@@ -17,72 +20,54 @@ namespace Heart.Codegen
             return generator.ErrorCode;
         }
 
-        private class CountingStreamReader : StreamReader
-        {
-            public int LineNumber { get; private set; }
-
-            public CountingStreamReader(Stream s) : base(s) 
-            {
-                LineNumber = 1;
-            }
-
-            public override int Read()
-            {
-                int r = base.Read();
-                if (r == '\n')
-                    ++LineNumber;
-                return r;
-            }
-
-            public override string ReadLine()
-            {
-                ++LineNumber;
-                return base.ReadLine();
-            }
-        }
-
         private struct FieldToken
         {
             public string name;
-            public string annotation;
+            public bool asRef;
 
-            public FieldToken(string n, string a)
+            public FieldToken(string n, bool r)
             {
                 name = n;
-                annotation = a;
+                asRef = r;
             }
         }
 
         private int ErrorCode { get; set; }
 
         private string _currentFile;
-        private bool _mayCurrentlySerialize;
 
         private string _directory;
-        private List<string> _includes = new List<string>();
+        private HashSet<string> _includes = new HashSet<string>();
         private HashSet<int> _serializedStringSizes = new HashSet<int>();
-
-        private readonly Dictionary<string, string> _annotations = new Dictionary<string, string>()
-        {
-            { "", "SERIALIZE_FIELD" },
-            { "SERIALIZE_AS_REF", "SERIALIZE_FIELD_ALIAS" }
-        };
+        private Dictionary<string, List<FieldToken>> _typeFields = new Dictionary<string, List<FieldToken>>();
 
         private SerializationGen(string dir) 
         {
             _directory = dir;
         }
 
-        private void EncounterError(string msg, CountingStreamReader reader, bool processingPrevious = true)
+        private void EncounterError(string msg, CXSourceLocation location)
         {
             Console.Error.WriteLine($"heart-codegen error: {msg}");
-            Console.Error.WriteLine($"\tEncountered at: {_currentFile} ({reader.LineNumber + (processingPrevious ? -1 : 0)})");
+            Console.Error.WriteLine($"\tEncountered at: {location.ToString()}");
+
+            System.Diagnostics.Debug.WriteLine($"heart-codegen error: {msg}");
+            System.Diagnostics.Debug.WriteLine($"\tEncountered at: {location.ToString()}");
+
             ErrorCode = 1;
+        }
+
+        private string GetRelativePath(string target)
+        {
+            var dirUri = new Uri(_directory);
+            return dirUri.MakeRelativeUri(new Uri(target)).OriginalString;
         }
 
         private void Process()
         {
-            string output = TraverseCodebase();
+            TraverseCodebase();
+
+            var dirUri = new Uri(_directory);
 
             using (var writer = File.CreateText($"{_directory}\\gen\\reflection.heartgen.cpp"))
             {
@@ -104,9 +89,22 @@ namespace Heart.Codegen
                 {
                     foreach (var size in _serializedStringSizes)
                         writer.WriteLine($"\tentt::reflect<const char*>().conv<&SerializedString<{size}>::CreateFromCString>();");
-                    writer.WriteLine();
                 }
-                writer.Write(output);
+                foreach (var typePair in _typeFields)
+                {
+                    writer.WriteLine();
+                    var type = typePair.Key;
+                    writer.WriteLine($"\tBEGIN_SERIALIZE_TYPE({type})");
+
+                    foreach (var field in typePair.Value)
+                    {
+                        if (field.asRef)
+                            writer.WriteLine($"\t\tSERIALIZE_FIELD_ALIAS({type}, {field.name})");
+                        else
+                            writer.WriteLine($"\t\tSERIALIZE_FIELD({type}, {field.name})");
+                    }
+                    writer.WriteLine($"\tEND_SERIALIZE_TYPE({type})");
+                }
                 writer.WriteLine("}");
                 writer.WriteLine();
                 writer.WriteLine("/*   WRITTEN BY HEART-CODEGEN   */");
@@ -115,12 +113,9 @@ namespace Heart.Codegen
             Console.WriteLine("heart-codegen: reflection.heartgen.cpp");
         }
 
-        private string TraverseCodebase()
+        private void TraverseCodebase()
         {
-            StringBuilder sb = new StringBuilder();
-            var dirUri = new Uri(_directory);
             var codeExtensions = new[] { ".cpp", ".c", ".h", ".hpp" };
-            var allowedExtensions = new[] { ".h", ".hpp" };
 
             foreach (var file in Directory.GetFiles(_directory, "*.*", SearchOption.AllDirectories))
             {
@@ -128,190 +123,180 @@ namespace Heart.Codegen
                 if (!codeExtensions.Contains(ext))
                     continue;
 
-                _mayCurrentlySerialize = allowedExtensions.Contains(ext);
+                // We don't parse generated files... duh
+                if (file.Contains(".heartgen.cpp"))
+                    continue;
+
                 _currentFile = file;
 
-                string serializations = ProcessCurrentFile();
-                if (serializations.Length > 0)
-                {
-                    sb.Append(serializations);
-                    _includes.Add(dirUri.MakeRelativeUri(new Uri(file)).OriginalString);
-                }
+                ProcessCurrentFile();
             }
-
-            return sb.ToString();
         }
 
-        private string ProcessCurrentFile()
+        private void ProcessCurrentFile()
         {
-            StringBuilder sb = new StringBuilder();
+            _currentFile = Path.GetFullPath(_currentFile);
 
-            using (var filestream = File.OpenRead(_currentFile))
-            using (var stream = new CountingStreamReader(filestream))
+            _state = new CurrentState();
+
+            var options = new[]
             {
-                while (!stream.EndOfStream)
-                {
-                    var line = stream.ReadLine();
+                "-x",
+                "c++",
+                "--comments",
+                "--comments-in-macros",
+                "-fparse-all-comments",
+                "-D__HEART_CODEGEN_ACTIVE",
+                "--include-directory=C:\\Users\\James\\source\\repos\\cpp-fun-with-sfml\\game\\heart-core\\include",
+            };
 
-                    if (line == "SERIALIZE_STRUCT()")
-                    {
-                        if (!_mayCurrentlySerialize)
-                        {
-                            EncounterError("Cannot auto-serialize structs in cpp, please move to a header or remove SERIALIZE_STRUCT()!", stream, false);
-                            continue;
-                        }
-                        else
-                        {
-                            sb.Append(ProcessCurrentStruct(stream));
-                            sb.AppendLine();
-                        }
-                    }
+            var optionBytes = options.Select(x => Encoding.ASCII.GetBytes(x)).ToArray();
+
+            unsafe
+            {
+                var index = clang.createIndex(0, 0);
+
+                var bytes = Encoding.ASCII.GetBytes(_currentFile);
+
+                sbyte* file;
+                fixed (byte* p = bytes)
+                    file = (sbyte*)p;
+
+                var optionSb = new sbyte*[optionBytes.Length];
+                for (int i = 0; i < optionBytes.Length; ++i)
+                {
+                    fixed (byte* p = optionBytes[i])
+                        optionSb[i] = (sbyte*)p;
                 }
+
+                CXTranslationUnitImpl* rawTranslationUnit;
+
+                fixed (sbyte** sb = optionSb)
+                    rawTranslationUnit = clang.parseTranslationUnit(index, file, sb, optionBytes.Length, null, 0, (uint)CXTranslationUnit_Flags.CXTranslationUnit_None);
+
+                var indexCursor = clang.getTranslationUnitCursor(rawTranslationUnit);
+                var clientData = new CXClientData(new IntPtr(rawTranslationUnit));
+                indexCursor.VisitChildren(VisitChildren, clientData);
+
+                clang.disposeTranslationUnit(rawTranslationUnit);
+                clang.disposeIndex(index);
             }
 
-            return sb.ToString();
+            _currentFile = "";
         }
 
-        private string ProcessCurrentStruct(CountingStreamReader stream)
+        private enum SerializeState
         {
-            int bracketLevel = 0;
-            var structName = ExtractTypeName(stream, ref bracketLevel);
-            if (string.IsNullOrEmpty(structName))
-            {
-                EncounterError("Unable to parse structure name!", stream);
-                return string.Empty;
-            }
-
-            var tokens = ProcessStructFields(stream, bracketLevel);
-
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"\tBEGIN_SERIALIZE_TYPE({structName})");
-            foreach (var t in tokens)
-            {
-                var macro = _annotations[t.annotation];
-                sb.AppendLine($"\t\t{macro}({structName}, {t.name})");
-            }
-            sb.AppendLine($"\tEND_SERIALIZE_TYPE({structName})");
-            return sb.ToString();
+            Scanning,
+            SerializeNextStruct,
+            SerializeCurrentParent,
+            SerializeCurrentParentNextAsRef,
         }
 
-        private List<FieldToken> ProcessStructFields(CountingStreamReader stream, int bracketLevel)
+        private struct CurrentState
         {
-            // TODO: This is a very dumb way of reading that can easily be broken by coding styles.
-            // A better idea would be to use libclang or some other actual C++ parser
+            public SerializeState state;
+            public CXCursor? serializedParent;
+        }
 
-            var result = new List<FieldToken>();
-            
-            while (true)
+        CurrentState _state;
+
+        private unsafe CXChildVisitResult VisitChildren(CXCursor cursor, CXCursor parent, void* client_data)
+        {
+            if (_state.serializedParent != null && _state.serializedParent != parent)
             {
-                int next = stream.Peek();
-                
-                if (next == '{')
+                if (_state.state != SerializeState.SerializeCurrentParent)
                 {
-                    stream.Read();
-                    ++bracketLevel;
-                    continue;
-                }
-                else if (next == '}')
-                {
-                    stream.Read();
-                    --bracketLevel;
-                    continue;
+                    EncounterError("Unexpected end of declaration while parsing serialized struct!", cursor.Location);
                 }
 
-                if (bracketLevel > 1)
-                {
-                    stream.Read();
-                    continue;
-                }
-                else if (bracketLevel == 0)
-                {
-                    break;
-                }
+                _state.state = SerializeState.Scanning;
+                _state.serializedParent = null;
+            }
 
-                if (char.IsWhiteSpace((char)next))
+            if (cursor.Spelling.CString == "HEARTGEN___SERIALIZE_NEXT_SYMBOL_STRUCT")
+            {
+                if (_state.state != SerializeState.Scanning)
                 {
-                    stream.Read();
-                    continue;
+                    EncounterError("Cannot parse nested serialized structures!", cursor.Location);
                 }
-
-                // we're at root level and we just hit something!
-                // we can just consume the rest of the line now.
-                // note: this will break if you do something stupid (like put the open parenthesis for a function on the next line,
-                // or seperate the type and identifier.
-                var line = stream.ReadLine();
-                if (line.Contains("(")) // false alarm, this is a function
+                else
                 {
-                    if (line.Contains("{") && !line.Contains("}"))
-                        ++bracketLevel;
-                    continue;
+                    _state.state = SerializeState.SerializeNextStruct;
                 }
 
-                var declarations = line.Split(';');
-                foreach (var d in declarations)
+                return CXChildVisitResult.CXChildVisit_Continue;
+            }
+
+            if (cursor.Spelling.CString == "HEARTGEN___SERIALIZE_NEXT_SYMBOL_AS_REF")
+            {
+                if (_state.state != SerializeState.SerializeCurrentParent)
                 {
-                    if (d.Length == 0)
-                        continue;
+                    EncounterError("Unable to parse serialization directive; not inside serialized structure?", cursor.Location);
+                }
+                else
+                {
+                    _state.state = SerializeState.SerializeCurrentParentNextAsRef;
+                }
 
-                    var tokens = d.Split(' ');
+                return CXChildVisitResult.CXChildVisit_Continue;
+            }
 
-                    string annotation = "", type, identifier;
-                    if (tokens.Length == 2)
-                    {
-                        type = tokens[0];
-                        identifier = tokens[1];
-                    }
-                    else if (tokens.Length == 3)
-                    {
-                        annotation = tokens[0];
-                        type = tokens[1];
-                        identifier = tokens[2];
-                    }
-                    else
-                    {
-                        EncounterError("Unable to parse - too many tokens in declaration!", stream);
-                        continue;
-                    }
-
-                    // Fixup for array declarations (eg. int x[5])
-                    var arrayRegex = new Regex("(.+?)(\\[\\d+\\])");
-                    if (arrayRegex.IsMatch(identifier))
-                    {
-                        identifier = arrayRegex.Match(identifier).Groups[1].Value;
-                    }
-
-                    if (!_annotations.ContainsKey(annotation))
-                    {
-                        EncounterError($"Unknown annotation: \"{annotation}\"", stream);
-                        continue;
-                    }
-
-                    result.Add(new FieldToken(identifier, annotation));
-
-                    // Check for our special type that needs extra reflection
-                    var serializedStringRegex = new Regex("(SerializedString<)(\\d+)(>)");
-                    if (serializedStringRegex.IsMatch(type))
-                    {
-                        var stringSize = serializedStringRegex.Match(type).Groups[2].Value;
-                        _serializedStringSizes.Add(int.Parse(stringSize));
-                    }
+            if (_state.state == SerializeState.SerializeNextStruct)
+            {
+                if (cursor.CXXAccessSpecifier != CX_CXXAccessSpecifier.CX_CXXPublic && cursor.CXXAccessSpecifier != CX_CXXAccessSpecifier.CX_CXXInvalidAccessSpecifier)
+                {
+                    EncounterError($"Ignoring serialized struct {cursor.Spelling.CString} - cannot serialize non-public structures!", cursor.Location);
+                    _state.serializedParent = null;
+                    _state.state = SerializeState.Scanning;
+                    return CXChildVisitResult.CXChildVisit_Continue;
+                }
+                else
+                {
+                    _state.serializedParent = cursor;
+                    _state.state = SerializeState.SerializeCurrentParent;
+                    return CXChildVisitResult.CXChildVisit_Recurse;
                 }
             }
 
-            return result;
-        }
+            if (_state.state == SerializeState.Scanning)
+                return CXChildVisitResult.CXChildVisit_Recurse;
 
-        private string ExtractTypeName(CountingStreamReader stream, ref int bracketLevel)
-        {
-            var nextLine = stream.ReadLine();
-            if (nextLine.Contains("{") && !nextLine.Contains("}"))
-                ++bracketLevel;
+            // FINALLY we're inside a serialized struct! Let's look at the current cursor!
+            if (cursor.Kind == CXCursorKind.CXCursor_FieldDecl && cursor.CXXAccessSpecifier == CX_CXXAccessSpecifier.CX_CXXPublic)
+            {
+                var parentType = _state.serializedParent.GetValueOrDefault().Type.CanonicalType.Spelling.CString;
+                var fieldName = cursor.Spelling.CString;
 
-            var tokens = nextLine.Split(' ');
-            if (tokens[0] == "struct" || tokens[1] == "class")
-                return tokens[1];
+                if (!_typeFields.ContainsKey(parentType))
+                    _typeFields[parentType] = new List<FieldToken>();
 
-            return string.Empty;
+                bool asRef = _state.state == SerializeState.SerializeCurrentParentNextAsRef;
+                _state.state = SerializeState.SerializeCurrentParent;
+
+                // TODO: Don't do this linearly?
+                if (!_typeFields[parentType].Any(x => x.name == fieldName))
+                {
+                    CXFile file;
+                    uint line, column, row;
+                    cursor.Location.GetFileLocation(out file, out line, out column, out row);
+
+                    _includes.Add(GetRelativePath(file.Name.CString));
+                    _typeFields[parentType].Add(new FieldToken(fieldName, asRef));
+                }
+
+                var fieldType = cursor.Type.Spelling.CString;
+                var serializedStringRgx = new Regex("(SerializedString<)(\\d+)(>)");
+                if (serializedStringRgx.IsMatch(fieldType))
+                {
+                    int size = int.Parse(serializedStringRgx.Match(fieldType).Groups[2].Value);
+                    _serializedStringSizes.Add(size);
+                }
+
+                return CXChildVisitResult.CXChildVisit_Continue;
+            }
+
+            return CXChildVisitResult.CXChildVisit_Continue;
         }
     }
 }
