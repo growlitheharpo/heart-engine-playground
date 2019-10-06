@@ -6,7 +6,7 @@
 #include <heart/debug/assert.h>
 
 template <typename OutType>
-bool DeserializeObjectFromFile(OutType& outObject, const char* filename)
+bool HeartDeserializeObjectFromFile(OutType& outObject, const char* filename)
 {
 	// 4 kilobytes should be enough for just json... right?
 	uint8_t filebuffer[4096] = {};
@@ -31,5 +31,5 @@ bool DeserializeObjectFromFile(OutType& outObject, const char* filename)
 	if (jsonDoc.HasParseError())
 		return false;
 
-	return DeserializeObject(outObject, jsonDoc);
+	return HeartDeserializeObject(outObject, jsonDoc);
 }
