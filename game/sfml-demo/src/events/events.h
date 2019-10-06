@@ -30,6 +30,7 @@ public:
 
 private:
 	hrt::unordered_map<sf::Event::EventType, hrt::vector<EventFilterFunc>> event_handlers_;
+	void ProcessEvent(sf::Event e);
 
 public:
 	EventFilterFunc& CreateHandler(sf::Event::EventType e);
@@ -37,5 +38,6 @@ public:
 	void Initialize(Renderer* r);
 	void Dispose();
 
+	void ManuallyIssueEvent(sf::Event e);
 	void Process();
 };
