@@ -102,7 +102,7 @@ namespace ImGui
 		void RegisterEvents()
 		{
 #if IMGUI_ENABLED
-			EventManager::Get().CreateHandler(sf::Event::KeyPressed).connect<sToggleImGuiEvent>();
+			hrt::get<1>(EventManager::Get().CreateHandler(sf::Event::KeyPressed)).connect<sToggleImGuiEvent>();
 #endif
 		}
 	}

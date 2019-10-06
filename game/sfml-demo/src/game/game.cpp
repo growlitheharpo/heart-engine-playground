@@ -160,8 +160,15 @@ void InitializeGame()
 		tf.position = sf::Vector2f(0.0f, -250.0f);
 	}
 
-	EventManager::Get().CreateHandler(sf::Event::KeyPressed).connect<sPlayerInputDown>();
-	EventManager::Get().CreateHandler(sf::Event::KeyReleased).connect<sPlayerInputUp>();
+	{
+		auto handle = EventManager::Get().CreateHandler(sf::Event::KeyPressed);
+		hrt::get<1>(handle).connect<sPlayerInputDown>();
+	}
+
+	{
+		auto handle = EventManager::Get().CreateHandler(sf::Event::KeyReleased);
+		hrt::get<1>(handle).connect<sPlayerInputUp>();
+	}
 }
 
 void ShutdownGame()

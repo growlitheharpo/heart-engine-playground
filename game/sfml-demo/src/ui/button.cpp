@@ -34,14 +34,14 @@ bool UI::Button::OnClick(sf::Event e)
 
 void UI::Button::Initialize()
 {
-	click_event_handle_ = EventManager::Get().CreateHandler(sf::Event::MouseButtonPressed);
-	click_event_handle_.connect<&UI::Button::OnClick>(*this);
+	auto click = EventManager::Get().CreateHandler(sf::Event::MouseButtonPressed);
+	click_event_handle_ = hrt::get<0>(click);
+	hrt::get<1>(click).connect<&UI::Button::OnClick>(*this);
 }
 
 void UI::Button::Destroy()
 {
-	// TODO: Actually remove the handler from the map!
-	click_event_handle_.reset();
+	EventManager::Get().RemoveHandler(click_event_handle_);
 }
 
 void UI::Button::Update()
