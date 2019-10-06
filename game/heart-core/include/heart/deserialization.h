@@ -143,5 +143,6 @@ namespace heart_priv
 
 #define BEGIN_SERIALIZE_TYPE(type_name) entt::reflect<type_name>(#type_name##_hs)
 #define SERIALIZE_FIELD(type_name, field) .data<&type_name ::field>(#field##_hs)
+#define SERIALIZE_FUNCTION(type_name, function) .func<&type_name ::function>(#function##_hs)
 #define SERIALIZE_FIELD_ALIAS(type_name, field) .data<&type_name ::field, entt::as_alias_t>(#field##_hs)
 #define END_SERIALIZE_TYPE(type_name) ;
