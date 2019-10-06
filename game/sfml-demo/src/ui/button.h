@@ -21,13 +21,20 @@ namespace UI
 		};
 
 	private:
-		EventManager::EventFilterFunc click_event_handle_;
+		EventManager::EventFuncHandle click_event_handle_;
 		ButtonData data_;
 
 		bool OnClick(sf::Event e);
 
 	public:
-		~Button();
+		Button(ButtonData d) : data_(d)
+		{
+		}
+
+		~Button()
+		{
+			Destroy();
+		}
 
 		// Inherited via Widget
 		virtual void Initialize() override;

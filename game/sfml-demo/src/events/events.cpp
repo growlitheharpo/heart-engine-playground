@@ -1,6 +1,6 @@
 #include "events.h"
-#include "render/render.h"
 #include "render/imgui_game.h"
+#include "render/render.h"
 
 #include <heart/debug/imgui.h>
 
@@ -34,9 +34,29 @@ void EventManager::ProcessEvent(sf::Event e)
 	ImGui::Game::ProcessEvent(e);
 }
 
-EventManager::EventFilterFunc& EventManager::CreateHandler(sf::Event::EventType e)
+hrt::pair<EventManager::EventFuncHandle, EventManager::EventFilterFunc&> EventManager::CreateHandler(
+	sf::Event::EventType e)
 {
-	return event_handlers_[e].emplace_back();
+	auto& vec = event_handlers_[e];
+	auto& func = vec.emplace_back();
+	auto handle = EventFuncHandle(e, int32_t(vec.size() - 1));
+
+	return hrt::make_pair(handle, hrt::ref(func));
+}
+
+bool EventManager::RemoveHandler(EventFuncHandle id)
+{
+	if (id.type >= sf::Event::Count)
+		return false;
+
+	auto& vec = event_handlers_[id.type];
+	if (id.idx >= vec.size())
+		return false;
+
+	// TODO: ideally, we'd like to actually remove the handler from the list to clean up the memory it's holding...
+	// luckily, that shouldn't require any API changes since the handle is totally opaque to the caller
+	vec[id.idx].reset();
+	return true;
 }
 
 void EventManager::Initialize(Renderer* r)
