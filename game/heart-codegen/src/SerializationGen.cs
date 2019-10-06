@@ -24,11 +24,13 @@ namespace Heart.Codegen
         {
             public string name;
             public bool asRef;
+            public bool asFunc;
 
-            public FieldToken(string n, bool r)
+            public FieldToken(string n, bool r, bool f)
             {
                 name = n;
                 asRef = r;
+                asFunc = f;
             }
         }
 
@@ -98,7 +100,9 @@ namespace Heart.Codegen
 
                     foreach (var field in typePair.Value)
                     {
-                        if (field.asRef)
+                        if (field.asFunc)
+                            writer.WriteLine($"\t\tSERIALIZE_FUNCTION({type}, {field.name})");
+                        else if (field.asRef)
                             writer.WriteLine($"\t\tSERIALIZE_FIELD_ALIAS({type}, {field.name})");
                         else
                             writer.WriteLine($"\t\tSERIALIZE_FIELD({type}, {field.name})");
@@ -191,6 +195,7 @@ namespace Heart.Codegen
             SerializeNextStruct,
             SerializeCurrentParent,
             SerializeCurrentParentNextAsRef,
+            SerializeCurrentParentNextAsFunc,
         }
 
         private struct CurrentState
@@ -242,6 +247,20 @@ namespace Heart.Codegen
                 return CXChildVisitResult.CXChildVisit_Continue;
             }
 
+            if (cursor.Spelling.CString == "HEARTGEN___SERIALIZE_NEXT_SYMBOL_AS_MEMB_FUNCTION")
+            {
+                if (_state.state != SerializeState.SerializeCurrentParent)
+                {
+                    EncounterError("Unable to parse serialization directive; not inside serialized structure?", cursor.Location);
+                }
+                else
+                {
+                    _state.state = SerializeState.SerializeCurrentParentNextAsFunc;
+                }
+
+                return CXChildVisitResult.CXChildVisit_Continue;
+            }
+
             if (_state.state == SerializeState.SerializeNextStruct)
             {
                 if (cursor.CXXAccessSpecifier != CX_CXXAccessSpecifier.CX_CXXPublic && cursor.CXXAccessSpecifier != CX_CXXAccessSpecifier.CX_CXXInvalidAccessSpecifier)
@@ -262,8 +281,14 @@ namespace Heart.Codegen
             if (_state.state == SerializeState.Scanning)
                 return CXChildVisitResult.CXChildVisit_Recurse;
 
+            bool shouldBeFunc = _state.state == SerializeState.SerializeCurrentParentNextAsFunc;
+
+            bool valid = cursor.CXXAccessSpecifier == CX_CXXAccessSpecifier.CX_CXXPublic && (
+                (!shouldBeFunc && cursor.Kind == CXCursorKind.CXCursor_FieldDecl) ||
+                (shouldBeFunc && cursor.Kind == CXCursorKind.CXCursor_CXXMethod));
+
             // FINALLY we're inside a serialized struct! Let's look at the current cursor!
-            if (cursor.Kind == CXCursorKind.CXCursor_FieldDecl && cursor.CXXAccessSpecifier == CX_CXXAccessSpecifier.CX_CXXPublic)
+            if (valid)
             {
                 var parentType = _state.serializedParent.GetValueOrDefault().Type.CanonicalType.Spelling.CString;
                 var fieldName = cursor.Spelling.CString;
@@ -272,6 +297,7 @@ namespace Heart.Codegen
                     _typeFields[parentType] = new List<FieldToken>();
 
                 bool asRef = _state.state == SerializeState.SerializeCurrentParentNextAsRef;
+                bool asFunc = shouldBeFunc;
                 _state.state = SerializeState.SerializeCurrentParent;
 
                 // TODO: Don't do this linearly?
@@ -282,7 +308,7 @@ namespace Heart.Codegen
                     cursor.Location.GetFileLocation(out file, out line, out column, out row);
 
                     _includes.Add(GetRelativePath(file.Name.CString));
-                    _typeFields[parentType].Add(new FieldToken(fieldName, asRef));
+                    _typeFields[parentType].Add(new FieldToken(fieldName, asRef, asFunc));
                 }
 
                 var fieldType = cursor.Type.Spelling.CString;
@@ -294,6 +320,13 @@ namespace Heart.Codegen
                 }
 
                 return CXChildVisitResult.CXChildVisit_Continue;
+            }
+            else
+            {
+                if (_state.state != SerializeState.SerializeCurrentParent)
+                    EncounterError("Invalid serialization directive preceding nonserializable cursor!", cursor.Location);
+
+                _state.state = SerializeState.SerializeCurrentParent;
             }
 
             return CXChildVisitResult.CXChildVisit_Continue;
