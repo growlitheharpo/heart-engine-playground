@@ -70,8 +70,9 @@ namespace UI
 			transform_.dirty = true;
 		}
 
-		virtual void Initialize() const = 0;
-		virtual void Update() const = 0;
+		virtual void Initialize() = 0;
+		virtual void Destroy() = 0;
+		virtual void Update() = 0;
 		virtual void Draw() const = 0;
 	};
 }

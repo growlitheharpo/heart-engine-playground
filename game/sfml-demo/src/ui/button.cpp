@@ -1,10 +1,19 @@
 #include "button.h"
 
-void UI::Button::Initialize() const
+bool UI::Button::OnClick(sf::Event e)
+{
+	return false;
+}
+
+void UI::Button::Initialize()
 {
 }
 
-void UI::Button::Update() const
+void UI::Button::Destroy()
+{
+}
+
+void UI::Button::Update()
 {
 }
 
