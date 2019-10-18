@@ -20,14 +20,18 @@ static class Program
 
         var listArgs = args.ToList();
         var scanDir = GetParamater("-in", listArgs);
+        var heartDir = GetParamater("-heart", listArgs);
 
-        if (scanDir == null)
+        if (string.IsNullOrEmpty(scanDir))
             Console.WriteLine("Invalid or missing \"-in\" argument - skipping heart-codegen");
+        else if (string.IsNullOrEmpty(heartDir))
+            Console.WriteLine("Invalid or missing \"-heart\" argument (should point to heart-core folder) - skipping heart-codegen");
         else
         {
             scanDir = Path.GetFullPath(scanDir);
+            heartDir = Path.GetFullPath(heartDir);
 
-            int serializationResult = Heart.Codegen.SerializationGen.ProcessSourceDirectory(scanDir);
+            int serializationResult = Heart.Codegen.SerializationGen.ProcessSourceDirectory(scanDir, heartDir);
             if (serializationResult != 0)
                 return 1;
 
