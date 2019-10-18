@@ -1,0 +1,12 @@
+{
+  "type": "UI::Button::ButtonData",
+  "contents": {
+    "offsetX": 50.0,
+    "offsetY": 50.0,
+    "sizeX": 100.0,
+    "sizeY": 45.0,
+    "offsetSizeMode": 1,
+    "label": "Close Game",
+    "action": "CloseGame"
+  }
+}
