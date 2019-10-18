@@ -3,8 +3,10 @@
 #include "events/events.h"
 #include "render/imgui_game.h"
 #include "render/render.h"
+#include "ui/button.h"
 
 #include <heart/debug/assert.h>
+#include <heart/deserialization_file.h>
 
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
@@ -12,6 +14,8 @@
 #include <entt/entt.hpp>
 
 entt::registry s_registry;
+
+UI::Button* s_button = nullptr;
 
 enum InputKey
 {
@@ -160,6 +164,15 @@ void InitializeGame()
 		tf.position = sf::Vector2f(0.0f, -250.0f);
 	}
 
+	// Load and create a UI button
+	{
+		UI::Button::ButtonData data;
+		HeartDeserializeObjectFromFile(data, "json/button1.json");
+
+		s_button = new UI::Button(data);
+		s_button->Initialize();
+	}
+
 	{
 		auto handle = EventManager::Get().CreateHandler(sf::Event::KeyPressed);
 		hrt::get<1>(handle).connect<sPlayerInputDown>();
@@ -173,6 +186,13 @@ void InitializeGame()
 
 void ShutdownGame()
 {
+	if (s_button != nullptr)
+	{
+		s_button->Destroy();
+		delete s_button;
+		s_button = nullptr;
+	}
+
 	s_registry.reset();
 }
 
