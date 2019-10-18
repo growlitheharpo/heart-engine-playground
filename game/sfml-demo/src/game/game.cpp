@@ -198,21 +198,22 @@ void ShutdownGame()
 
 void RunGameTick(float deltaT)
 {
-	s_registry.view<PlayerTag, InputStatus, EnttTransformable>().each([=](auto p, InputStatus& s, EnttTransformable& t) {
-		sf::Vector2f move(0.0f, 0.0f);
+	s_registry.view<PlayerTag, InputStatus, EnttTransformable>().each(
+		[=](auto p, InputStatus& s, EnttTransformable& t) {
+			sf::Vector2f move(0.0f, 0.0f);
 
-		if (s.flags & InputUp)
-			move.y += 1.0f;
-		if (s.flags & InputDown)
-			move.y -= 1.0f;
-		if (s.flags & InputLeft)
-			move.x -= 1.0f;
-		if (s.flags & InputRight)
-			move.x += 1.0f;
+			if (s.flags & InputUp)
+				move.y += 1.0f;
+			if (s.flags & InputDown)
+				move.y -= 1.0f;
+			if (s.flags & InputLeft)
+				move.x -= 1.0f;
+			if (s.flags & InputRight)
+				move.x += 1.0f;
 
-		move *= 200.0f * deltaT;
-		t.position += move;
-	});
+			move *= 200.0f * deltaT;
+			t.position += move;
+		});
 }
 
 void DrawGame(Renderer& r)
@@ -235,9 +236,8 @@ void DrawGame(Renderer& r)
 		if (ImGui::Game::IsActive())
 		{
 			if (ImGui::Begin("x", &open,
-					ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground |
-						ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove |
-						ImGuiWindowFlags_AlwaysAutoResize))
+					ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar |
+						ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize))
 			{
 				ImGui::SetCursorPos(ImVec2(25.0f, 25.0f));
 				ImGui::Text("%f, %f", t.position.x, t.position.y);
