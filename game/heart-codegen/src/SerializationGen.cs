@@ -12,8 +12,12 @@ namespace Heart.Codegen
 {
     public class SerializationGen
     {
-        public static int ProcessSourceDirectory(string dir)
+        private static string HeartCoreDirectory;
+
+        public static int ProcessSourceDirectory(string dir, string heartLocation)
         {
+            HeartCoreDirectory = heartLocation;
+
             SerializationGen generator = new SerializationGen(dir);
             generator.Process();
 
@@ -151,7 +155,7 @@ namespace Heart.Codegen
                 "--comments-in-macros",
                 "-fparse-all-comments",
                 "-D__HEART_CODEGEN_ACTIVE",
-                "--include-directory=C:\\Users\\James\\source\\repos\\cpp-fun-with-sfml\\game\\heart-core\\include",
+                $"--include-directory={HeartCoreDirectory}\\include",
             };
 
             var optionBytes = options.Select(x => Encoding.ASCII.GetBytes(x)).ToArray();
