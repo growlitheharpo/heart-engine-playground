@@ -3,7 +3,7 @@
 #include "events/events.h"
 #include "render/imgui_game.h"
 #include "render/render.h"
-#include "ui/button.h"
+#include "ui/ui_manager.h"
 
 #include <heart/debug/assert.h>
 #include <heart/deserialization_file.h>
@@ -15,7 +15,7 @@
 
 entt::registry s_registry;
 
-UI::Button* s_button = nullptr;
+UI::UIManager s_uiManager;
 
 enum InputKey
 {
@@ -166,11 +166,8 @@ void InitializeGame()
 
 	// Load and create a UI button
 	{
-		UI::Button::ButtonData data;
-		HeartDeserializeObjectFromFile(data, "json/button1.json");
-
-		s_button = new UI::Button(data);
-		s_button->Initialize();
+		s_uiManager.Initialize();
+		s_uiManager.LoadPanel("blah");
 	}
 
 	{
@@ -186,13 +183,7 @@ void InitializeGame()
 
 void ShutdownGame()
 {
-	if (s_button != nullptr)
-	{
-		s_button->Destroy();
-		delete s_button;
-		s_button = nullptr;
-	}
-
+	s_uiManager.Cleanup();
 	s_registry.reset();
 }
 
@@ -226,6 +217,8 @@ void DrawGame(Renderer& r)
 		draw.sprite->setPosition(camera.transformPoint(tranform.position + sf::Vector2f(0.0f, height)));
 		r.Draw(*draw.sprite);
 	});
+
+	s_uiManager.Render(r);
 
 #if IMGUI_ENABLED
 	{
