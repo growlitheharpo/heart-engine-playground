@@ -1,6 +1,7 @@
 #pragma once
 
 #include <heart/copy_move_semantics.h>
+#include <heart/debug/assert.h>
 
 #include <SFML/System/Clock.hpp>
 
@@ -8,6 +9,7 @@
 
 namespace sf
 {
+	class Window;
 	class RenderWindow;
 	class Clock;
 	class Event;
@@ -42,6 +44,8 @@ public:
 
 	sf::Transform GetCameraTransform() const;
 
+	const sf::Window& GetWindowRef() const;
+
 private:
 	friend class EventManager;
 	sf::RenderWindow* GetWindow()
@@ -53,4 +57,5 @@ private:
 namespace RenderUtils
 {
 	bool LoadTextureFromFile(sf::Texture& outTexture, const char* path);
+	sf::Vector2i GetMousePosition();
 }

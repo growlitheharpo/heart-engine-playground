@@ -1,9 +1,14 @@
 #pragma once
 
 #include <heart/deserialization_fwd.h>
+#include <heart/stl/vector.h>
+
+class Renderer;
 
 namespace UI
 {
+	class Widget;
+
 	SERIALIZE_STRUCT()
 	struct GlobalButtonFunctionality
 	{
@@ -19,6 +24,16 @@ namespace UI
 
 	class UIManager
 	{
+	private:
+		hrt::vector<UI::Widget*> widgets_;
+
 	public:
+		void Initialize();
+		void Cleanup();
+
+		void LoadPanel(const char* panelName);
+
+		void Update();
+		void Render(Renderer& r);
 	};
 }

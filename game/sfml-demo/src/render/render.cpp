@@ -1,6 +1,6 @@
 #include "render.h"
-#include "imgui_game.h"
 #include "events/events.h"
+#include "imgui_game.h"
 
 #include <heart/debug/assert.h>
 #include <heart/debug/imgui.h>
@@ -8,6 +8,8 @@
 #include <heart/file.h>
 
 #include <SFML/Graphics.hpp>
+
+static Renderer* s_globalRenderer = nullptr;
 
 Renderer::~Renderer()
 {
@@ -17,6 +19,9 @@ Renderer::~Renderer()
 
 void Renderer::Initialize()
 {
+	HEART_ASSERT(s_globalRenderer == nullptr, "Cannot have more than one renderer initialized!");
+	s_globalRenderer = this;
+
 	window_ = new sf::RenderWindow(
 		sf::VideoMode(1280, 720), "SFML works!", sf::Style::Titlebar | sf::Style::Close | sf::Style::Resize);
 	HEART_ASSERT(window_ != nullptr, "Could not initialize window!");
@@ -26,6 +31,8 @@ void Renderer::Initialize()
 
 void Renderer::Dispose()
 {
+	s_globalRenderer = nullptr;
+
 	window_->close();
 	delete window_;
 	window_ = nullptr;
@@ -82,6 +89,12 @@ sf::Transform Renderer::GetCameraTransform() const
 	return cameraTf;
 }
 
+const sf::Window& Renderer::GetWindowRef() const
+{
+	HEART_ASSERT(window_ != nullptr, "Cannot get window reference before initiailization!");
+	return *window_;
+}
+
 bool RenderUtils::LoadTextureFromFile(sf::Texture& outTexture, const char* path)
 {
 	HeartFile file;
@@ -99,4 +112,11 @@ bool RenderUtils::LoadTextureFromFile(sf::Texture& outTexture, const char* path)
 		return false;
 
 	return outTexture.loadFromMemory(data.data(), data.size());
+}
+
+sf::Vector2i RenderUtils::GetMousePosition()
+{
+	// TODO: More safety here!
+	auto& window = s_globalRenderer->GetWindowRef();
+	return sf::Mouse::getPosition(window);
 }

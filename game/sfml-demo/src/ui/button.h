@@ -26,6 +26,8 @@ namespace UI
 
 		bool OnClick(sf::Event e);
 
+		sf::IntRect GetRect() const;
+
 	public:
 		Button(ButtonData d) : data_(d)
 		{
@@ -43,6 +45,6 @@ namespace UI
 
 		virtual void Update() override;
 
-		virtual void Draw() const override;
+		virtual void Draw(Renderer& r) const override;
 	};
 }

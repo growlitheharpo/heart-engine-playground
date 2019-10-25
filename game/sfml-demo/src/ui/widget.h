@@ -4,6 +4,8 @@
 
 #include <SFML/System.hpp>
 
+class Renderer;
+
 namespace UI
 {
 	struct TransformUI
@@ -73,6 +75,6 @@ namespace UI
 		virtual void Initialize() = 0;
 		virtual void Destroy() = 0;
 		virtual void Update() = 0;
-		virtual void Draw() const = 0;
+		virtual void Draw(Renderer& r) const = 0;
 	};
 }
