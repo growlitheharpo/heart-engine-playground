@@ -48,6 +48,12 @@ bool Renderer::HandleResize(const sf::Event& e)
 	return true;
 }
 
+Renderer& Renderer::Get()
+{
+	HEART_ASSERT(s_globalRenderer != nullptr);
+	return *s_globalRenderer;
+}
+
 void Renderer::RegisterEvents()
 {
 	auto eventHandle = EventManager::Get().CreateHandler(sf::Event::Resized);
@@ -93,6 +99,15 @@ const sf::Window& Renderer::GetWindowRef() const
 {
 	HEART_ASSERT(window_ != nullptr, "Cannot get window reference before initiailization!");
 	return *window_;
+}
+
+sf::Vector2f Renderer::GetScreenSize() const
+{
+	if (window_ == nullptr)
+		return {};
+
+	auto pixelSize = window_->getSize();
+	return sf::Vector2f(float(pixelSize.x), float(pixelSize.y));
 }
 
 bool RenderUtils::LoadTextureFromFile(sf::Texture& outTexture, const char* path)

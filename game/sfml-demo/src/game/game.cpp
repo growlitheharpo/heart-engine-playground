@@ -3,6 +3,7 @@
 #include "events/events.h"
 #include "render/imgui_game.h"
 #include "render/render.h"
+#include "tween/tween_manager.h"
 #include "ui/ui_manager.h"
 
 #include <heart/debug/assert.h>
@@ -16,6 +17,11 @@
 entt::registry s_registry;
 
 UI::UIManager s_uiManager;
+
+TweenManager::Wrapper alphaTween(tweeny::from(0.0f));
+TweenManager::Wrapper sizeTween(tweeny::from(sf::Vector2f()));
+TweenManager::Wrapper posTween(tweeny::from(sf::Vector2f()));
+sf::RectangleShape rectShape;
 
 enum InputKey
 {
@@ -179,6 +185,29 @@ void InitializeGame()
 		auto handle = EventManager::Get().CreateHandler(sf::Event::KeyReleased);
 		hrt::get<1>(handle).connect<sPlayerInputUp>();
 	}
+
+	{
+		auto duration = sf::seconds(4.0f).asMilliseconds();
+		alphaTween = tweeny::from(0.1f)
+						 .to(1.0f)
+						 .during(duration)
+						 .via(tweeny::easing::linear)
+						 .to(0.0f)
+						 .during(sf::seconds(1.0f).asMilliseconds())
+						 .via(tweeny::easing::linear);
+		sizeTween = tweeny::from(sf::Vector2f())
+						.to(Renderer::Get().GetScreenSize())
+						.during(duration)
+						.via(tweeny::easing::cubicInOut);
+		posTween = tweeny::from(Renderer::Get().GetScreenSize() / 2.0f)
+					   .to(sf::Vector2f())
+					   .during(duration)
+					   .via(tweeny::easing::cubicInOut);
+
+		TweenManager::RegisterTween(alphaTween);
+		TweenManager::RegisterTween(sizeTween);
+		TweenManager::RegisterTween(posTween);
+	}
 }
 
 void ShutdownGame()
@@ -205,6 +234,11 @@ void RunGameTick(float deltaT)
 			move *= 200.0f * deltaT;
 			t.position += move;
 		});
+
+	auto color = sf::Color(155, 0, 255, int(float(255) * alphaTween.impl.peek()));
+	rectShape.setFillColor(color);
+	rectShape.setPosition(posTween.impl.peek());
+	rectShape.setSize(sizeTween.impl.peek());
 }
 
 void DrawGame(Renderer& r)
@@ -219,6 +253,8 @@ void DrawGame(Renderer& r)
 	});
 
 	s_uiManager.Render(r);
+
+	r.Draw(rectShape);
 
 #if IMGUI_ENABLED
 	{

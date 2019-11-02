@@ -26,6 +26,8 @@ private:
 	bool HandleResize(const sf::Event& e);
 
 public:
+	static Renderer& Get(); // bleck :(
+
 	Renderer() = default;
 	DISABLE_COPY_SEMANTICS(Renderer);
 	USE_DEFAULT_MOVE_SEMANTICS(Renderer);
@@ -43,6 +45,7 @@ public:
 	void SubmitFrame();
 
 	sf::Transform GetCameraTransform() const;
+	sf::Vector2f GetScreenSize() const;
 
 	const sf::Window& GetWindowRef() const;
 
