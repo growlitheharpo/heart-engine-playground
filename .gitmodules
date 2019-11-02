@@ -13,3 +13,6 @@
 [submodule "external/entt"]
 	path = external/entt
 	url = https://github.com/skypjack/entt.git
+[submodule "external/tweeny"]
+	path = external/tweeny
+	url = https://github.com/mobius3/tweeny.git
