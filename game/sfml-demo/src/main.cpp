@@ -5,6 +5,7 @@
 #include "render/render.h"
 
 #include "gen/gen.h"
+#include "tween/tween_manager.h"
 
 #include <heart/file.h>
 
@@ -52,11 +53,12 @@ int WinMain()
 	{
 		e.Process();
 
-		auto elapsed = deltaClock.getElapsedTime().asMicroseconds();
-		if (elapsed >= DESIRED_FRAME_TIME)
+		auto elapsed = deltaClock.getElapsedTime();
+		if (elapsed.asMicroseconds() >= DESIRED_FRAME_TIME)
 		{
 			deltaClock.restart();
-			RunGameTick(elapsed / float(1000000.0f));
+			TweenManager::Tick(elapsed.asMilliseconds());
+			RunGameTick(elapsed.asMicroseconds() / float(1000000.0f));
 		}
 
 		r.BeginFrame();
