@@ -137,3 +137,18 @@ project "entt"
 		"entt/src/**",
 		"entt/README.md",
 	}
+
+function include_tweeny(should_link)
+	includedirs {
+		export_include_root .. "tweeny/include"
+	}
+end
+
+project "tweeny"
+	kind "None" -- tweeny is header-only
+	set_location()
+	warnings "Off"
+	include_tweeny()
+	files {
+		"tweeny/include/**",
+	}
