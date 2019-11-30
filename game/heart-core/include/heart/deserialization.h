@@ -151,8 +151,22 @@ namespace heart_priv
 				for (rapidjson::SizeType i = 0; i < jsonArr.Size(); ++i)
 				{
 					auto newMetaObject = inserterFunc.invoke(metaData.get(outObject));
-					if (!HeartDeserializeObject(newMetaObject, jsonArr[i]))
-						return false;
+
+					if (jsonArr[i].IsObject())
+					{
+						if (!HeartDeserializeObject(newMetaObject, jsonArr[i]))
+							return false;
+					}
+					else if (auto metaSelf = newMetaObject.type().data("self"_hs); metaSelf)
+					{
+						if (!ReadSingleProperty(newMetaObject, metaSelf, jsonArr[i]))
+							return false;
+					}
+					else
+					{
+						HEART_ASSERT(
+							false, "Type inside of array was not an object and did not have \"self\" reflected as data! You must provide one or the other!");
+					}
 				}
 			}
 		}

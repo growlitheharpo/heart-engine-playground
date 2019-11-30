@@ -87,15 +87,27 @@ namespace Heart.Codegen
                     writer.WriteLine($"#include \"{incl}\"");
                 writer.WriteLine();
 
+                writer.WriteLine("template<typename T> void builtinset(T& prop, T value) { prop = value; }");
+                writer.WriteLine("template<typename T> T builtinget(T& prop) { return prop; }");
+                writer.WriteLine();
+
                 writer.WriteLine("void ReflectSerializedData()");
                 writer.WriteLine("{");
                 writer.WriteLine("\tentt::meta<int32_t>().conv<uint32_t>().conv<uint16_t>().conv<uint8_t>();");
                 writer.WriteLine("\tentt::meta<uint32_t>().conv<int32_t>().conv<uint16_t>().conv<uint8_t>();");
                 writer.WriteLine();
-                if (_serializedStringSizes.Count > 0)
+                var baseTypes = new [] {"int8_t", "uint8_t", "int16_t", "uint16_t", "int32_t", "uint32_t", "int64_t", "uint64_t", "bool", "float", "double" };
+                foreach (var type in baseTypes)
                 {
-                    foreach (var size in _serializedStringSizes)
-                        writer.WriteLine($"\tentt::meta<const char*>().conv<&SerializedString<{size}>::CreateFromCString>();");
+                    writer.WriteLine($"\tentt::meta<{type}>().data<&builtinset<{type}>, &builtinget<{type}>>(\"self\"_hs);");
+                }
+                writer.WriteLine();
+
+
+                foreach (var size in _serializedStringSizes)
+                {
+                    writer.WriteLine($"\tentt::meta<const char*>().conv<&SerializedString<{size}>::CreateFromCString>();");
+                    writer.WriteLine($"\tentt::meta<SerializedString<{size}>>().data<&builtinset<SerializedString<{size}>>, &builtinget<SerializedString<{size}>>>(\"self\"_hs);");
                 }
                 foreach (var vectorType in _serializedVectorTypes)
                 {
