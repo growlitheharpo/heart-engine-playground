@@ -12,11 +12,11 @@ namespace Heart.Codegen
 {
     public class SerializationGen
     {
-        private static string HeartCoreDirectory;
+        private static string[] HeartDirectories;
 
         public static int ProcessSourceDirectory(string dir, string heartLocation)
         {
-            HeartCoreDirectory = heartLocation;
+            HeartDirectories = new [] { heartLocation, heartLocation + "\\..\\heart-stl", heartLocation + "\\..\\heart-debug" };
 
             SerializationGen generator = new SerializationGen(dir);
             generator.Process();
@@ -45,6 +45,7 @@ namespace Heart.Codegen
         private string _directory;
         private HashSet<string> _includes = new HashSet<string>();
         private HashSet<int> _serializedStringSizes = new HashSet<int>();
+        private HashSet<string> _serializedVectorTypes = new HashSet<string>();
         private Dictionary<string, List<FieldToken>> _typeFields = new Dictionary<string, List<FieldToken>>();
 
         private SerializationGen(string dir) 
@@ -95,6 +96,15 @@ namespace Heart.Codegen
                 {
                     foreach (var size in _serializedStringSizes)
                         writer.WriteLine($"\tentt::reflect<const char*>().conv<&SerializedString<{size}>::CreateFromCString>();");
+                }
+                foreach (var vectorType in _serializedVectorTypes)
+                {
+                    writer.WriteLine();
+                    string type = $"hrt::vector<{vectorType}>";
+                    writer.WriteLine($"\tBEGIN_SERIALIZE_TYPE({type})");
+                    writer.WriteLine($"\t\tSERIALIZE_FUNCTION_ALIAS({type}, emplace_back<>)");
+                    writer.WriteLine($"\t\tSERIALIZE_FUNCTION_ALIAS({type}, reserve)");
+                    writer.WriteLine($"\tEND_SERIALIZE_TYPE({type})");
                 }
                 foreach (var typePair in _typeFields)
                 {
@@ -147,7 +157,7 @@ namespace Heart.Codegen
 
             _state = new CurrentState();
 
-            var options = new[]
+            var options = new string[]
             {
                 "-x",
                 "c++",
@@ -155,8 +165,7 @@ namespace Heart.Codegen
                 "--comments-in-macros",
                 "-fparse-all-comments",
                 "-D__HEART_CODEGEN_ACTIVE",
-                $"--include-directory={HeartCoreDirectory}\\include",
-            };
+            }.Concat(HeartDirectories.Select(x => $"--include-directory={x}\\include"));
 
             var optionBytes = options.Select(x => Encoding.ASCII.GetBytes(x)).ToArray();
 
@@ -321,6 +330,12 @@ namespace Heart.Codegen
                 {
                     int size = int.Parse(serializedStringRgx.Match(fieldType).Groups[2].Value);
                     _serializedStringSizes.Add(size);
+                }
+                var hrtVectorRgx = new Regex("(hrt::vector<)(.+)(>)");
+                if (hrtVectorRgx.IsMatch(fieldType))
+                {
+                    string typeName = hrtVectorRgx.Match(fieldType).Groups[2].Value;
+                    _serializedVectorTypes.Add(typeName);
                 }
 
                 return CXChildVisitResult.CXChildVisit_Continue;

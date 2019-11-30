@@ -57,7 +57,6 @@ bool HeartDeserializeObject(OutType& outObject, RapidjsonType& node)
 	return true;
 }
 
-
 namespace heart_priv
 {
 	template <typename OutType, typename MetaType, typename RapidjsonType>
@@ -130,10 +129,31 @@ namespace heart_priv
 		else if (jsonNode.IsArray())
 		{
 			auto jsonArr = jsonNode.GetArray();
-			for (rapidjson::SizeType i = 0; i < jsonArr.Size(); ++i)
+
+			// If the real type is an actual array, we can set by-index
+			if (metaData.type().is_array())
 			{
-				if (!ReadSingleProperty(outObject, metaData, jsonArr[i], size_t(i)))
-					return false;
+				for (rapidjson::SizeType i = 0; i < jsonArr.Size() && i < metaData.type().extent(); ++i)
+				{
+					if (!ReadSingleProperty(outObject, metaData, jsonArr[i], size_t(i)))
+						return false;
+				}
+			}
+			// otherwise, look for an emplace_back<> member (i.e. STL-like) and insert dynamically
+			else if (auto inserterFunc = metaData.type().func("emplace_back<>"_hs); inserterFunc)
+			{
+				// Attempt to reserve the amount of space we need - this is not fatal if it cannot be found
+				if (auto reserverFunc = metaData.type().func("reserve"_hs); reserverFunc)
+				{
+					reserverFunc.invoke(metaData.get(outObject), size_t(jsonArr.Size()));
+				}
+
+				for (rapidjson::SizeType i = 0; i < jsonArr.Size(); ++i)
+				{
+					auto newMetaObject = inserterFunc.invoke(metaData.get(outObject));
+					if (!HeartDeserializeObject(newMetaObject, jsonArr[i]))
+						return false;
+				}
 			}
 		}
 
@@ -145,4 +165,5 @@ namespace heart_priv
 #define SERIALIZE_FIELD(type_name, field) .data<&type_name ::field>(#field##_hs)
 #define SERIALIZE_FUNCTION(type_name, function) .func<&type_name ::function>(#function##_hs)
 #define SERIALIZE_FIELD_ALIAS(type_name, field) .data<&type_name ::field, entt::as_alias_t>(#field##_hs)
+#define SERIALIZE_FUNCTION_ALIAS(type_name, function) .func<&type_name ::function, entt::as_alias_t>(#function##_hs)
 #define END_SERIALIZE_TYPE(type_name) ;
