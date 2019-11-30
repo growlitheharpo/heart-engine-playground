@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <!-- VC 2015 -->
+	<Type Name="hrt::vector&lt;*&gt;">
+		<Intrinsic Name="size" Expression="size_" />
+		<Intrinsic Name="capacity" Expression="capacity_" />
+		<DisplayString>{{ size={size()} }}</DisplayString>
+		<Expand>
+			<Item Name="[capacity]" ExcludeView="simple">capacity()</Item>
+			<ArrayItems>
+				<Size>size()</Size>
+				<ValuePointer>($T1 * )data_begin_</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+</AutoVisualizer>
