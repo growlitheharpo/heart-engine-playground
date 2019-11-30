@@ -1,0 +1,18 @@
+{
+    "type": "TileSpritesheet",
+    "contents": {
+        "spritelist": [
+            {"type":"TileSpritesheetEntry", "contents": {"name":"cityDetails_000.png","x":"125","y":"64","width":"22","height":"37"} },
+            {"type":"TileSpritesheetEntry", "contents": {"name":"cityDetails_001.png","x":"71","y":"45","width":"32","height":"32"} },
+            {"type":"TileSpritesheetEntry", "contents": {"name":"cityDetails_002.png","x":"71","y":"77","width":"32","height":"32"} },
+            {"type":"TileSpritesheetEntry", "contents": {"name":"cityDetails_003.png","x":"103","y":"32","width":"32","height":"32"} },
+            {"type":"TileSpritesheetEntry", "contents": {"name":"cityDetails_004.png","x":"103","y":"0","width":"32","height":"32"} },
+            {"type":"TileSpritesheetEntry", "contents": {"name":"cityDetails_005.png","x":"147","y":"46","width":"22","height":"46"} },
+            {"type":"TileSpritesheetEntry", "contents": {"name":"cityDetails_006.png","x":"135","y":"0","width":"22","height":"46"} },
+            {"type":"TileSpritesheetEntry", "contents": {"name":"cityDetails_007.png","x":"103","y":"64","width":"22","height":"37"} },
+            {"type":"TileSpritesheetEntry", "contents": {"name":"cityDetails_008.png","x":"0","y":"64","width":"71","height":"63"} },
+            {"type":"TileSpritesheetEntry", "contents": {"name":"cityDetails_009.png","x":"0","y":"0","width":"71","height":"64"} },
+            {"type":"TileSpritesheetEntry", "contents": {"name":"cityDetails_010.png","x":"71","y":"0","width":"32","height":"45" } }
+        ]
+    }
+}

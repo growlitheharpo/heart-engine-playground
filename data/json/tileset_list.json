@@ -1,0 +1,11 @@
+{
+	"type": "TileSpritesheetList",
+	"contents": {
+		"fileCount": 3,
+		"filelist": [
+			"sprites/isobuildings/buildingTiles_sheet.json",
+			"sprites/isocity/cityDetails_sheet.json",
+			"sprites/isocity/cityTiles_sheet.json"
+		]
+	}
+}
