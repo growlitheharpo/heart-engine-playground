@@ -89,13 +89,13 @@ namespace Heart.Codegen
 
                 writer.WriteLine("void ReflectSerializedData()");
                 writer.WriteLine("{");
-                writer.WriteLine("\tentt::reflect<int32_t>().conv<uint32_t>().conv<uint16_t>().conv<uint8_t>();");
-                writer.WriteLine("\tentt::reflect<uint32_t>().conv<int32_t>().conv<uint16_t>().conv<uint8_t>();");
+                writer.WriteLine("\tentt::meta<int32_t>().conv<uint32_t>().conv<uint16_t>().conv<uint8_t>();");
+                writer.WriteLine("\tentt::meta<uint32_t>().conv<int32_t>().conv<uint16_t>().conv<uint8_t>();");
                 writer.WriteLine();
                 if (_serializedStringSizes.Count > 0)
                 {
                     foreach (var size in _serializedStringSizes)
-                        writer.WriteLine($"\tentt::reflect<const char*>().conv<&SerializedString<{size}>::CreateFromCString>();");
+                        writer.WriteLine($"\tentt::meta<const char*>().conv<&SerializedString<{size}>::CreateFromCString>();");
                 }
                 foreach (var vectorType in _serializedVectorTypes)
                 {
