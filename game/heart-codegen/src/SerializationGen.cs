@@ -12,6 +12,9 @@ namespace Heart.Codegen
 {
 	public class SerializationGen
 	{
+		// If this changes, update deserialization_fwd.h in heart-core!
+		private const int SerializedDataPathSize = 64;
+
 		private static string[] HeartDirectories;
 
 		public static int ProcessSourceDirectory(string dir, string heartLocation)
@@ -128,23 +131,22 @@ namespace Heart.Codegen
 
 		private void ReflectSerializedStrings(ICodeWriter writer)
 		{
-			if (_serializedStringSizes.Count > 0)
+			_serializedStringSizes.Add(SerializedDataPathSize);
+
+			foreach (var size in _serializedStringSizes)
 			{
-				foreach (var size in _serializedStringSizes)
-				{
-					writer.WriteLine($"entt::meta<const char*>().conv<&SerializedString<{size}>::CreateFromCString>();");
-				}
-
-				writer.WriteLine();
-
-				foreach (var size in _serializedStringSizes)
-				{
-					using (var indent = new IndentLevel(writer, $"entt::meta<SerializedString<{size}>>()"))
-						indent.WriteLine($".data<&ReflectionSet<SerializedString<{size}>>, &ReflectionGet<SerializedString<{size}>>>(\"self\"_hs);");
-				}
-
-				writer.WriteLine();
+				writer.WriteLine($"entt::meta<const char*>().conv<&SerializedString<{size}>::CreateFromCString>();");
 			}
+
+			writer.WriteLine();
+
+			foreach (var size in _serializedStringSizes)
+			{
+				using (var indent = new IndentLevel(writer, $"entt::meta<SerializedString<{size}>>()"))
+					indent.WriteLine($".data<&ReflectionSet<SerializedString<{size}>>, &ReflectionGet<SerializedString<{size}>>>(\"self\"_hs);");
+			}
+
+			writer.WriteLine();
 		}
 
 		private void ReflectSerializedVectors(ICodeWriter writer)

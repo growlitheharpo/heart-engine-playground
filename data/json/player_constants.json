@@ -1,0 +1,7 @@
+{
+	"type": "PlayerValues",
+	"contents": {
+		"speed": 200.0,
+		"texture": "textures/player.png"
+	}
+}

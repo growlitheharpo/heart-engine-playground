@@ -16,11 +16,6 @@
 
 #include <entt/entt.hpp>
 
-entt::registry s_registry;
-
-UI::UIManager s_uiManager;
-TileManager s_tileManager;
-
 enum InputKey
 {
 	InputLeft = 1 << 0,
@@ -28,6 +23,13 @@ enum InputKey
 	InputUp = 1 << 2,
 	InputDown = 1 << 3,
 };
+
+entt::registry s_registry;
+
+UI::UIManager s_uiManager;
+TileManager s_tileManager;
+
+PlayerValues s_playerVals;
 
 static bool sPlayerInputDown(sf::Event e)
 {
@@ -102,11 +104,13 @@ void InitializeGame()
 
 	// Create our player
 	{
+		HeartDeserializeObjectFromFile(s_playerVals, "json/player_constants.json");
+
 		auto player = s_registry.create<PlayerTag, InputStatusComponent, TransformableComponent, DrawableComponent>();
 		auto& drawable = std::get<4>(player);
 
 		drawable.texture = new sf::Texture();
-		HEART_CHECK(RenderUtils::LoadTextureFromFile(*drawable.texture, "textures/player.png"));
+		HEART_CHECK(RenderUtils::LoadTextureFromFile(*drawable.texture, s_playerVals.texture.c_str()));
 
 		drawable.sprite = new sf::Sprite(*drawable.texture);
 	}
@@ -189,7 +193,7 @@ void RunGameTick(float deltaT)
 		if (s.flags & InputRight)
 			move.x += 1.0f;
 
-		move *= 200.0f * deltaT;
+		move *= s_playerVals.speed * deltaT;
 		t.position += move;
 	});
 
