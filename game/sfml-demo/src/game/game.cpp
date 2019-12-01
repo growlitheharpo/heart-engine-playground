@@ -138,6 +138,7 @@ void InitializeGame()
 		HEART_CHECK(RenderUtils::LoadTextureFromFile(*drawable.texture, "textures/bg.png"));
 
 		drawable.sprite = new sf::Sprite(*drawable.texture);
+		drawable.z = -10.0f;
 
 		auto& tf = std::get<1>(bg);
 		tf.position = sf::Vector2f(0.0f, -250.0f);
@@ -216,16 +217,18 @@ void RunGameTick(float deltaT)
 	rectShape.setFillColor(color);
 	rectShape.setPosition(posTween.impl.peek());
 	rectShape.setSize(sizeTween.impl.peek());
+
+	s_registry.sort<DrawableComponent>([](const auto& lhs, const auto& rhs) { return lhs.z < rhs.z; });
 }
 
 void DrawGame(Renderer& r)
 {
 	auto camera = r.GetCameraTransform();
-	s_registry.view<TransformableComponent, DrawableComponent>().each([&](auto entity, auto& tranform, auto& draw) {
+	s_registry.view<DrawableComponent, TransformableComponent>().each([&](auto entity, auto& draw, auto& transform) {
 		// In "world" coordinates, 0,0 is the bottom left, so also offset the height of
 		// the sprite in addition to the camera transform
 		float height = draw.sprite->getGlobalBounds().height;
-		draw.sprite->setPosition(camera.transformPoint(tranform.position + sf::Vector2f(0.0f, height)));
+		draw.sprite->setPosition(camera.transformPoint(transform.position + sf::Vector2f(0.0f, height)));
 		r.Draw(*draw.sprite);
 	});
 

@@ -21,6 +21,7 @@ struct DrawableComponent
 {
 	sf::Sprite* sprite = nullptr;
 	sf::Texture* texture = nullptr;
+	float z = 0.0f;
 
 	static void OnDestroy(entt::entity e);
 };
