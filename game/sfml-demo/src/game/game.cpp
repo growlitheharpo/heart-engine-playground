@@ -4,6 +4,7 @@
 #include "events/events.h"
 #include "render/imgui_game.h"
 #include "render/render.h"
+#include "tiles/tile_manager.h"
 #include "tween/tween_manager.h"
 #include "ui/ui_manager.h"
 
@@ -18,6 +19,7 @@
 entt::registry s_registry;
 
 UI::UIManager s_uiManager;
+TileManager s_tileManager;
 
 TweenManager::Wrapper alphaTween(tweeny::from(0.0f));
 TweenManager::Wrapper sizeTween(tweeny::from(sf::Vector2f()));
@@ -150,6 +152,11 @@ void InitializeGame()
 		s_uiManager.LoadPanel("blah");
 	}
 
+	// Load up the tilesets
+	{
+		s_tileManager.Initialize("json/tileset_list.json");
+	}
+
 	{
 		auto handle = EventManager::Get().CreateHandler(sf::Event::KeyPressed);
 		hrt::get<1>(handle).connect<sPlayerInputDown>();
@@ -191,6 +198,7 @@ entt::registry* GetRegistry()
 
 void ShutdownGame()
 {
+	s_tileManager.Dispose();
 	s_uiManager.Cleanup();
 	s_registry.reset();
 }

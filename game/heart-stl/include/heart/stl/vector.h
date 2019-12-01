@@ -9,6 +9,7 @@
 
 #include <heart/stl/allocator.h>
 #include <heart/stl/iterator.h>
+#include <heart/stl/utility.h>
 
 // We include initializer_list from STD no matter what
 #include <initializer_list>

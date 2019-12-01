@@ -4,10 +4,12 @@
 #define SERIALIZE_STRUCT()
 #define SERIALIZE_AS_REF()
 #define SERIALIZE_MEMBER_METHOD()
+#define HIDE_FROM_CODEGEN(...) __VA_ARGS__
 #else
 #define SERIALIZE_STRUCT() void HEARTGEN___SERIALIZE_NEXT_SYMBOL_STRUCT();
 #define SERIALIZE_AS_REF() void HEARTGEN___SERIALIZE_NEXT_SYMBOL_AS_REF();
 #define SERIALIZE_MEMBER_METHOD() void HEARTGEN___SERIALIZE_NEXT_SYMBOL_AS_MEMB_FUNCTION();
+#define HIDE_FROM_CODEGEN(...)
 #endif
 
 template <size_t N>
@@ -28,6 +30,11 @@ struct SerializedString
 	}
 
 	const char* Get()
+	{
+		return buffer;
+	}
+
+	const char* c_str() const
 	{
 		return buffer;
 	}
