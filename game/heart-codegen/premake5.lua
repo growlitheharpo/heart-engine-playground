@@ -5,6 +5,9 @@ project "heart-codegen"
 	language "C#"
 	clr "Unsafe"
 
+	-- codegen always runs with optimization
+	optimize "On"
+
 	kind "ConsoleApp"
 	files {
 		"src/**.cs"
