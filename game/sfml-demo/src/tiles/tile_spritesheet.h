@@ -31,5 +31,5 @@ struct TileSpritesheet
 SERIALIZE_STRUCT()
 struct TileSpritesheetList
 {
-	SERIALIZE_AS_REF() hrt::vector<SerializedString<64>> filelist;
+	SERIALIZE_AS_REF() hrt::vector<SerializedDataPath> filelist;
 };

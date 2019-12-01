@@ -54,3 +54,7 @@ struct SerializedString
 	{
 	}
 };
+
+// If this changes, update SerializationGen in heart-codegen!
+constexpr size_t SerializedDataPathSize = 64;
+typedef SerializedString<SerializedDataPathSize> SerializedDataPath;
