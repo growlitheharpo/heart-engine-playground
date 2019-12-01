@@ -76,71 +76,113 @@ namespace Heart.Codegen
 
 			var dirUri = new Uri(_directory);
 
-			using (var writer = File.CreateText($"{_directory}\\gen\\reflection.heartgen.cpp"))
+			using (var stream = File.CreateText($"{_directory}\\gen\\reflection.heartgen.cpp"))
+			using (var writer = new CodeWriter(stream))
 			{
-				writer.WriteLine("/*   WRITTEN BY HEART-CODEGEN   */");
-				writer.WriteLine();
-				writer.WriteLine("#include \"gen/gen.h\"");
-				writer.WriteLine("#include <heart/deserialization.h>");
-				writer.WriteLine();
-				foreach (var incl in _includes.Distinct())
-					writer.WriteLine($"#include \"{incl}\"");
-				writer.WriteLine();
+				WriteHeader(writer);
 
-				writer.WriteLine("template<typename T> void builtinset(T& prop, T value) { prop = value; }");
-				writer.WriteLine("template<typename T> T builtinget(T& prop) { return prop; }");
-				writer.WriteLine();
-
-				writer.WriteLine("void ReflectSerializedData()");
-				writer.WriteLine("{");
-				writer.WriteLine("\tentt::meta<int32_t>().conv<uint32_t>().conv<uint16_t>().conv<uint8_t>();");
-				writer.WriteLine("\tentt::meta<uint32_t>().conv<int32_t>().conv<uint16_t>().conv<uint8_t>();");
-				writer.WriteLine();
-				var baseTypes = new[] { "int8_t", "uint8_t", "int16_t", "uint16_t", "int32_t", "uint32_t", "int64_t", "uint64_t", "bool", "float", "double" };
-				foreach (var type in baseTypes)
+				using (var function = new FunctionBlock(writer, "void ReflectSerializedData()"))
 				{
-					writer.WriteLine($"\tentt::meta<{type}>().data<&builtinset<{type}>, &builtinget<{type}>>(\"self\"_hs);");
+					ReflectBaseTypes(function);
+					ReflectSerializedStrings(function);
+					ReflectSerializedVectors(function);
+					ReflectSerializedStructs(function);
 				}
-				writer.WriteLine();
 
-
-				foreach (var size in _serializedStringSizes)
-				{
-					writer.WriteLine($"\tentt::meta<const char*>().conv<&SerializedString<{size}>::CreateFromCString>();");
-					writer.WriteLine($"\tentt::meta<SerializedString<{size}>>().data<&builtinset<SerializedString<{size}>>, &builtinget<SerializedString<{size}>>>(\"self\"_hs);");
-				}
-				foreach (var vectorType in _serializedVectorTypes)
-				{
-					writer.WriteLine();
-					string type = $"hrt::vector<{vectorType}>";
-					writer.WriteLine($"\tBEGIN_SERIALIZE_TYPE({type})");
-					writer.WriteLine($"\t\tSERIALIZE_FUNCTION_ALIAS({type}, emplace_back<>)");
-					writer.WriteLine($"\t\tSERIALIZE_FUNCTION_ALIAS({type}, reserve)");
-					writer.WriteLine($"\tEND_SERIALIZE_TYPE({type})");
-				}
-				foreach (var typePair in _typeFields)
-				{
-					writer.WriteLine();
-					var type = typePair.Key;
-					writer.WriteLine($"\tBEGIN_SERIALIZE_TYPE({type})");
-
-					foreach (var field in typePair.Value)
-					{
-						if (field.asFunc)
-							writer.WriteLine($"\t\tSERIALIZE_FUNCTION({type}, {field.name})");
-						else if (field.asRef)
-							writer.WriteLine($"\t\tSERIALIZE_FIELD_ALIAS({type}, {field.name})");
-						else
-							writer.WriteLine($"\t\tSERIALIZE_FIELD({type}, {field.name})");
-					}
-					writer.WriteLine($"\tEND_SERIALIZE_TYPE({type})");
-				}
-				writer.WriteLine("}");
 				writer.WriteLine();
 				writer.WriteLine("/*   WRITTEN BY HEART-CODEGEN   */");
 			}
 
 			Console.WriteLine("heart-codegen: reflection.heartgen.cpp");
+		}
+
+		private void WriteHeader(ICodeWriter writer)
+		{
+			writer.WriteLine("/*   WRITTEN BY HEART-CODEGEN   */");
+			writer.WriteLine();
+			writer.WriteLine("#include \"gen/gen.h\"");
+			writer.WriteLine("#include <heart/deserialization.h>");
+			writer.WriteLine();
+			foreach (var incl in _includes.Distinct())
+				writer.WriteLine($"#include \"{incl}\"");
+			writer.WriteLine();
+
+			writer.WriteLine("template<typename T> void ReflectionSet(T& prop, T value) { prop = value; }");
+			writer.WriteLine("template<typename T> T ReflectionGet(T& prop) { return prop; }");
+			writer.WriteLine();
+		}
+
+		private void ReflectBaseTypes(ICodeWriter writer)
+		{
+			writer.WriteLine("entt::meta<int32_t>().conv<uint32_t>().conv<uint16_t>().conv<uint8_t>();");
+			writer.WriteLine("entt::meta<uint32_t>().conv<int32_t>().conv<uint16_t>().conv<uint8_t>();");
+			writer.WriteLine();
+
+			var baseTypes = new[] { "int8_t", "uint8_t", "int16_t", "uint16_t", "int32_t", "uint32_t", "int64_t", "uint64_t", "bool", "float", "double" };
+			foreach (var type in baseTypes)
+			{
+				writer.WriteLine($"entt::meta<{type}>().data<&ReflectionSet<{type}>, &ReflectionGet<{type}>>(\"self\"_hs);");
+			}
+			writer.WriteLine();
+		}
+
+		private void ReflectSerializedStrings(ICodeWriter writer)
+		{
+			if (_serializedStringSizes.Count > 0)
+			{
+				foreach (var size in _serializedStringSizes)
+				{
+					writer.WriteLine($"entt::meta<const char*>().conv<&SerializedString<{size}>::CreateFromCString>();");
+				}
+
+				writer.WriteLine();
+
+				foreach (var size in _serializedStringSizes)
+				{
+					using (var indent = new IndentLevel(writer, $"entt::meta<SerializedString<{size}>>()"))
+						indent.WriteLine($".data<&ReflectionSet<SerializedString<{size}>>, &ReflectionGet<SerializedString<{size}>>>(\"self\"_hs);");
+				}
+
+				writer.WriteLine();
+			}
+		}
+
+		private void ReflectSerializedVectors(ICodeWriter writer)
+		{
+			foreach (var vectorType in _serializedVectorTypes)
+			{
+				string type = $"hrt::vector<{vectorType}>";
+
+				using (var vec = new IndentLevel(writer, $"BEGIN_SERIALIZE_TYPE({type})", $"END_SERIALIZE_TYPE({type})"))
+				{
+					vec.WriteLine($"\t\tSERIALIZE_FUNCTION_ALIAS({type}, emplace_back<>)");
+					vec.WriteLine($"\t\tSERIALIZE_FUNCTION_ALIAS({type}, reserve)");
+				}
+				writer.WriteLine();
+			}
+		}
+
+		private void ReflectSerializedStructs(ICodeWriter writer)
+		{
+			foreach (var typePair in _typeFields)
+			{
+				var type = typePair.Key;
+
+				using (var typeBlock = new IndentLevel(writer, $"BEGIN_SERIALIZE_TYPE({type})", $"END_SERIALIZE_TYPE({type})"))
+				{
+					foreach (var field in typePair.Value)
+					{
+						if (field.asFunc)
+							typeBlock.WriteLine($"SERIALIZE_FUNCTION({type}, {field.name})");
+						else if (field.asRef)
+							typeBlock.WriteLine($"SERIALIZE_FIELD_ALIAS({type}, {field.name})");
+						else
+							typeBlock.WriteLine($"SERIALIZE_FIELD({type}, {field.name})");
+					}
+				}
+
+				writer.WriteLine();
+			}
 		}
 
 		private void TraverseCodebase()
