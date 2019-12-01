@@ -1,4 +1,5 @@
 #include "game.h"
+#include "base_components.h"
 
 #include "events/events.h"
 #include "render/imgui_game.h"
@@ -31,108 +32,80 @@ enum InputKey
 	InputDown = 1 << 3,
 };
 
-struct InputStatus
-{
-	uint8_t flags = 0;
-};
-
-struct EnttTransformable
-{
-	sf::Vector2f position;
-	sf::Vector2f rotation;
-};
-
-struct Drawable
-{
-	sf::Sprite* sprite = nullptr;
-	sf::Texture* texture = nullptr;
-
-	static void OnDestroy(entt::entity e)
-	{
-		auto& d = s_registry.get<Drawable>(e);
-		delete d.sprite;
-		d.sprite = nullptr;
-
-		delete d.texture;
-		d.texture = nullptr;
-	}
-};
-
-struct PlayerTag
-{
-};
-
 static bool sPlayerInputDown(sf::Event e)
 {
-	auto view = s_registry.view<PlayerTag, InputStatus>();
-	HEART_ASSERT(view.size() == 1);
+	bool success = false;
+	s_registry.view<PlayerTag, InputStatusComponent>().each([e, &success](auto playerEntity, auto& inputState) {
+		if (e.key.code == sf::Keyboard::W || e.key.code == sf::Keyboard::Up)
+		{
+			inputState.flags |= InputUp;
+			success = true;
+			return;
+		}
+		else if (e.key.code == sf::Keyboard::A || e.key.code == sf::Keyboard::Left)
+		{
+			inputState.flags |= InputLeft;
+			success = true;
+			return;
+		}
+		else if (e.key.code == sf::Keyboard::S || e.key.code == sf::Keyboard::Down)
+		{
+			inputState.flags |= InputDown;
+			success = true;
+			return;
+		}
+		else if (e.key.code == sf::Keyboard::D || e.key.code == sf::Keyboard::Right)
+		{
+			inputState.flags |= InputRight;
+			success = true;
+			return;
+		}
+	});
 
-	entt::entity playerEntity = *view.begin();
-	auto& inputState = s_registry.get<InputStatus>(playerEntity);
-
-	if (e.key.code == sf::Keyboard::W || e.key.code == sf::Keyboard::Up)
-	{
-		inputState.flags |= InputUp;
-		return true;
-	}
-	else if (e.key.code == sf::Keyboard::A || e.key.code == sf::Keyboard::Left)
-	{
-		inputState.flags |= InputLeft;
-		return true;
-	}
-	else if (e.key.code == sf::Keyboard::S || e.key.code == sf::Keyboard::Down)
-	{
-		inputState.flags |= InputDown;
-		return true;
-	}
-	else if (e.key.code == sf::Keyboard::D || e.key.code == sf::Keyboard::Right)
-	{
-		inputState.flags |= InputRight;
-		return true;
-	}
-
-	return false;
+	return success;
 }
 
 static bool sPlayerInputUp(sf::Event e)
 {
-	auto view = s_registry.view<PlayerTag, InputStatus>();
-	HEART_ASSERT(view.size() == 1);
+	bool success = false;
 
-	entt::entity playerEntity = *view.begin();
-	auto& inputState = s_registry.get<InputStatus>(playerEntity);
+	s_registry.view<PlayerTag, InputStatusComponent>().each([e, &success](auto playerEntity, auto& inputState) {
+		if (e.key.code == sf::Keyboard::W || e.key.code == sf::Keyboard::Up)
+		{
+			inputState.flags &= ~InputUp;
+			success = true;
+			return;
+		}
+		else if (e.key.code == sf::Keyboard::A || e.key.code == sf::Keyboard::Left)
+		{
+			inputState.flags &= ~InputLeft;
+			success = true;
+			return;
+		}
+		else if (e.key.code == sf::Keyboard::S || e.key.code == sf::Keyboard::Down)
+		{
+			inputState.flags &= ~InputDown;
+			success = true;
+			return;
+		}
+		else if (e.key.code == sf::Keyboard::D || e.key.code == sf::Keyboard::Right)
+		{
+			inputState.flags &= ~InputRight;
+			success = true;
+			return;
+		}
+	});
 
-	if (e.key.code == sf::Keyboard::W || e.key.code == sf::Keyboard::Up)
-	{
-		inputState.flags &= ~InputUp;
-		return true;
-	}
-	else if (e.key.code == sf::Keyboard::A || e.key.code == sf::Keyboard::Left)
-	{
-		inputState.flags &= ~InputLeft;
-		return true;
-	}
-	else if (e.key.code == sf::Keyboard::S || e.key.code == sf::Keyboard::Down)
-	{
-		inputState.flags &= ~InputDown;
-		return true;
-	}
-	else if (e.key.code == sf::Keyboard::D || e.key.code == sf::Keyboard::Right)
-	{
-		inputState.flags &= ~InputRight;
-		return true;
-	}
-
-	return false;
+	return success;
 }
 
 void InitializeGame()
 {
-	s_registry.on_destroy<Drawable>().connect<&Drawable::OnDestroy>();
+	s_registry.on_destroy<DrawableComponent>().connect<&DrawableComponent::OnDestroy>();
 
 	// Create our player
 	{
-		auto player = s_registry.create<PlayerTag, InputStatus, EnttTransformable, Drawable>();
+		auto player = s_registry.create<PlayerTag, InputStatusComponent, TransformableComponent, DrawableComponent>();
 		auto& drawable = std::get<4>(player);
 
 		drawable.texture = new sf::Texture();
@@ -143,7 +116,7 @@ void InitializeGame()
 
 	// Create our origin marker
 	{
-		auto originMarker = s_registry.create<EnttTransformable, Drawable>();
+		auto originMarker = s_registry.create<TransformableComponent, DrawableComponent>();
 		auto& drawable = std::get<2>(originMarker);
 
 		sf::Image i;
@@ -158,7 +131,7 @@ void InitializeGame()
 
 	// Create the background
 	{
-		auto bg = s_registry.create<EnttTransformable, Drawable>();
+		auto bg = s_registry.create<TransformableComponent, DrawableComponent>();
 		auto& drawable = std::get<2>(bg);
 
 		drawable.texture = new sf::Texture();
@@ -210,6 +183,11 @@ void InitializeGame()
 	}
 }
 
+entt::registry* GetRegistry()
+{
+	return &s_registry;
+}
+
 void ShutdownGame()
 {
 	s_uiManager.Cleanup();
@@ -218,22 +196,21 @@ void ShutdownGame()
 
 void RunGameTick(float deltaT)
 {
-	s_registry.view<PlayerTag, InputStatus, EnttTransformable>().each(
-		[=](auto p, InputStatus& s, EnttTransformable& t) {
-			sf::Vector2f move(0.0f, 0.0f);
+	s_registry.view<PlayerTag, InputStatusComponent, TransformableComponent>().each([=](auto p, auto& s, auto& t) {
+		sf::Vector2f move(0.0f, 0.0f);
 
-			if (s.flags & InputUp)
-				move.y += 1.0f;
-			if (s.flags & InputDown)
-				move.y -= 1.0f;
-			if (s.flags & InputLeft)
-				move.x -= 1.0f;
-			if (s.flags & InputRight)
-				move.x += 1.0f;
+		if (s.flags & InputUp)
+			move.y += 1.0f;
+		if (s.flags & InputDown)
+			move.y -= 1.0f;
+		if (s.flags & InputLeft)
+			move.x -= 1.0f;
+		if (s.flags & InputRight)
+			move.x += 1.0f;
 
-			move *= 200.0f * deltaT;
-			t.position += move;
-		});
+		move *= 200.0f * deltaT;
+		t.position += move;
+	});
 
 	auto color = sf::Color(155, 0, 255, int(float(255) * alphaTween.impl.peek()));
 	rectShape.setFillColor(color);
@@ -244,7 +221,7 @@ void RunGameTick(float deltaT)
 void DrawGame(Renderer& r)
 {
 	auto camera = r.GetCameraTransform();
-	s_registry.view<EnttTransformable, Drawable>().each([&](auto entity, EnttTransformable& tranform, Drawable& draw) {
+	s_registry.view<TransformableComponent, DrawableComponent>().each([&](auto entity, auto& tranform, auto& draw) {
 		// In "world" coordinates, 0,0 is the bottom left, so also offset the height of
 		// the sprite in addition to the camera transform
 		float height = draw.sprite->getGlobalBounds().height;
@@ -259,8 +236,8 @@ void DrawGame(Renderer& r)
 #if IMGUI_ENABLED
 	{
 		bool open = true;
-		auto player = *s_registry.view<PlayerTag, EnttTransformable>().begin();
-		auto t = s_registry.get<EnttTransformable>(player);
+		auto player = s_registry.view<PlayerTag, TransformableComponent>().begin();
+		auto t = s_registry.get<TransformableComponent>(*player);
 
 		if (ImGui::Game::IsActive())
 		{
