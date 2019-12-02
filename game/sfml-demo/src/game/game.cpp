@@ -2,6 +2,7 @@
 #include "base_components.h"
 
 #include "events/events.h"
+#include "memory/pools.h"
 #include "render/imgui_game.h"
 #include "render/render.h"
 #include "tiles/tile_manager.h"
@@ -230,7 +231,10 @@ void DrawGame(Renderer& r)
 			}
 
 			ImGui::End();
+
+			MemoryManager::DrawReport();
 		}
 	}
+
 #endif
 }

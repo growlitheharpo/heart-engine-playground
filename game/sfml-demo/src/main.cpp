@@ -1,6 +1,7 @@
 #include "game/game.h"
 
 #include "events/events.h"
+#include "memory/pools.h"
 #include "render/imgui_game.h"
 #include "render/render.h"
 
@@ -10,6 +11,19 @@
 #include <heart/file.h>
 
 static bool s_shutdown = false;
+
+#if IMGUI_ENABLED
+void* ImguiAllocator(size_t size, void*)
+{
+	return MemoryManager::Allocate<MemoryPool::UI>(size);
+}
+
+void ImguiFree(void* ptr, void*)
+{
+	return MemoryManager::Free<MemoryPool::UI>(ptr);
+}
+
+#endif
 
 bool WindowClosedEvent(sf::Event e)
 {
@@ -32,7 +46,11 @@ int WinMain()
 	HeartSetRoot("{%cwd}\\..\\data\\");
 	ReflectSerializedData();
 
-	Renderer r;
+#if IMGUI_ENABLED
+	ImGui::SetAllocatorFunctions(ImguiAllocator, ImguiFree);
+#endif
+
+		Renderer r;
 	r.Initialize();
 
 	EventManager& e = EventManager::Get();
