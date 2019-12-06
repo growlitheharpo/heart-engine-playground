@@ -211,6 +211,7 @@ void DrawGame(Renderer& r)
 		r.Draw(*draw.sprite);
 	});
 
+	s_tileManager.Render(r);
 	s_uiManager.Render(r);
 
 #if IMGUI_ENABLED

@@ -11,6 +11,41 @@
 
 static Renderer* s_globalRenderer = nullptr;
 
+static void sDrawMenuPanel()
+{
+	if (!ImGui::Game::IsActive())
+		return;
+
+#if IMGUI_ENABLED
+	struct ToolType
+	{
+		const char* name;
+		bool* toggle;
+	};
+
+	extern bool TileManagerImguiPanelActive;
+
+	ToolType tools[] = {"Tile Manager", &TileManagerImguiPanelActive};
+
+	if (ImGui::BeginMainMenuBar())
+	{
+		if (ImGui::BeginMenu("Tools"))
+		{
+			for (auto& t : tools)
+			{
+				if (ImGui::MenuItem(t.name))
+				{
+					*t.toggle = !*t.toggle;
+				}
+			}
+			ImGui::EndMenu();
+		}
+
+		ImGui::EndMainMenuBar();
+	}
+#endif
+}
+
 Renderer::~Renderer()
 {
 	if (window_ != nullptr)
@@ -63,6 +98,7 @@ void Renderer::RegisterEvents()
 void Renderer::BeginFrame()
 {
 	window_->clear();
+	sDrawMenuPanel();
 }
 
 void Renderer::Draw(sf::Drawable& d)

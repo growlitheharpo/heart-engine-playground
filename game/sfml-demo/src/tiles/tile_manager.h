@@ -23,4 +23,6 @@ public:
 
 	void Initialize(const char* listPath);
 	void Dispose();
+
+	void Render(Renderer& r);
 };
