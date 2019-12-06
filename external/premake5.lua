@@ -103,10 +103,15 @@ project "imgui"
 	warnings "Off"
 	files {
 		"imgui/imgui.cpp",
+		"imgui/imgui_demo.cpp",
 		"imgui/imgui_widgets.cpp",
 		"imgui/imgui_draw.cpp",
 		"imgui/*.h",
 	}
+
+	filter { "files:imgui/imgui_demo.cpp" }
+		flags { "ExcludeFromBuild" }
+	filter {}
 
 project "imgui-sfml"
 	kind "StaticLib"
