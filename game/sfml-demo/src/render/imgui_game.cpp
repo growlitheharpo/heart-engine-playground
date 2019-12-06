@@ -10,6 +10,7 @@
 #if IMGUI_ENABLED
 static bool s_imgui_active = false;
 static bool s_was_ever_initialized = false;
+static bool s_awaiting_render = false;
 #endif
 
 namespace ImGui
@@ -43,19 +44,12 @@ namespace ImGui
 			if (!IsActive() || !s_was_ever_initialized || i == nullptr)
 				return;
 
+			if (s_awaiting_render)
+				ImGui::EndFrame();
+
 			static sf::Clock imGuiClock;
 			ImGui::SFML::Update(*i, imGuiClock.restart());
-#endif
-		}
-
-		void BeginRender()
-		{
-#if IMGUI_ENABLED
-			if (!IsActive() || !s_was_ever_initialized)
-				return;
-
-			ImGui::EndFrame();
-			ImGui::NewFrame();
+			s_awaiting_render = true;
 #endif
 		}
 
@@ -66,6 +60,7 @@ namespace ImGui
 				return;
 
 			ImGui::SFML::Render(*i);
+			s_awaiting_render = false;
 #endif
 		}
 

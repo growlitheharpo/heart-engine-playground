@@ -15,7 +15,6 @@ namespace ImGui
 		void Init(sf::RenderWindow* i);
 		void ProcessEvent(const sf::Event& e);
 		void Tick(sf::RenderWindow* i);
-		void BeginRender();
 		void SubmitRender(sf::RenderWindow* i);
 		void Shutdown();
 

@@ -62,7 +62,6 @@ void Renderer::RegisterEvents()
 
 void Renderer::BeginFrame()
 {
-	ImGui::Game::BeginRender();
 	window_->clear();
 }
 
