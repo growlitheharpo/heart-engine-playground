@@ -396,7 +396,7 @@ namespace hrt
 					size_ = count;
 					if constexpr (sizeof(value_type) <= sizeof(uint8_t))
 					{
-						std::memset(data_begin_, uint8_t(val), size_);
+						memset(data_begin_, uint8_t(val), size_);
 					}
 					else
 					{
