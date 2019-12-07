@@ -7,6 +7,7 @@ project "sfml-demo"
 	include_imgui(true)
 	include_entt()
 	include_tweeny()
+	include_icon_headers()
 	debugdir "%{wks.location}/"
 
 	defines {

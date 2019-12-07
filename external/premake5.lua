@@ -157,3 +157,17 @@ project "tweeny"
 	files {
 		"tweeny/include/**",
 	}
+
+function include_icon_headers(should_link)
+	includedirs {
+		export_include_root .. "icon-font-cpp-headers"
+	}
+end
+
+project "icon-font-cpp-headers"
+	kind "None" -- header-only
+	set_location()
+	include_icon_headers()
+	files {
+		"icon-font-cpp-headers/**.h"
+	}

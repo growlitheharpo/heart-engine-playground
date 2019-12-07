@@ -16,3 +16,6 @@
 [submodule "external/tweeny"]
 	path = external/tweeny
 	url = https://github.com/mobius3/tweeny.git
+[submodule "external/icon-font-cpp-headers/icons"]
+	path = external/icon-font-cpp-headers/icons
+	url = https://github.com/juliettef/IconFontCppHeaders.git
