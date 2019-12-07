@@ -15,6 +15,10 @@ class TileManager
 private:
 	hrt::vector<TileSpritesheet> spritesheets_;
 
+#ifdef _DEBUG
+	entt::entity selected_tile_ = entt::null;
+#endif
+
 public:
 	TileManager() = default;
 	DISABLE_COPY_SEMANTICS(TileManager);
