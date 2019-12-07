@@ -94,7 +94,9 @@ bool HeartCloseFile(HeartFile& file)
 	if (file.native_handle_ == 0)
 		return true;
 
-	return bool(CloseHandle(HANDLE(file.native_handle_)));
+	auto result = bool(CloseHandle(HANDLE(file.native_handle_)));
+	file.native_handle_ = 0;
+	return result;
 }
 
 bool HeartGetFileSize(HeartFile& file, uint64_t& outSize)
