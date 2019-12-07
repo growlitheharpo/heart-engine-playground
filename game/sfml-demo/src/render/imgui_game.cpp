@@ -1,7 +1,10 @@
 #include "imgui_game.h"
 #include "events/events.h"
 
+#include "icons/IconsKenney.h"
+
 #include <heart/debug/imgui.h>
+#include <heart/util/file_load.h>
 
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
@@ -25,6 +28,23 @@ namespace ImGui
 
 			s_was_ever_initialized = true;
 			ImGui::SFML::Init(*i);
+
+			auto fontData = HeartUtilLoadExistingFile("fonts/" FONT_ICON_FILE_NAME_KI);
+			if (!fontData.empty())
+			{
+				auto& io = ImGui::GetIO();
+
+				ImFontConfig config;
+				config.MergeMode = true;
+				config.FontDataOwnedByAtlas = false;
+				config.GlyphMinAdvanceX = 13.0f;
+
+				static const ImWchar icon_ranges[] = {ICON_MIN_KI, ICON_MAX_KI, 0};
+
+				io.Fonts->AddFontFromMemoryTTF(fontData.data(), int(fontData.size()), 13.0f, &config, icon_ranges);
+				io.Fonts->Build();
+				ImGui::SFML::UpdateFontTexture();
+			}
 #endif
 		}
 
