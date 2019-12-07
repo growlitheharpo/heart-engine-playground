@@ -6,5 +6,5 @@ project "heart-core"
 	include_entt()
 
 	includedirs {
-		"../../external/rapidjson/include",
+		get_root_location() .. "external/rapidjson/include",
 	}

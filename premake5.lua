@@ -18,9 +18,9 @@ end
 
 function include_heart(also_link)
 	includedirs {
-		get_root_location() .. "game/heart-core/include/",
-		get_root_location() .. "game/heart-debug/include/",
-		get_root_location() .. "game/heart-stl/include/",
+		get_root_location() .. "heart/heart-core/include/",
+		get_root_location() .. "heart/heart-debug/include/",
+		get_root_location() .. "heart/heart-stl/include/",
 	}
 	if also_link then
 		links {
@@ -65,6 +65,14 @@ workspace "fun-with-sfml"
 	objdir ("build/obj/%{prj.name}/%{cfg.longname}")
 
 include "external/"
+
+group "heart"
+	include "heart/heart-core"
+	include "heart/heart-debug"
+	include "heart/heart-stl"
+	include "heart/heart-codegen"
+group "*"
+
 include "game/"
 
 project "data"

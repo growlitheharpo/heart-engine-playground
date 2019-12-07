@@ -44,7 +44,7 @@ project "sfml-demo"
 	prebuildcommands {
 		get_output_location("heart-codegen") .. "heart-codegen.exe"
 		.. " -in " .. get_root_location() .. "game/sfml-demo/src/"
-		.. " -heart " .. get_root_location() .. "game/heart-core/"
+		.. " -heart " .. get_root_location() .. "heart/heart-core/"
 	}
 	-- At premake time, we create an empty generated for heart-codegen to fill; this is so that
 	-- it gets added to the project files and VS knows to build it
