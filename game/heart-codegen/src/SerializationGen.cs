@@ -157,8 +157,8 @@ namespace Heart.Codegen
 
 				using (var vec = new IndentLevel(writer, $"BEGIN_SERIALIZE_TYPE({type})", $"END_SERIALIZE_TYPE({type})"))
 				{
-					vec.WriteLine($"\t\tSERIALIZE_FUNCTION_ALIAS({type}, emplace_back<>)");
-					vec.WriteLine($"\t\tSERIALIZE_FUNCTION_ALIAS({type}, reserve)");
+					vec.WriteLine($"SERIALIZE_FUNCTION_ALIAS({type}, emplace_back<>)");
+					vec.WriteLine($"SERIALIZE_FUNCTION_ALIAS({type}, reserve)");
 				}
 				writer.WriteLine();
 			}

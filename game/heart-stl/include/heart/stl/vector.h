@@ -212,9 +212,6 @@ namespace hrt
 				emplace_back(val);
 		}
 
-#if HEART_STRICT_PERF
-		DISABLE_COPY_SEMANTICS(vector);
-#else
 		vector(const vector& other) : capacity_(0), size_(0), data_begin_(nullptr)
 		{
 			reserve(other.size());
@@ -228,7 +225,6 @@ namespace hrt
 			swap(tmp);
 			return *this;
 		}
-#endif
 
 		vector(vector&& other) : capacity_(0), size_(0), data_begin_(nullptr)
 		{
