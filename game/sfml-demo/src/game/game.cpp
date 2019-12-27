@@ -10,6 +10,7 @@
 
 #include <heart/debug/assert.h>
 #include <heart/deserialization_file.h>
+#include <heart/stl/unordered_map.h>
 
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
@@ -24,42 +25,31 @@ enum InputKey
 	InputDown = 1 << 3,
 };
 
-entt::registry s_registry;
+static entt::registry s_registry;
 
-UI::UIManager s_uiManager;
-TileManager s_tileManager;
+hrt::unordered_map<sf::Keyboard::Key, InputKey> s_keymap = {
+	{sf::Keyboard::W, InputUp}, {sf::Keyboard::Up, InputUp},
+	{sf::Keyboard::A, InputLeft}, {sf::Keyboard::Left, InputLeft}, 
+	{sf::Keyboard::S, InputDown}, {sf::Keyboard::Down, InputDown}, 
+	{sf::Keyboard::D, InputRight}, {sf::Keyboard::Right, InputRight}
+};
 
-PlayerValues s_playerVals;
+static UI::UIManager s_uiManager;
+static TileManager s_tileManager;
+
+static PlayerValues s_playerVals;
 
 static bool sPlayerInputDown(sf::Event e)
 {
 	bool success = false;
-	s_registry.view<PlayerTag, InputStatusComponent>().each([e, &success](auto playerEntity, auto& inputState) {
-		if (e.key.code == sf::Keyboard::W || e.key.code == sf::Keyboard::Up)
-		{
-			inputState.flags |= InputUp;
+
+	if (auto iter = s_keymap.find(e.key.code); iter != s_keymap.end())
+	{
+		s_registry.view<PlayerTag, InputStatusComponent>().each([iter, &success](auto playerEntity, auto& inputState) {
+			inputState.flags |= iter->second;
 			success = true;
-			return;
-		}
-		else if (e.key.code == sf::Keyboard::A || e.key.code == sf::Keyboard::Left)
-		{
-			inputState.flags |= InputLeft;
-			success = true;
-			return;
-		}
-		else if (e.key.code == sf::Keyboard::S || e.key.code == sf::Keyboard::Down)
-		{
-			inputState.flags |= InputDown;
-			success = true;
-			return;
-		}
-		else if (e.key.code == sf::Keyboard::D || e.key.code == sf::Keyboard::Right)
-		{
-			inputState.flags |= InputRight;
-			success = true;
-			return;
-		}
-	});
+		});
+	}
 
 	return success;
 }
@@ -68,32 +58,13 @@ static bool sPlayerInputUp(sf::Event e)
 {
 	bool success = false;
 
-	s_registry.view<PlayerTag, InputStatusComponent>().each([e, &success](auto playerEntity, auto& inputState) {
-		if (e.key.code == sf::Keyboard::W || e.key.code == sf::Keyboard::Up)
-		{
-			inputState.flags &= ~InputUp;
+	if (auto iter = s_keymap.find(e.key.code); iter != s_keymap.end())
+	{
+		s_registry.view<PlayerTag, InputStatusComponent>().each([iter, &success](auto playerEntity, auto& inputState) {
+			inputState.flags &= ~iter->second;
 			success = true;
-			return;
-		}
-		else if (e.key.code == sf::Keyboard::A || e.key.code == sf::Keyboard::Left)
-		{
-			inputState.flags &= ~InputLeft;
-			success = true;
-			return;
-		}
-		else if (e.key.code == sf::Keyboard::S || e.key.code == sf::Keyboard::Down)
-		{
-			inputState.flags &= ~InputDown;
-			success = true;
-			return;
-		}
-		else if (e.key.code == sf::Keyboard::D || e.key.code == sf::Keyboard::Right)
-		{
-			inputState.flags &= ~InputRight;
-			success = true;
-			return;
-		}
-	});
+		});
+	}
 
 	return success;
 }
