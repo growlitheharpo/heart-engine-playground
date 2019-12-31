@@ -15,13 +15,11 @@ namespace Heart.Codegen
 		// If this changes, update deserialization_fwd.h in heart-core!
 		private const int SerializedDataPathSize = 64;
 
-		private static string[] HeartDirectories;
-
 		public static int ProcessSourceDirectory(string dir, string heartLocation)
 		{
-			HeartDirectories = new[] { heartLocation, heartLocation + "\\..\\heart-stl", heartLocation + "\\..\\heart-debug" };
+			var heartDirs = new[] { heartLocation, heartLocation + "\\..\\heart-stl", heartLocation + "\\..\\heart-debug" };
 
-			SerializationGen generator = new SerializationGen(dir);
+			SerializationGen generator = new SerializationGen(dir, heartDirs);
 			generator.Process();
 
 			return generator.ErrorCode;
@@ -44,6 +42,7 @@ namespace Heart.Codegen
 		private int ErrorCode { get; set; }
 
 		private string _currentFile;
+		private string[] _heartDirectories;
 
 		private string _directory;
 		private HashSet<string> _includes = new HashSet<string>();
@@ -51,9 +50,10 @@ namespace Heart.Codegen
 		private HashSet<string> _serializedVectorTypes = new HashSet<string>();
 		private Dictionary<string, List<FieldToken>> _typeFields = new Dictionary<string, List<FieldToken>>();
 
-		private SerializationGen(string dir)
+		private SerializationGen(string dir, string[] heartDirs)
 		{
 			_directory = dir;
+			_heartDirectories = heartDirs;
 		}
 
 		private void EncounterError(string msg, CXSourceLocation location)
@@ -77,11 +77,12 @@ namespace Heart.Codegen
 		{
 			TraverseCodebase();
 
-			var dirUri = new Uri(_directory);
-
 			using (var stream = File.CreateText($"{_directory}\\gen\\reflection.heartgen.cpp"))
 			using (var writer = new CodeWriter(stream))
 			{
+				writer.WriteLine("/*\tWRITTEN BY HEART-CODEGEN\t*/");
+				writer.WriteLine();
+
 				WriteHeader(writer);
 
 				using (var function = new FunctionBlock(writer, "void ReflectSerializedData()"))
@@ -93,7 +94,7 @@ namespace Heart.Codegen
 				}
 
 				writer.WriteLine();
-				writer.WriteLine("/*   WRITTEN BY HEART-CODEGEN   */");
+				writer.WriteLine("/*\tWRITTEN BY HEART-CODEGEN\t*/");
 			}
 
 			Console.WriteLine("heart-codegen: reflection.heartgen.cpp");
@@ -101,8 +102,6 @@ namespace Heart.Codegen
 
 		private void WriteHeader(ICodeWriter writer)
 		{
-			writer.WriteLine("/*   WRITTEN BY HEART-CODEGEN   */");
-			writer.WriteLine();
 			writer.WriteLine("#include \"gen/gen.h\"");
 			writer.WriteLine("#include <heart/deserialization.h>");
 			writer.WriteLine();
@@ -110,43 +109,63 @@ namespace Heart.Codegen
 				writer.WriteLine($"#include \"{incl}\"");
 			writer.WriteLine();
 
-			writer.WriteLine("template<typename T> void ReflectionSet(T& prop, T value) { prop = value; }");
-			writer.WriteLine("template<typename T> T ReflectionGet(T& prop) { return prop; }");
+			writer.WriteLine("template <typename T>");
+			writer.WriteLine("void ReflectionSet(T& prop, T value)");
+			using (var f = new IndentLevel(writer, "{", "}"))
+				f.WriteLine("prop = value;");
+			writer.WriteLine();
+
+			writer.WriteLine("template <typename T>");
+			writer.WriteLine("T ReflectionGet(T& prop)");
+			using (var f = new IndentLevel(writer, "{", "}"))
+				f.WriteLine("return prop;");
 			writer.WriteLine();
 		}
 
 		private void ReflectBaseTypes(ICodeWriter writer)
 		{
-			writer.WriteLine("entt::meta<int32_t>().conv<uint32_t>().conv<uint16_t>().conv<uint8_t>();");
-			writer.WriteLine("entt::meta<uint32_t>().conv<int32_t>().conv<uint16_t>().conv<uint8_t>();");
-			writer.WriteLine();
-
 			var baseTypes = new[] { "int8_t", "uint8_t", "int16_t", "uint16_t", "int32_t", "uint32_t", "int64_t", "uint64_t", "bool", "float", "double" };
 			foreach (var type in baseTypes)
 			{
-				writer.WriteLine($"entt::meta<{type}>().data<&ReflectionSet<{type}>, &ReflectionGet<{type}>>(\"self\"_hs);");
+				using (var baseType = new IndentLevel(writer, $"BEGIN_SERIALIZE_TYPE({type})", $"END_SERIALIZE_TYPE({type})"))
+				{
+					baseType.WriteLine($"SERIALIZE_SELF_ACCESS({type}, &ReflectionSet<{type}>, &ReflectionGet<{type}>)");
+
+					if (type == "uint32_t")
+					{
+						baseType.WriteLine("SERIALIZE_CONVERSION(uint32_t, int32_t)");
+						baseType.WriteLine("SERIALIZE_CONVERSION(uint32_t, int16_t)");
+						baseType.WriteLine("SERIALIZE_CONVERSION(uint32_t, int8_t)");
+					}
+					else if (type == "int32_t")
+					{
+						baseType.WriteLine("SERIALIZE_CONVERSION(int32_t, uint32_t)");
+						baseType.WriteLine("SERIALIZE_CONVERSION(int32_t, uint16_t)");
+						baseType.WriteLine("SERIALIZE_CONVERSION(int32_t, uint8_t)");
+					}
+				}
+
+				writer.WriteLine();
 			}
-			writer.WriteLine();
 		}
 
 		private void ReflectSerializedStrings(ICodeWriter writer)
 		{
 			_serializedStringSizes.Add(SerializedDataPathSize);
 
-			foreach (var size in _serializedStringSizes)
+			using (var baseType = new IndentLevel(writer, "BEGIN_SERIALIZE_TYPE_ADDITIVE(const char*)", "END_SERIALIZE_TYPE(const char*)"))
 			{
-				writer.WriteLine($"entt::meta<const char*>().conv<&SerializedString<{size}>::CreateFromCString>();");
+				foreach (var size in _serializedStringSizes)
+					baseType.WriteLine($"SERIALIZE_CONVERSION(const char*, &SerializedString<{size}>::CreateFromCString)");
 			}
-
 			writer.WriteLine();
 
 			foreach (var size in _serializedStringSizes)
 			{
-				using (var indent = new IndentLevel(writer, $"entt::meta<SerializedString<{size}>>()"))
-					indent.WriteLine($".data<&ReflectionSet<SerializedString<{size}>>, &ReflectionGet<SerializedString<{size}>>>(\"self\"_hs);");
+				using (var block = new IndentLevel(writer, $"BEGIN_SERIALIZE_TYPE_ADDITIVE(SerializedString<{size}>)", $"END_SERIALIZE_TYPE(SerializedString<{size}>)"))
+					block.WriteLine($"SERIALIZE_SELF_ACCESS(SerializedString<{size}>, &ReflectionSet<SerializedString<{size}>>, &ReflectionGet<SerializedString<{size}>>)");
+				writer.WriteLine();
 			}
-
-			writer.WriteLine();
 		}
 
 		private void ReflectSerializedVectors(ICodeWriter writer)
@@ -221,7 +240,7 @@ namespace Heart.Codegen
 				"--comments-in-macros",
 				"-fparse-all-comments",
 				"-D__HEART_CODEGEN_ACTIVE",
-			}.Concat(HeartDirectories.Select(x => $"--include-directory={x}\\include"));
+			}.Concat(_heartDirectories.Select(x => $"--include-directory={x}\\include"));
 
 			var optionBytes = options.Select(x => Encoding.ASCII.GetBytes(x)).ToArray();
 

@@ -176,6 +176,9 @@ namespace heart_priv
 }
 
 #define BEGIN_SERIALIZE_TYPE(type_name) entt::meta<type_name>().type(#type_name##_hs)
+#define BEGIN_SERIALIZE_TYPE_ADDITIVE(type_name) entt::meta<type_name>()
+#define SERIALIZE_SELF_ACCESS(type_name, setter, getter) .data<setter, getter>("self"_hs)
+#define SERIALIZE_CONVERSION(type_name, convert) .conv<convert>()
 #define SERIALIZE_FIELD(type_name, field) .data<&type_name ::field>(#field##_hs)
 #define SERIALIZE_FUNCTION(type_name, function) .func<&type_name ::function>(#function##_hs)
 #define SERIALIZE_FIELD_ALIAS(type_name, field) .data<&type_name ::field, entt::as_alias_t>(#field##_hs)
