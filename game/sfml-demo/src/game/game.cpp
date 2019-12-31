@@ -184,25 +184,4 @@ void DrawGame(Renderer& r)
 
 	s_tileManager.Render(r);
 	s_uiManager.Render(r);
-
-#if IMGUI_ENABLED
-	{
-		bool open = true;
-		auto player = s_registry.view<PlayerTag, TransformableComponent>().begin();
-		auto t = s_registry.get<TransformableComponent>(*player);
-
-		if (ImGui::Game::IsActive())
-		{
-			if (ImGui::Begin("x", &open,
-					ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar |
-						ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize))
-			{
-				ImGui::SetCursorPos(ImVec2(25.0f, 25.0f));
-				ImGui::Text("%f, %f", t.position.x, t.position.y);
-			}
-
-			ImGui::End();
-		}
-	}
-#endif
 }
