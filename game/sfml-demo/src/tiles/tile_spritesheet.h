@@ -17,6 +17,8 @@ struct TileSpritesheetEntry
 	int y;
 	int width;
 	int height;
+
+	HIDE_FROM_CODEGEN(uint32_t key);
 };
 
 SERIALIZE_STRUCT()

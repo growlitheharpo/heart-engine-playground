@@ -145,6 +145,16 @@ sf::Vector2f Renderer::GetScreenSize() const
 	return sf::Vector2f(float(pixelSize.x), float(pixelSize.y));
 }
 
+sf::Vector2f Renderer::ScreenToWorldPosition(sf::Vector2f screenPosition)
+{
+	return GetCameraTransform().transformPoint(screenPosition);
+}
+
+sf::Vector2f Renderer::WorldToScreenPosition(sf::Vector2f worldPosition)
+{
+	return GetCameraTransform().getInverse().transformPoint(worldPosition);
+}
+
 bool RenderUtils::LoadTextureFromFile(sf::Texture& outTexture, const char* path)
 {
 	hrt::vector<uint8_t> data = HeartUtilLoadExistingFile(path);

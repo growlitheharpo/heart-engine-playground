@@ -47,6 +47,9 @@ public:
 	sf::Transform GetCameraTransform() const;
 	sf::Vector2f GetScreenSize() const;
 
+	sf::Vector2f ScreenToWorldPosition(sf::Vector2f screenPosition);
+	sf::Vector2f WorldToScreenPosition(sf::Vector2f worldPosition);
+
 	const sf::Window& GetWindowRef() const;
 
 private:
