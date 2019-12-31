@@ -8,6 +8,7 @@ project "sfml-demo"
 	include_entt()
 	include_tweeny()
 	include_icon_headers()
+	include_murmerhash(true)
 	debugdir "%{wks.location}/"
 
 	defines {

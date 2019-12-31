@@ -171,3 +171,26 @@ project "icon-font-cpp-headers"
 	files {
 		"icon-font-cpp-headers/**.h"
 	}
+
+function include_murmerhash(should_link)
+	includedirs {
+		export_include_root .. "smhasher"
+	}
+
+	if should_link then
+		links {
+			"murmerhash"
+		}
+	end
+end
+
+project "murmerhash"
+	kind "StaticLib"
+	set_location()
+	warnings "Off"
+	include_murmerhash()
+	files {
+		"smhasher/smhasher/src/MurmurHash1.cpp",
+		"smhasher/smhasher/src/MurmurHash2.cpp",
+		"smhasher/smhasher/src/MurmurHash3.cpp",
+	}

@@ -19,3 +19,6 @@
 [submodule "external/icon-font-cpp-headers/icons"]
 	path = external/icon-font-cpp-headers/icons
 	url = https://github.com/juliettef/IconFontCppHeaders.git
+[submodule "external/smhasher/smhasher"]
+	path = external/smhasher/smhasher
+	url = https://github.com/aappleby/smhasher.git
