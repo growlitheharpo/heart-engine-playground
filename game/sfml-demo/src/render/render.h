@@ -28,12 +28,14 @@ private:
 
 	bool HandleResize(const sf::Event& e);
 
+	Renderer() = default;
+
 public:
 	static Renderer& Get(); // bleck :(
 
-	Renderer() = default;
 	DISABLE_COPY_SEMANTICS(Renderer);
-	USE_DEFAULT_MOVE_SEMANTICS(Renderer);
+	DISABLE_MOVE_SEMANTICS(Renderer);
+
 	~Renderer();
 
 	void Initialize();

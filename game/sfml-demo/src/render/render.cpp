@@ -9,8 +9,6 @@
 
 #include <SFML/Graphics.hpp>
 
-static Renderer* s_globalRenderer = nullptr;
-
 static void sDrawMenuPanel()
 {
 	if (!ImGui::Game::IsActive())
@@ -54,9 +52,6 @@ Renderer::~Renderer()
 
 void Renderer::Initialize()
 {
-	HEART_ASSERT(s_globalRenderer == nullptr, "Cannot have more than one renderer initialized!");
-	s_globalRenderer = this;
-
 	window_ = new sf::RenderWindow(
 		sf::VideoMode(1280, 720), "SFML works!", sf::Style::Titlebar | sf::Style::Close | sf::Style::Resize);
 	HEART_ASSERT(window_ != nullptr, "Could not initialize window!");
@@ -66,8 +61,6 @@ void Renderer::Initialize()
 
 void Renderer::Dispose()
 {
-	s_globalRenderer = nullptr;
-
 	window_->close();
 	delete window_;
 	window_ = nullptr;
@@ -85,8 +78,8 @@ bool Renderer::HandleResize(const sf::Event& e)
 
 Renderer& Renderer::Get()
 {
-	HEART_ASSERT(s_globalRenderer != nullptr);
-	return *s_globalRenderer;
+	static Renderer r;
+	return r;
 }
 
 void Renderer::RegisterEvents()
@@ -139,7 +132,6 @@ bool RenderUtils::LoadTextureFromFile(sf::Texture& outTexture, const char* path)
 
 sf::Vector2i RenderUtils::GetMousePosition()
 {
-	// TODO: More safety here!
-	auto& window = s_globalRenderer->GetWindowRef();
+	auto& window = Renderer::Get().GetWindowRef();
 	return sf::Mouse::getPosition(window);
 }

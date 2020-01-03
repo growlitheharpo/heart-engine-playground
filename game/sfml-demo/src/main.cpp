@@ -32,7 +32,7 @@ int WinMain()
 	HeartSetRoot("{%cwd}\\..\\data\\");
 	ReflectSerializedData();
 
-	Renderer r;
+	Renderer& r = Renderer::Get();
 	r.Initialize();
 
 	EventManager& e = EventManager::Get();
