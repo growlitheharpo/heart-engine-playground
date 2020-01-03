@@ -144,7 +144,7 @@ void TileManager::Render(Renderer& r)
 					uint32_t tileKey = *(uint32_t*)payload->Data;
 
 					sf::Vector2f screenPos = ImGui::GetMousePos();
-					sf::Vector2f worldPos = r.ScreenToWorldPosition(screenPos);
+					sf::Vector2f worldPos = r.GetCameraRef().ScreenToWorldPosition(screenPos);
 
 					// TODO: move into grid space
 					worldPos.y -= 64.0f;

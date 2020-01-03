@@ -1,5 +1,7 @@
 #pragma once
 
+#include <render/camera.h>
+
 #include <heart/copy_move_semantics.h>
 #include <heart/debug/assert.h>
 
@@ -22,6 +24,7 @@ class Renderer
 private:
 	sf::RenderWindow* window_ = nullptr;
 	sf::Clock clock_;
+	Camera camera_;
 
 	bool HandleResize(const sf::Event& e);
 
@@ -44,13 +47,14 @@ public:
 
 	void SubmitFrame();
 
-	sf::Transform GetCameraTransform() const;
 	sf::Vector2f GetScreenSize() const;
 
-	sf::Vector2f ScreenToWorldPosition(sf::Vector2f screenPosition);
-	sf::Vector2f WorldToScreenPosition(sf::Vector2f worldPosition);
-
 	const sf::Window& GetWindowRef() const;
+
+	Camera& GetCameraRef()
+	{
+		return camera_;
+	}
 
 private:
 	friend class EventManager;

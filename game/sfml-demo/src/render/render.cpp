@@ -103,15 +103,7 @@ void Renderer::BeginFrame()
 
 void Renderer::Draw(sf::Drawable& d)
 {
-	/*
-	auto height = float(window_->getSize().y);
-	auto cameraTf = sf::Transform::Identity;
-	cameraTf.scale(1.0f, -1.0f, 0.0f, 0.0f);
-	cameraTf.translate(0.0f, -height);
-
-	auto state = sf::RenderStates(cameraTf);*/
 	auto state = sf::RenderStates();
-
 	window_->draw(d, state);
 }
 
@@ -119,15 +111,6 @@ void Renderer::SubmitFrame()
 {
 	ImGui::Game::SubmitRender(window_);
 	window_->display();
-}
-
-sf::Transform Renderer::GetCameraTransform() const
-{
-	auto height = float(window_->getSize().y);
-	auto cameraTf = sf::Transform::Identity;
-	cameraTf.scale(1.0f, -1.0f, 0.0f, 0.0f);
-	cameraTf.translate(0.0f, -height);
-	return cameraTf;
 }
 
 const sf::Window& Renderer::GetWindowRef() const
@@ -143,16 +126,6 @@ sf::Vector2f Renderer::GetScreenSize() const
 
 	auto pixelSize = window_->getSize();
 	return sf::Vector2f(float(pixelSize.x), float(pixelSize.y));
-}
-
-sf::Vector2f Renderer::ScreenToWorldPosition(sf::Vector2f screenPosition)
-{
-	return GetCameraTransform().transformPoint(screenPosition);
-}
-
-sf::Vector2f Renderer::WorldToScreenPosition(sf::Vector2f worldPosition)
-{
-	return GetCameraTransform().getInverse().transformPoint(worldPosition);
 }
 
 bool RenderUtils::LoadTextureFromFile(sf::Texture& outTexture, const char* path)

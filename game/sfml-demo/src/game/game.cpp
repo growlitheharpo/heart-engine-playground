@@ -173,7 +173,7 @@ void RunGameTick(float deltaT)
 
 void DrawGame(Renderer& r)
 {
-	auto camera = r.GetCameraTransform();
+	auto camera = r.GetCameraRef().GetTransform();
 	s_registry.view<DrawableComponent, TransformableComponent>().each([&](auto entity, auto& draw, auto& transform) {
 		// In "world" coordinates, 0,0 is the bottom left, so also offset the height of
 		// the sprite in addition to the camera transform
