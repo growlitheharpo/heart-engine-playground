@@ -68,6 +68,62 @@ sfml_lib("audio", function ()
 
 end)
 
+group "external/Boost"
+
+local boostLibs = os.matchdirs("boost/libs/*")
+
+function boost_is_lib(libName)
+	local srcFiles = os.matchfiles("boost/libs/" .. libName .. "/src/**")
+	if #srcFiles > 0 then
+		return true
+	else
+		return false
+	end
+end
+
+function include_boost(should_link)
+	for k,v in pairs(boostLibs) do
+		includedirs(export_include_root .. v .. "/include")
+
+		if should_link then
+			if boost_is_lib(path.getbasename(v)) then
+				links("boost." .. path.getbasename(v))
+			end
+		end
+	end
+end
+
+function boost_lib (libName)
+	project("boost." .. libName)
+		set_location()
+		files {
+			"boost/libs/" .. libName .. "/include/**.h",
+			"boost/libs/" .. libName .. "/include/**.hpp",
+			"boost/libs/" .. libName .. "/include/**.c",
+			"boost/libs/" .. libName .. "/include/**.cpp",
+			"boost/libs/" .. libName .. "/src/**.h",
+			"boost/libs/" .. libName .. "/src/**.hpp",
+			"boost/libs/" .. libName .. "/src/**.c",
+			"boost/libs/" .. libName .. "/src/**.cpp",
+		}
+
+		defines {
+			"BOOST_NO_EXCEPTIONS=1"
+		}
+
+		if boost_is_lib(libName) then
+			kind "StaticLib"
+		else
+			kind "None"
+		end
+
+		include_boost()
+end
+
+for k,v in pairs(boostLibs) do
+	boost_lib(path.getbasename(v))
+end
+
 group "external"
 
 project "rapidjson"

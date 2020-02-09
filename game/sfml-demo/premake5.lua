@@ -5,6 +5,7 @@ project "sfml-demo"
 	include_self()
 	include_heart(true)
 	include_imgui(true)
+	include_boost(true)
 	include_entt()
 	include_tweeny()
 	include_icon_headers()
