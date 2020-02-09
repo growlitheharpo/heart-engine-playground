@@ -22,3 +22,6 @@
 [submodule "external/smhasher/smhasher"]
 	path = external/smhasher/smhasher
 	url = https://github.com/aappleby/smhasher.git
+[submodule "external/boost"]
+	path = external/boost
+	url = https://github.com/boostorg/boost.git
