@@ -111,11 +111,12 @@ function boost_lib (libName)
 			"BOOST_NO_EXCEPTIONS=1"
 		}
 
-		if boost_is_lib(libName) then
-			kind "StaticLib"
-		else
-			kind "None"
-		end
+		-- if boost_is_lib(libName) then
+		-- 	kind "StaticLib"
+		-- else
+		-- 	kind "None"
+		-- end
+		kind "None"
 
 		include_boost()
 end

@@ -24,15 +24,21 @@ jobs:
       with:
         clean: 'true'
         submodules: 'recursive'
-        
-    - name: run Premake
-      run: premake.bat
-      
-    - name: clang-format Check
-      uses: jidicula/clang-format-action@v1.0.1
+    
+    - name: Add nuget to PATH
+      uses: nuget/setup-nuget@v1
 
-    # Runs a set of commands using the runners shell
-    - name: Run a multi-line script
-      run: |
-        echo Add other actions to build,
-        echo test, and deploy your project.
+    - name: run Premake
+      run: .\premake.bat
+
+    - name: Restore NuGet packages for codegen
+      run: nuget restore build\heart-engine-playground.sln
+
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.0
+
+    - name: Build debug
+      run: msbuild build\heart-engine-playground.sln /p:platform=x64 /p:configuration=debug
+
+    - name: Build release
+      run: msbuild build\heart-engine-playground.sln /p:platform=x64 /p:configuration=release
