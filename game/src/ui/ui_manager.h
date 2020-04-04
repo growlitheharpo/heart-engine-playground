@@ -1,6 +1,6 @@
 #pragma once
 
-#include <heart/deserialization_fwd.h>
+#include <heart/codegen/codegen.h>
 
 #include <heart/stl/string.h>
 #include <heart/stl/unordered_map.h>

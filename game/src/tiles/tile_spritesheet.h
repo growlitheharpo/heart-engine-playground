@@ -1,6 +1,6 @@
 #pragma once
 
-#include <heart/deserialization_fwd.h>
+#include <heart/codegen/codegen.h>
 #include <heart/stl/vector.h>
 
 // TODO: A better way to do this!! Codegen fails to parse certain template

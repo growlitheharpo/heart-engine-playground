@@ -136,7 +136,8 @@ namespace Heart.Codegen
 		private void WriteHeader(ICodeWriter writer)
 		{
 			writer.WriteLine("#include \"gen/gen.h\"");
-			writer.WriteLine("#include <heart/deserialization.h>");
+			writer.WriteLine("#include <heart/codegen/codegen.h>");
+			writer.WriteLine("#include <heart/deserialization/deserialization.h>");
 			writer.WriteLine();
 			foreach (var incl in _includes.Distinct())
 				writer.WriteLine($"#include \"{incl}\"");

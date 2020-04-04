@@ -1,7 +1,6 @@
 #pragma once
 
 #include <heart/debug/assert.h>
-#include <heart/deserialization_fwd.h>
 #include <heart/types.h>
 
 #include <heart/stl/type_traits.h>

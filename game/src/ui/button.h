@@ -3,7 +3,7 @@
 #include "events/events.h"
 #include "ui/widget.h"
 
-#include <heart/deserialization_fwd.h>
+#include <heart/codegen/codegen.h>
 
 namespace UI
 {

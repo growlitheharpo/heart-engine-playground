@@ -2,7 +2,7 @@
 
 #include <entt/fwd.hpp>
 
-#include <heart/deserialization_fwd.h>
+#include <heart/codegen/codegen.h>
 
 SERIALIZE_STRUCT()
 struct PlayerValues

@@ -9,7 +9,7 @@
 #include "ui/ui_manager.h"
 
 #include <heart/debug/assert.h>
-#include <heart/deserialization_file.h>
+#include <heart/deserialization/deserialization_file.h>
 #include <heart/stl/unordered_map.h>
 
 #include <SFML/Graphics.hpp>
