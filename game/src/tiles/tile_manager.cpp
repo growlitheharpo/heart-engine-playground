@@ -35,7 +35,7 @@ void TileManager::PlaceTile(uint32_t tileKey, float x, float y)
 	auto& sheet = spritesheets_[sheetIndex];
 	auto& tile = sheet.spritelist[tileIndex];
 
-	auto newTile = create_multi_component<TransformableComponent, DrawableComponent>();
+	auto newTile = create_multi_component<TransformComponent, DrawableComponent>();
 	GetRegistry()->assign<TileTag>(std::get<0>(newTile));
 
 	auto& pos = std::get<1>(newTile);
@@ -280,7 +280,7 @@ void TileManager::Render(Renderer& r)
 					ImGui::PushID(id++);
 					if (ImGui::ImageButton(sprite))
 					{
-						auto newTile = GetRegistry()->create<TileTag, TransformableComponent, DrawableComponent>();
+						auto newTile = GetRegistry()->create<TileTag, TransformComponent, DrawableComponent>();
 						selected_tile_ = std::get<0>(newTile);
 
 						auto& pos = std::get<2>(newTile);
@@ -364,7 +364,7 @@ void TileManager::Render(Renderer& r)
 
 			ImGui::Text("X: %.0f Y: %.0f", xAdjust, yAdjust);
 
-			auto& transform = GetRegistry()->get<TransformableComponent>(selected_tile_);
+			auto& transform = GetRegistry()->get<TransformComponent>(selected_tile_);
 			transform.position.x = InitialPos + xAdjust;
 			transform.position.y = InitialPos + yAdjust;
 		}

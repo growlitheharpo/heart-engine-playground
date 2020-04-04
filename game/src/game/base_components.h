@@ -11,7 +11,7 @@ namespace sf
 	class Texture;
 }
 
-struct TransformableComponent
+struct TransformComponent
 {
 	sf::Vector2f position;
 	sf::Vector2f rotation;

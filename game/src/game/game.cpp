@@ -74,7 +74,7 @@ void InitializeGame()
 	{
 		HeartDeserializeObjectFromFile(s_playerVals, "json/player_constants.json");
 
-		auto player = create_multi_component<InputStatusComponent, TransformableComponent, DrawableComponent>();
+		auto player = create_multi_component<InputStatusComponent, TransformComponent, DrawableComponent>();
 		s_registry.assign<PlayerTag>(std::get<0>(player));
 		auto& drawable = std::get<3>(player);
 
@@ -86,7 +86,7 @@ void InitializeGame()
 
 	// Create our origin marker
 	{
-		auto originMarker = create_multi_component<TransformableComponent, DrawableComponent>();
+		auto originMarker = create_multi_component<TransformComponent, DrawableComponent>();
 		auto& drawable = std::get<2>(originMarker);
 
 		sf::Image i;
@@ -101,7 +101,7 @@ void InitializeGame()
 
 	// Create the background
 	{
-		auto bg = create_multi_component<TransformableComponent, DrawableComponent>();
+		auto bg = create_multi_component<TransformComponent, DrawableComponent>();
 		auto& drawable = std::get<2>(bg);
 
 		drawable.texture = new sf::Texture();
@@ -155,7 +155,7 @@ void ShutdownGame()
 
 void RunGameTick(float deltaT)
 {
-	s_registry.view<PlayerTag, InputStatusComponent, TransformableComponent>().each([=](auto p, auto& s, auto& t) {
+	s_registry.view<PlayerTag, InputStatusComponent, TransformComponent>().each([=](auto p, auto& s, auto& t) {
 		sf::Vector2f move(0.0f, 0.0f);
 
 		if (s.flags & InputUp)
@@ -177,7 +177,7 @@ void RunGameTick(float deltaT)
 void DrawGame(Renderer& r)
 {
 	auto camera = r.GetCameraRef().GetTransform();
-	s_registry.view<DrawableComponent, TransformableComponent>().each([&](auto entity, auto& draw, auto& transform) {
+	s_registry.view<DrawableComponent, TransformComponent>().each([&](auto entity, auto& draw, auto& transform) {
 		// In "world" coordinates, 0,0 is the bottom left, so also offset the height of
 		// the sprite in addition to the camera transform
 		float height = draw.sprite->getGlobalBounds().height;
