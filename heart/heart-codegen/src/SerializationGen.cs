@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -77,27 +78,59 @@ namespace Heart.Codegen
 		{
 			TraverseCodebase();
 
-			using (var stream = File.CreateText($"{_directory}\\gen\\reflection.heartgen.cpp"))
-			using (var writer = new CodeWriter(stream))
+			Encoding encoding = Encoding.ASCII;
+
+			using (var stream = new MemoryStream())
 			{
-				writer.WriteLine("/*\tWRITTEN BY HEART-CODEGEN\t*/");
-				writer.WriteLine();
-
-				WriteHeader(writer);
-
-				using (var function = new FunctionBlock(writer, "void ReflectSerializedData()"))
+				using (var streamWriter = new StreamWriter(stream, encoding))
+				using (var writer = new CodeWriter(streamWriter))
 				{
-					ReflectBaseTypes(function);
-					ReflectSerializedStrings(function);
-					ReflectSerializedVectors(function);
-					ReflectSerializedStructs(function);
+					writer.WriteLine("/*\tWRITTEN BY HEART-CODEGEN\t*/");
+					writer.WriteLine();
+
+					WriteHeader(writer);
+
+					using (var function = new FunctionBlock(writer, "void ReflectSerializedData()"))
+					{
+						ReflectBaseTypes(function);
+						ReflectSerializedStrings(function);
+						ReflectSerializedVectors(function);
+						ReflectSerializedStructs(function);
+					}
+
+					writer.WriteLine();
+					writer.WriteLine("/*\tWRITTEN BY HEART-CODEGEN\t*/");
 				}
 
-				writer.WriteLine();
-				writer.WriteLine("/*\tWRITTEN BY HEART-CODEGEN\t*/");
-			}
+				bool commit = true;
+				var streamContents = stream.ToArray();
+				try
+				{
+					var current = File.ReadAllText($"{_directory}\\gen\\reflection.heartgen.cpp");
 
-			Console.WriteLine("heart-codegen: reflection.heartgen.cpp");
+					string hash1;
+					using(SHA1CryptoServiceProvider sha1 = new SHA1CryptoServiceProvider())
+						hash1 = Convert.ToBase64String(sha1.ComputeHash(encoding.GetBytes(current)));
+
+					string hash2;
+					using(SHA1CryptoServiceProvider sha1 = new SHA1CryptoServiceProvider())
+						hash2 = Convert.ToBase64String(sha1.ComputeHash(streamContents));
+
+					if (string.Equals(hash1, hash2, StringComparison.OrdinalIgnoreCase))
+						commit = false;
+				}
+				catch { }
+
+				if (commit)
+				{
+					Console.WriteLine("heart-codegen: reflection.heartgen.cpp");
+					File.WriteAllBytes($"{_directory}\\gen\\reflection.heartgen.cpp", streamContents);
+				}
+				else
+				{
+					Console.WriteLine("heart-codegen: reflection.heartgen.cpp - SKIPPED (nothing changed)");
+				}
+			}
 		}
 
 		private void WriteHeader(ICodeWriter writer)
