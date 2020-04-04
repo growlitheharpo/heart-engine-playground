@@ -33,7 +33,7 @@ function set_location()
 	location "%{wks.location}/proj/%{prj.name}/"
 end
 
-workspace "fun-with-sfml"
+workspace "heart-engine-playground"
 	location "build/"
 	language "C++"
 	cppdialect "c++17"
