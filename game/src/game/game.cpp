@@ -136,9 +136,9 @@ void InitializeGame()
 	}
 }
 
-entt::registry* GetRegistry()
+entt::registry& GetRegistry()
 {
-	return &s_registry;
+	return s_registry;
 }
 
 UI::UIManager& GetUIManager()

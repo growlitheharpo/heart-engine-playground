@@ -36,7 +36,7 @@ void TileManager::PlaceTile(uint32_t tileKey, float x, float y)
 	auto& tile = sheet.spritelist[tileIndex];
 
 	auto newTile = create_multi_component<TransformComponent, DrawableComponent>();
-	GetRegistry()->assign<TileTag>(std::get<0>(newTile));
+	GetRegistry().assign<TileTag>(std::get<0>(newTile));
 
 	auto& pos = std::get<1>(newTile);
 	pos.position.x = x;
@@ -115,8 +115,8 @@ void TileManager::LoadMap(void* data)
 
 void TileManager::Dispose()
 {
-	auto registry = GetRegistry();
-	registry->view<TileTag>().each([registry](auto entity, auto tag) { registry->destroy(entity); });
+	auto& registry = GetRegistry();
+	registry.view<TileTag>().each([&registry](auto entity, auto tag) { registry.destroy(entity); });
 
 	spritesheets_.clear();
 }

@@ -22,19 +22,19 @@ void InitializeGame();
 
 void RunGameTick(float deltaT);
 
-entt::registry* GetRegistry();
+entt::registry& GetRegistry();
 
 template <typename... T>
 std::tuple<entt::entity, T&...> create_multi_component()
 {
-	entt::entity e = GetRegistry()->create();
-	return std::make_tuple(e, std::ref(GetRegistry()->assign<T>(e)) ...);
+	entt::entity e = GetRegistry().create();
+	return std::make_tuple(e, std::ref(GetRegistry().assign<T>(e)) ...);
 }
 
 template <typename... T>
 std::tuple<T&...> assign_multi_component(entt::entity e)
 {
-	return std::make_tuple(e, std::ref(GetRegistry()->assign<T>(e))...);
+	return std::make_tuple(e, std::ref(GetRegistry().assign<T>(e))...);
 }
 
 UI::UIManager& GetUIManager();
