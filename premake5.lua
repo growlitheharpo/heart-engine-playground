@@ -59,6 +59,10 @@ workspace "fun-with-sfml"
 		"FatalWarnings"
 	}
 
+	defines {
+		"_ITERATOR_DEBUG_LEVEL=0",
+	}
+
 	targetdir ("build/bin/%{prj.name}/%{cfg.longname}")
 	objdir ("build/obj/%{prj.name}/%{cfg.longname}")
 
