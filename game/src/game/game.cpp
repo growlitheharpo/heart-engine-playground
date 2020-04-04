@@ -74,9 +74,8 @@ void InitializeGame()
 	{
 		HeartDeserializeObjectFromFile(s_playerVals, "json/player_constants.json");
 
-		auto player = create_multi_component<InputStatusComponent, TransformComponent, DrawableComponent>();
-		s_registry.assign<PlayerTag>(std::get<0>(player));
-		auto& drawable = std::get<3>(player);
+		auto player = create_multi_component<PlayerTag, InputStatusComponent, TransformComponent, DrawableComponent>();
+		auto& drawable = std::get<4>(player);
 
 		drawable.texture = new sf::Texture();
 		HEART_CHECK(RenderUtils::LoadTextureFromFile(*drawable.texture, s_playerVals.texture.c_str()));

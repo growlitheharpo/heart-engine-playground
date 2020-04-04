@@ -35,8 +35,7 @@ void TileManager::PlaceTile(uint32_t tileKey, float x, float y)
 	auto& sheet = spritesheets_[sheetIndex];
 	auto& tile = sheet.spritelist[tileIndex];
 
-	auto newTile = create_multi_component<TransformComponent, DrawableComponent>();
-	GetRegistry().assign<TileTag>(std::get<0>(newTile));
+	auto newTile = create_multi_component<TransformComponent, DrawableComponent, TileTag>();
 
 	auto& pos = std::get<1>(newTile);
 	pos.position.x = x;

@@ -24,17 +24,29 @@ void RunGameTick(float deltaT);
 
 entt::registry& GetRegistry();
 
+template <typename T>
+struct multi_component_return_type
+{
+	using type = T&;
+};
+
+template <auto Value>
+struct multi_component_return_type<entt::tag<Value>>
+{
+	using type = entt::tag<Value>;
+};
+
 template <typename... T>
-std::tuple<entt::entity, T&...> create_multi_component()
+auto create_multi_component()
 {
 	entt::entity e = GetRegistry().create();
-	return std::make_tuple(e, std::ref(GetRegistry().assign<T>(e)) ...);
+	return std::tuple<entt::entity, multi_component_return_type<T>::type...>(e, GetRegistry().assign<T>(e)...);
 }
 
 template <typename... T>
-std::tuple<T&...> assign_multi_component(entt::entity e)
+auto assign_multi_component(entt::entity e)
 {
-	return std::make_tuple(e, std::ref(GetRegistry().assign<T>(e))...);
+	return std::tuple<multi_component_return_type<T>::type...>(GetRegistry().assign<T>(e)...);
 }
 
 UI::UIManager& GetUIManager();
