@@ -9,6 +9,8 @@
 #include <heart/deserialization_file.h>
 #include <heart/scope_exit.h>
 
+#include <heart/stl/string.h>
+
 #include <SFML/Graphics.hpp>
 #include <icons/IconsKenney.h>
 #include <smhasher/src/MurmurHash3.h>

@@ -3,19 +3,9 @@
 #include <heart/config.h>
 #include <heart/types.h>
 
-#define USE_STD_STRING 1
-
-#if HEART_IS_STD || USE_STD_STRING
-#include <string>
-#endif
+#include <boost/container/string.hpp>
 
 namespace hrt
 {
-#if HEART_IS_STD || USE_STD_STRING
-	using string = std::string;
-#else
-	static_assert(false, "hrt::string is not implemented!");
-#endif
+	using string = boost::container::string;
 }
-
-size_t WriteDebugValue(char* tgt, size_t len, const hrt::string& value);

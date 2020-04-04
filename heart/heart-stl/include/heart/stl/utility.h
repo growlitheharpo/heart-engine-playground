@@ -3,17 +3,10 @@
 #include <heart/config.h>
 #include <heart/types.h>
 
-#define USE_STD_UTILITY 1
-
-#if HEART_IS_STD || USE_STD_UTILITY
-#include <utility>
-#endif
+#include <boost/container/detail/pair.hpp>
+#include <boost/tuple/tuple.hpp>
 
 namespace hrt
 {
-#if HEART_IS_STD || USE_STD_UTILITY
-	using namespace std;
-#else
-	static_assert(false, "hrt::utility is not implemented!");
-#endif
+	using namespace boost::container::dtl;
 }

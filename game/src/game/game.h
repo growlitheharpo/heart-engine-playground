@@ -13,11 +13,18 @@ struct PlayerValues
 
 class Renderer;
 
+namespace UI
+{
+	class UIManager;
+}
+
 void InitializeGame();
 
 void RunGameTick(float deltaT);
 
 entt::registry* GetRegistry();
+
+UI::UIManager& GetUIManager();
 
 void ShutdownGame();
 

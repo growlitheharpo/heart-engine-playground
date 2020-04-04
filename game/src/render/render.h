@@ -45,7 +45,7 @@ public:
 
 	void BeginFrame();
 
-	void Draw(sf::Drawable&);
+	void Draw(const sf::Drawable&);
 
 	void SubmitFrame();
 

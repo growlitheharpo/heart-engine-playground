@@ -53,7 +53,7 @@ private:
 	void ProcessEvent(sf::Event e);
 
 public:
-	hrt::pair<EventFuncHandle, EventFilterFunc&> CreateHandler(sf::Event::EventType e);
+	hrt::tuple<EventFuncHandle, EventFilterFunc&> CreateHandler(sf::Event::EventType e);
 	bool RemoveHandler(EventFuncHandle id);
 
 	void Initialize(Renderer* r);

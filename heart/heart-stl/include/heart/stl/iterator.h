@@ -7,16 +7,8 @@
 #include <heart/canonical_operators.h>
 #include <heart/copy_move_semantics.h>
 
-#if HEART_IS_STD
-#include <iterator>
-#endif
-
 namespace hrt
 {
-#if HEART_IS_STD
-	using namespace std;
-#else
-
 	using size_t = size_t;
 
 	template <typename DataType, typename s = size_t, typename d = ptrdiff_t>
@@ -268,5 +260,4 @@ namespace hrt
 			return data_ptr_;
 		}
 	};
-#endif
 }

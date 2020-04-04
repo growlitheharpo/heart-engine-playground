@@ -94,7 +94,7 @@ void Renderer::BeginFrame()
 	sDrawMenuPanel();
 }
 
-void Renderer::Draw(sf::Drawable& d)
+void Renderer::Draw(const sf::Drawable& d)
 {
 	auto state = sf::RenderStates();
 	window_->draw(d, state);

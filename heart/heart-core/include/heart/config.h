@@ -7,7 +7,3 @@
 #define HEART_STRICT_PERF 0
 #endif
 #endif
-
-#if !defined(HEART_IS_STD)
-#define HEART_IS_STD 0
-#endif

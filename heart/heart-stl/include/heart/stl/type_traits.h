@@ -2,16 +2,8 @@
 
 #include <heart/config.h>
 
-#if HEART_IS_STD
-#include <type_traits>
-#endif
-
 namespace hrt
 {
-#if HEART_IS_STD
-	using namespace std;
-#else
-
 	template <class... Ts>
 	using void_t = void;
 
@@ -165,6 +157,4 @@ namespace hrt
 	struct is_same : bool_constant<is_same_v<T1, T2>>
 	{
 	};
-
-#endif
 }

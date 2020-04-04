@@ -6,6 +6,7 @@
 #include "events/events.h"
 
 #include <heart/deserialization_file.h>
+#include <heart/util/file_load.h>
 
 bool UI::GlobalButtonFunctionality::CloseGame()
 {
@@ -39,6 +40,14 @@ void UI::UIManager::Cleanup()
 	}
 
 	widgets_.clear();
+
+	for (auto& fPair : loaded_fonts_)
+	{
+		delete fPair.second;
+		fPair.second = nullptr;
+	}
+
+	loaded_fonts_.clear();
 }
 
 void UI::UIManager::LoadPanel(const char* panelName)
@@ -50,6 +59,24 @@ void UI::UIManager::LoadPanel(const char* panelName)
 	button->Initialize();
 
 	widgets_.push_back(button);
+}
+
+sf::Font* UI::UIManager::FindOrLoadFont(const char* fontName)
+{
+	auto iter = loaded_fonts_.find(fontName);
+	if (iter != loaded_fonts_.end())
+	{
+		return iter->second;
+	}
+
+	auto fileData = HeartUtilLoadExistingFile(fontName);
+	sf::Font tmp;
+	if (!tmp.loadFromMemory(fileData.data(), fileData.size()))
+		return nullptr;
+
+	auto result = new sf::Font(tmp);
+	loaded_fonts_[fontName] = result;
+	return result;
 }
 
 void UI::UIManager::Update()

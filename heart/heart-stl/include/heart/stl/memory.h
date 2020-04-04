@@ -2,17 +2,11 @@
 
 #include <heart/config.h>
 
-#define HEART_STD_MEMORY 1
-
-#if HEART_IS_STD || HEART_STD_MEMORY
-#include <memory>
-#endif
+#include <boost/intrusive_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 
 namespace hrt
 {
-#if HEART_IS_STD || HEART_STD_MEMORY
-	using namespace std;
-#else
-	static_assert(false, "hrt::memory is not implemented!");
-#endif
+	using namespace boost;
 }

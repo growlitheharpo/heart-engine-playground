@@ -34,14 +34,14 @@ void EventManager::ProcessEvent(sf::Event e)
 	ImGui::Game::ProcessEvent(e);
 }
 
-hrt::pair<EventManager::EventFuncHandle, EventManager::EventFilterFunc&> EventManager::CreateHandler(
+hrt::tuple<EventManager::EventFuncHandle, EventManager::EventFilterFunc&> EventManager::CreateHandler(
 	sf::Event::EventType e)
 {
 	auto& vec = event_handlers_[e];
 	auto& func = vec.emplace_back();
 	auto handle = EventFuncHandle(e, int32_t(vec.size() - 1));
 
-	return hrt::make_pair(handle, hrt::ref(func));
+	return hrt::tuple<EventManager::EventFuncHandle, EventManager::EventFilterFunc&>(handle, std::ref(func));
 }
 
 bool EventManager::RemoveHandler(EventFuncHandle id)

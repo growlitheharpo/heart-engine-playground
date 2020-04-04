@@ -3,18 +3,8 @@
 #include <heart/config.h>
 #include <heart/stl/type_traits.h>
 
-#define USE_STD_ALLOCATOR 0
-
-#if HEART_IS_STD || USE_STD_ALLOCATOR
-#include <memory>
-#endif
-
 namespace hrt
 {
-#if HEART_IS_STD || USE_STD_ALLOCATOR
-	using namespace std;
-#else
-
 	// In C++20, the standard allocator is totally stateless (and basically useless)
 	template <typename T>
 	struct allocator
@@ -78,5 +68,4 @@ namespace hrt
 			pointer(p)->~value_type();
 		}
 	};
-#endif
 }

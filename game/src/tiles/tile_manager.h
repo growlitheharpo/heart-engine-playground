@@ -4,6 +4,7 @@
 
 #include <heart/copy_move_semantics.h>
 #include <heart/stl/unordered_map.h>
+#include <heart/stl/utility.h>
 
 #include <entt/entity/helper.hpp>
 

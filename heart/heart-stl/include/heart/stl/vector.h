@@ -9,7 +9,6 @@
 
 #include <heart/stl/allocator.h>
 #include <heart/stl/iterator.h>
-#include <heart/stl/utility.h>
 
 // We include initializer_list from STD no matter what
 #include <initializer_list>
@@ -21,16 +20,8 @@
 #include <heart/debug/assert.h>
 #endif
 
-#if HEART_IS_STD
-#include <vector>
-#endif
-
 namespace hrt
 {
-#if HEART_IS_STD
-	using namespace std;
-#else
-
 	template <typename t, typename alloc = allocator<t>>
 	class vector
 	{
@@ -497,10 +488,29 @@ namespace hrt
 
 		void swap(this_type& other) noexcept
 		{
-			hrt::swap(this->allocator_, other.allocator_);
-			hrt::swap(this->size_, other.size_);
-			hrt::swap(this->capacity_, other.capacity_);
-			hrt::swap(this->data_begin_, other.data_begin_);
+			{
+				auto tmp = this->allocator_;
+				this->allocator_ = other.allocator_;
+				other.allocator_ = tmp;
+			}
+
+			{
+				auto tmp = this->size_;
+				this->size_ = other.size_;
+				other.size_ = tmp;
+			}
+
+			{
+				auto tmp = this->capacity_;
+				this->capacity_ = other.capacity_;
+				other.capacity_ = tmp;
+			}
+
+			{
+				auto tmp = this->data_begin_;
+				this->data_begin_ = other.data_begin_;
+				other.data_begin_ = tmp;
+			}
 		}
 
 		void clear()
@@ -535,5 +545,4 @@ namespace hrt
 			return iterator(loc);
 		}
 	};
-#endif
 }

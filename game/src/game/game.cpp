@@ -143,6 +143,11 @@ entt::registry* GetRegistry()
 	return &s_registry;
 }
 
+UI::UIManager& GetUIManager()
+{
+	return s_uiManager;
+}
+
 void ShutdownGame()
 {
 	s_tileManager.Dispose();

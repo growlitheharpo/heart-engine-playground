@@ -2,17 +2,12 @@
 
 #include <heart/config.h>
 
-#define HEART_STD_FUNC 1
-
-#if HEART_IS_STD || HEART_STD_FUNC
-#include <functional>
-#endif
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+#include <boost/functional.hpp>
 
 namespace hrt
 {
-#if HEART_IS_STD || HEART_STD_FUNC
-	using namespace std;
-#else
-	static_assert(false, "hrt::functional is not implemented!");
-#endif
+	using namespace boost;
+	using namespace boost::functional;
 }
