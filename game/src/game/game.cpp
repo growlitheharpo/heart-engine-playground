@@ -27,12 +27,9 @@ enum InputKey
 
 static entt::registry s_registry;
 
-hrt::unordered_map<sf::Keyboard::Key, InputKey> s_keymap = {
-	{sf::Keyboard::W, InputUp}, {sf::Keyboard::Up, InputUp},
-	{sf::Keyboard::A, InputLeft}, {sf::Keyboard::Left, InputLeft}, 
-	{sf::Keyboard::S, InputDown}, {sf::Keyboard::Down, InputDown}, 
-	{sf::Keyboard::D, InputRight}, {sf::Keyboard::Right, InputRight}
-};
+hrt::unordered_map<sf::Keyboard::Key, InputKey> s_keymap = {{sf::Keyboard::W, InputUp}, {sf::Keyboard::Up, InputUp},
+	{sf::Keyboard::A, InputLeft}, {sf::Keyboard::Left, InputLeft}, {sf::Keyboard::S, InputDown},
+	{sf::Keyboard::Down, InputDown}, {sf::Keyboard::D, InputRight}, {sf::Keyboard::Right, InputRight}};
 
 static UI::UIManager s_uiManager;
 static TileManager s_tileManager;
@@ -77,8 +74,9 @@ void InitializeGame()
 	{
 		HeartDeserializeObjectFromFile(s_playerVals, "json/player_constants.json");
 
-		auto player = s_registry.create<PlayerTag, InputStatusComponent, TransformableComponent, DrawableComponent>();
-		auto& drawable = std::get<4>(player);
+		auto player = create_multi_component<InputStatusComponent, TransformableComponent, DrawableComponent>();
+		s_registry.assign<PlayerTag>(std::get<0>(player));
+		auto& drawable = std::get<3>(player);
 
 		drawable.texture = new sf::Texture();
 		HEART_CHECK(RenderUtils::LoadTextureFromFile(*drawable.texture, s_playerVals.texture.c_str()));
@@ -88,7 +86,7 @@ void InitializeGame()
 
 	// Create our origin marker
 	{
-		auto originMarker = s_registry.create<TransformableComponent, DrawableComponent>();
+		auto originMarker = create_multi_component<TransformableComponent, DrawableComponent>();
 		auto& drawable = std::get<2>(originMarker);
 
 		sf::Image i;
@@ -103,7 +101,7 @@ void InitializeGame()
 
 	// Create the background
 	{
-		auto bg = s_registry.create<TransformableComponent, DrawableComponent>();
+		auto bg = create_multi_component<TransformableComponent, DrawableComponent>();
 		auto& drawable = std::get<2>(bg);
 
 		drawable.texture = new sf::Texture();
@@ -152,7 +150,7 @@ void ShutdownGame()
 {
 	s_tileManager.Dispose();
 	s_uiManager.Cleanup();
-	s_registry.reset();
+	s_registry.clear();
 }
 
 void RunGameTick(float deltaT)

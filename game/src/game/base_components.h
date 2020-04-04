@@ -23,7 +23,7 @@ struct DrawableComponent
 	sf::Texture* texture = nullptr;
 	float z = 0.0f;
 
-	static void OnDestroy(entt::entity e);
+	static void OnDestroy(entt::registry& r, entt::entity e);
 };
 
 struct InputStatusComponent

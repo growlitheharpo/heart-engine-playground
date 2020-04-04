@@ -29,7 +29,7 @@ bool UI::Button::OnClick(sf::Event e)
 	if (!metaType)
 		return false;
 
-	auto func = metaType.func(entt::hashed_string::to_value(data_.action.Get()));
+	auto func = metaType.func(entt::hashed_string::value(data_.action.Get()));
 	if (!func)
 		return false;
 

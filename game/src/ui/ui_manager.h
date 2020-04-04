@@ -20,9 +20,10 @@ namespace UI
 	SERIALIZE_STRUCT()
 	struct GlobalButtonFunctionality
 	{
-		static GlobalButtonFunctionality Instance()
+		static GlobalButtonFunctionality& Instance()
 		{
-			return GlobalButtonFunctionality();
+			static GlobalButtonFunctionality gbf;
+			return gbf;
 		}
 
 		SERIALIZE_MEMBER_METHOD() static bool CloseGame();

@@ -4,9 +4,9 @@
 
 #include <SFML/Graphics.hpp>
 
-void DrawableComponent::OnDestroy(entt::entity e)
+void DrawableComponent::OnDestroy(entt::registry& r, entt::entity e)
 {
-	auto& d = GetRegistry()->get<DrawableComponent>(e);
+	auto& d = r.get<DrawableComponent>(e);
 	delete d.sprite;
 	d.sprite = nullptr;
 

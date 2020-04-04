@@ -30,7 +30,7 @@ bool HeartDeserializeObject(OutType& outObject, RapidjsonType& node)
 		return false;
 
 	auto typeStr = typeIter->value.GetString();
-	auto metaType = entt::resolve(entt::hashed_string::to_value(typeStr));
+	auto metaType = entt::resolve(entt::hashed_string::value(typeStr));
 	if (!HEART_CHECK(metaType, "Type is not reflected!", typeStr))
 		return false;
 
@@ -48,7 +48,7 @@ bool HeartDeserializeObject(OutType& outObject, RapidjsonType& node)
 	for (auto& child : contents)
 	{
 		HEART_CHECK(child.name.IsString());
-		auto childId = entt::hashed_string::to_value(child.name.GetString());
+		auto childId = entt::hashed_string::value(child.name.GetString());
 
 		if (!heart_priv::ReadSingleProperty(outObject, metaType.data(childId), child.value))
 			return false;
@@ -175,7 +175,7 @@ namespace heart_priv
 	}
 }
 
-#define BEGIN_SERIALIZE_TYPE(type_name) entt::meta<type_name>().type(#type_name##_hs)
+#define BEGIN_SERIALIZE_TYPE(type_name) entt::meta<type_name>().alias(#type_name##_hs)
 #define BEGIN_SERIALIZE_TYPE_ADDITIVE(type_name) entt::meta<type_name>()
 #define SERIALIZE_SELF_ACCESS(type_name, setter, getter) .data<setter, getter>("self"_hs)
 #define SERIALIZE_CONVERSION(type_name, convert) .conv<convert>()
