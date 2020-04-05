@@ -4,10 +4,8 @@
 
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
-#include <boost/functional.hpp>
 
 namespace hrt
 {
 	using namespace boost;
-	using namespace boost::functional;
 }

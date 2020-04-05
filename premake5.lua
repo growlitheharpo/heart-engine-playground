@@ -28,6 +28,7 @@ function include_heart(also_link)
 		get_root_location() .. "heart/heart-stl/include/",
 	}
 	if also_link then
+		dependson('heart-stl')
 		links {
 			'heart-core',
 			-- 'heart-stl', -- does not actually "build", so no need to link
