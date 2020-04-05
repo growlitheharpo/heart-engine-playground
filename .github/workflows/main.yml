@@ -28,6 +28,7 @@ jobs:
     - name: Checkout submodules
       run: |
         git submodule update --init external/entt
+        git submodule update --init external/icon-font-cpp-headers
         git submodule update --init external/imgui
         git submodule update --init external/imgui-sfml
         git submodule update --init external/rapidjson

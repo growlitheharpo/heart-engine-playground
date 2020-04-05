@@ -83,7 +83,7 @@ end
 
 function include_boost(should_link)
 	if _OPTIONS["boostlib"] then
-		includedirs(_OPTIONS["boostlib"])
+		sysincludedirs(_OPTIONS["boostlib"])
 	else
 		for k,v in pairs(boostLibs) do
 			includedirs(export_include_root .. v .. "/include")
@@ -115,12 +115,11 @@ function boost_lib (libName)
 			"BOOST_NO_EXCEPTIONS=1"
 		}
 
-		-- if boost_is_lib(libName) then
-		-- 	kind "StaticLib"
-		-- else
-		-- 	kind "None"
-		-- end
-		kind "None"
+		if boost_is_lib(libName) then
+			kind "StaticLib"
+		else
+			kind "None"
+		end
 
 		include_boost()
 end
