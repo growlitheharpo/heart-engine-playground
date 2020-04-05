@@ -82,12 +82,16 @@ function boost_is_lib(libName)
 end
 
 function include_boost(should_link)
-	for k,v in pairs(boostLibs) do
-		includedirs(export_include_root .. v .. "/include")
+	if _OPTIONS["boostlib"] then
+		includedirs(_OPTIONS["boostlib"])
+	else
+		for k,v in pairs(boostLibs) do
+			includedirs(export_include_root .. v .. "/include")
 
-		if should_link then
-			if boost_is_lib(path.getbasename(v)) then
-				links("boost." .. path.getbasename(v))
+			if should_link then
+				if boost_is_lib(path.getbasename(v)) then
+					links("boost." .. path.getbasename(v))
+				end
 			end
 		end
 	end
@@ -121,8 +125,10 @@ function boost_lib (libName)
 		include_boost()
 end
 
-for k,v in pairs(boostLibs) do
-	boost_lib(path.getbasename(v))
+if not _OPTIONS["boostlib"] then
+	for k,v in pairs(boostLibs) do
+		boost_lib(path.getbasename(v))
+	end
 end
 
 group "external"
