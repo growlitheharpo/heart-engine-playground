@@ -28,7 +28,7 @@ jobs:
     - name: Add nuget to PATH
       uses: nuget/setup-nuget@v1
 
-    - name: run Premake
+    - name: Premake
       run: .\premake.bat
 
     - name: Restore NuGet packages for codegen
@@ -42,3 +42,9 @@ jobs:
 
     - name: Build release
       run: msbuild build\heart-engine-playground.sln /p:platform=x64 /p:configuration=release
+
+    - name: Upload heartgen result
+      uses: actions/upload-artifact@v1
+      with:
+        name: heartgen-output
+        path: game/src/gen/reflection.heartgen.cpp
