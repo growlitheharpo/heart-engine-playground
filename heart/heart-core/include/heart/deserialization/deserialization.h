@@ -7,6 +7,7 @@
 
 #include <entt/core/hashed_string.hpp>
 #include <entt/meta/factory.hpp>
+#include <entt/meta/resolve.hpp>
 #include <entt/meta/meta.hpp>
 
 #include <rapidjson/document.h>
@@ -29,7 +30,7 @@ bool HeartDeserializeObject(OutType& outObject, RapidjsonType& node)
 		return false;
 
 	auto typeStr = typeIter->value.GetString();
-	auto metaType = entt::resolve(entt::hashed_string::value(typeStr));
+	auto metaType = entt::resolve_id(entt::hashed_string::value(typeStr));
 	if (!HEART_CHECK(metaType, "Type is not reflected!", typeStr))
 		return false;
 
@@ -174,12 +175,12 @@ namespace heart_priv
 	}
 }
 
-#define BEGIN_SERIALIZE_TYPE(type_name) entt::meta<type_name>().alias(#type_name##_hs)
+#define BEGIN_SERIALIZE_TYPE(type_name) entt::meta<type_name>().type(#type_name##_hs)
 #define BEGIN_SERIALIZE_TYPE_ADDITIVE(type_name) entt::meta<type_name>()
 #define SERIALIZE_SELF_ACCESS(type_name, setter, getter) .data<setter, getter>("self"_hs)
 #define SERIALIZE_CONVERSION(type_name, convert) .conv<convert>()
 #define SERIALIZE_FIELD(type_name, field) .data<&type_name ::field>(#field##_hs)
 #define SERIALIZE_FUNCTION(type_name, function) .func<&type_name ::function>(#function##_hs)
-#define SERIALIZE_FIELD_ALIAS(type_name, field) .data<&type_name ::field, entt::as_alias_t>(#field##_hs)
-#define SERIALIZE_FUNCTION_ALIAS(type_name, function) .func<&type_name ::function, entt::as_alias_t>(#function##_hs)
+#define SERIALIZE_FIELD_ALIAS(type_name, field) .data<&type_name ::field, entt::as_ref_t>(#field##_hs)
+#define SERIALIZE_FUNCTION_ALIAS(type_name, function) .func<&type_name ::function, entt::as_ref_t>(#function##_hs)
 #define END_SERIALIZE_TYPE(type_name) ;

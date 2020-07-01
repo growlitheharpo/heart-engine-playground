@@ -1,6 +1,7 @@
 #pragma once
 
 #include <entt/fwd.hpp>
+#include <entt/core/type_traits.hpp>
 
 #include <heart/codegen/codegen.h>
 
@@ -28,25 +29,36 @@ template <typename T>
 struct multi_component_return_type
 {
 	using type = T&;
+
+	static T& emplace_wrapper(entt::entity e)
+	{
+		return GetRegistry().emplace<T>(e);
+	}
 };
 
 template <auto Value>
 struct multi_component_return_type<entt::tag<Value>>
 {
 	using type = entt::tag<Value>;
+
+	static type emplace_wrapper(entt::entity e)
+	{
+		GetRegistry().emplace<type>(e);
+		return type();
+	}
 };
 
 template <typename... T>
 auto create_multi_component()
 {
 	entt::entity e = GetRegistry().create();
-	return std::tuple<entt::entity, multi_component_return_type<T>::type...>(e, GetRegistry().assign<T>(e)...);
+	return std::tuple<entt::entity, multi_component_return_type<T>::type...>(e, multi_component_return_type<T>::emplace_wrapper(e)...);
 }
 
 template <typename... T>
 auto assign_multi_component(entt::entity e)
 {
-	return std::tuple<multi_component_return_type<T>::type...>(GetRegistry().assign<T>(e)...);
+	return std::tuple<multi_component_return_type<T>::type...>(multi_component_return_type<T>::emplace_wrapper(e)...);
 }
 
 UI::UIManager& GetUIManager();

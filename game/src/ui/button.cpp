@@ -5,6 +5,7 @@
 
 #include <entt/core/hashed_string.hpp>
 #include <entt/meta/factory.hpp>
+#include <entt/meta/resolve.hpp>
 #include <entt/meta/meta.hpp>
 
 static bool CheckBounds(sf::IntRect buttonRect)

@@ -115,7 +115,7 @@ void TileManager::LoadMap(void* data)
 void TileManager::Dispose()
 {
 	auto& registry = GetRegistry();
-	registry.view<TileTag>().each([&registry](auto entity, auto tag) { registry.destroy(entity); });
+	registry.view<TileTag>().each([&registry](auto entity) { registry.destroy(entity); });
 
 	spritesheets_.clear();
 }
