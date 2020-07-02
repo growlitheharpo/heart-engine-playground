@@ -55,6 +55,9 @@ jobs:
     - name: Build
       run: msbuild build\heart-engine-playground.sln -m /p:platform=x64 /p:configuration=${{ matrix.config }}
 
+    - name: Run
+      run: build/bin/sfml-demo/${{ matrix.config }}/sfml-demo.exe --framecount 60
+
     - name: Upload heartgen result
       uses: actions/upload-artifact@v1
       with:
