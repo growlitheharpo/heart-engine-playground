@@ -226,6 +226,26 @@ function include_icon_headers(should_link)
 	}
 end
 
+function include_cxxopts(should_link)
+
+	filter { "configurations:Release" }
+		defines { "CXXOPTS_NO_EXCEPTIONS=1" }
+	filter{}
+
+	includedirs {
+		export_include_root .. "cxxopts/include"
+	}
+end
+
+project "cxxopts"
+	kind "None" -- cxxopts is header-only
+	set_location()
+	warnings "Off"
+	include_cxxopts()
+	files {
+		"cxxopts/include/**",
+	}
+
 project "icon-font-cpp-headers"
 	kind "None" -- header-only
 	set_location()

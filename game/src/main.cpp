@@ -1,3 +1,5 @@
+#include "cmd_line.h"
+
 #include "game/game.h"
 
 #include "events/events.h"
@@ -28,8 +30,10 @@ bool EscapeKeyHitEvent(sf::Event e)
 
 int WinMain()
 {
+	auto commandLine = ParseCommandLine();
+
 	// TODO: Move this to somewhere else (like the command line??)
-	HeartSetRoot("{%cwd}\\..\\data\\");
+	HeartSetRoot(commandLine["dataroot"].as<std::string>().c_str());
 	ReflectSerializedData();
 
 	Renderer& r = Renderer::Get();
@@ -49,7 +53,10 @@ int WinMain()
 
 	constexpr uint64_t DESIRED_FRAME_TIME = 16667;
 
-	while (!s_shutdown)
+	uint64_t frameLimit = uint64_t(commandLine["framecount"].as<int>());
+	uint64_t frameNumber = 0;
+
+	while (!s_shutdown && frameNumber < frameLimit)
 	{
 		e.Process();
 
@@ -59,6 +66,8 @@ int WinMain()
 			deltaClock.restart();
 			TweenManager::Tick(elapsed.asMilliseconds());
 			RunGameTick(elapsed.asMicroseconds() / float(1000000.0f));
+
+			++frameNumber;
 		}
 
 		r.BeginFrame();
@@ -67,6 +76,7 @@ int WinMain()
 	}
 
 	ShutdownGame();
+	sf::err() << "Succesfully ran " << frameNumber << " frames\n";
 
 	e.Dispose();
 	r.Dispose();

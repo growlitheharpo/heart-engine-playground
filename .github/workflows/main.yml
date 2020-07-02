@@ -38,6 +38,7 @@ jobs:
         git submodule update --init external/sfml
         git submodule update --init external/smhasher
         git submodule update --init external/tweeny
+        git submodule update --init external/cxxopts
 
     - name: Add nuget to PATH
       uses: nuget/setup-nuget@v1
