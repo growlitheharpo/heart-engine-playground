@@ -17,23 +17,23 @@ namespace UI
 	class Widget
 	{
 	private:
-		TransformUI transform_ = {};
-		hrt::weak_ptr<Widget> parent_ = {};
+		TransformUI m_transform = {};
+		hrt::weak_ptr<Widget> m_parent = {};
 
 	public:
 		void SetParent(hrt::shared_ptr<Widget> parent)
 		{
-			parent_ = parent;
+			m_parent = parent;
 		}
 
 		inline hrt::shared_ptr<Widget> GetParent() const
 		{
-			return parent_.lock();
+			return m_parent.lock();
 		}
 
 		inline sf::Vector2f GetLocalPosition() const
 		{
-			return transform_.position;
+			return m_transform.position;
 		}
 
 		inline sf::Vector2f GetAbsolutePosition() const
@@ -62,14 +62,14 @@ namespace UI
 
 		inline void SetPositionX(float x)
 		{
-			transform_.position.x = x;
-			transform_.dirty = true;
+			m_transform.position.x = x;
+			m_transform.dirty = true;
 		}
 
 		inline void SetPositionY(float y)
 		{
-			transform_.position.y = y;
-			transform_.dirty = true;
+			m_transform.position.y = y;
+			m_transform.dirty = true;
 		}
 
 		virtual void Initialize() = 0;

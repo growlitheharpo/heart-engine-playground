@@ -181,11 +181,13 @@ namespace hrt
 		}
 
 	public:
-		vector() noexcept : capacity_(0), size_(0)
+		vector() noexcept :
+			capacity_(0), size_(0)
 		{
 		}
 
-		explicit vector(size_type initial_capacity) : capacity_(0), size_(0), data_begin_(nullptr)
+		explicit vector(size_type initial_capacity) :
+			capacity_(0), size_(0), data_begin_(nullptr)
 		{
 			reserve(initial_capacity);
 		}
@@ -196,14 +198,16 @@ namespace hrt
 			resize(initial_size, initial_value);
 		}
 
-		vector(const std::initializer_list<value_type>& v) : capacity_(0), size_(0), data_begin_(nullptr)
+		vector(const std::initializer_list<value_type>& v) :
+			capacity_(0), size_(0), data_begin_(nullptr)
 		{
 			reserve(v.size());
 			for (auto& val : v)
 				emplace_back(val);
 		}
 
-		vector(const vector& other) : capacity_(0), size_(0), data_begin_(nullptr)
+		vector(const vector& other) :
+			capacity_(0), size_(0), data_begin_(nullptr)
 		{
 			reserve(other.size());
 			for (auto& val : other)
@@ -217,7 +221,8 @@ namespace hrt
 			return *this;
 		}
 
-		vector(vector&& other) : capacity_(0), size_(0), data_begin_(nullptr)
+		vector(vector&& other) :
+			capacity_(0), size_(0), data_begin_(nullptr)
 		{
 			swap(other);
 		}

@@ -18,8 +18,11 @@ private:
 	bool dismissed_ = false;
 
 public:
-	HeartScopeGuard(F&& f) : func_(f) {}
-	
+	HeartScopeGuard(F&& f) :
+		func_(f)
+	{
+	}
+
 	~HeartScopeGuard()
 	{
 		if (!dismissed_)

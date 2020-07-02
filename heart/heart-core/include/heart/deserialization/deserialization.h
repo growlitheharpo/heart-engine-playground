@@ -7,8 +7,8 @@
 
 #include <entt/core/hashed_string.hpp>
 #include <entt/meta/factory.hpp>
-#include <entt/meta/resolve.hpp>
 #include <entt/meta/meta.hpp>
+#include <entt/meta/resolve.hpp>
 
 #include <rapidjson/document.h>
 
@@ -164,8 +164,7 @@ namespace heart_priv
 					}
 					else
 					{
-						HEART_ASSERT(
-							false, "Type inside of array was not an object and did not have \"self\" reflected as data! You must provide one or the other!");
+						HEART_ASSERT(false, "Type inside of array was not an object and did not have \"self\" reflected as data! You must provide one or the other!");
 					}
 				}
 			}

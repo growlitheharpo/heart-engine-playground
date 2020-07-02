@@ -15,11 +15,11 @@ using TileTag = entt::tag<"TileTag"_hs>;
 class TileManager
 {
 private:
-	hrt::vector<TileSpritesheet> spritesheets_;
-	hrt::unordered_map<uint32_t, hrt::pair<size_t, size_t>> spritemap_;
+	hrt::vector<TileSpritesheet> m_spritesheets;
+	hrt::unordered_map<uint32_t, hrt::pair<size_t, size_t>> m_spritemap;
 
 #ifdef _DEBUG
-	entt::entity selected_tile_ = entt::null;
+	entt::entity m_selectedTile = entt::null;
 #endif
 
 	void PlaceTile(uint32_t tileKey, float x, float y);

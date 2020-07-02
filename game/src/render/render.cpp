@@ -46,24 +46,24 @@ static void sDrawMenuPanel()
 
 Renderer::~Renderer()
 {
-	if (window_ != nullptr)
+	if (m_window != nullptr)
 		Dispose();
 }
 
 void Renderer::Initialize()
 {
-	window_ = new sf::RenderWindow(
+	m_window = new sf::RenderWindow(
 		sf::VideoMode(1280, 720), "SFML works!", sf::Style::Titlebar | sf::Style::Close | sf::Style::Resize);
-	HEART_ASSERT(window_ != nullptr, "Could not initialize window!");
+	HEART_ASSERT(m_window != nullptr, "Could not initialize window!");
 
-	ImGui::Game::Init(window_);
+	ImGui::Game::Init(m_window);
 }
 
 void Renderer::Dispose()
 {
-	window_->close();
-	delete window_;
-	window_ = nullptr;
+	m_window->close();
+	delete m_window;
+	m_window = nullptr;
 
 	ImGui::Game::Shutdown();
 }
@@ -71,7 +71,7 @@ void Renderer::Dispose()
 bool Renderer::HandleResize(const sf::Event& e)
 {
 	// sf::FloatRect visibleArea(0, 0, float(e.size.width), float(e.size.height));
-	// window_->setView(sf::View(visibleArea));
+	// m_window->setView(sf::View(visibleArea));
 	// return true;
 	return true;
 }
@@ -90,34 +90,34 @@ void Renderer::RegisterEvents()
 
 void Renderer::BeginFrame()
 {
-	window_->clear();
+	m_window->clear();
 	sDrawMenuPanel();
 }
 
 void Renderer::Draw(const sf::Drawable& d)
 {
 	auto state = sf::RenderStates();
-	window_->draw(d, state);
+	m_window->draw(d, state);
 }
 
 void Renderer::SubmitFrame()
 {
-	ImGui::Game::SubmitRender(window_);
-	window_->display();
+	ImGui::Game::SubmitRender(m_window);
+	m_window->display();
 }
 
 const sf::Window& Renderer::GetWindowRef() const
 {
-	HEART_ASSERT(window_ != nullptr, "Cannot get window reference before initiailization!");
-	return *window_;
+	HEART_ASSERT(m_window != nullptr, "Cannot get window reference before initiailization!");
+	return *m_window;
 }
 
 sf::Vector2f Renderer::GetScreenSize() const
 {
-	if (window_ == nullptr)
+	if (m_window == nullptr)
 		return {};
 
-	auto pixelSize = window_->getSize();
+	auto pixelSize = m_window->getSize();
 	return sf::Vector2f(float(pixelSize.x), float(pixelSize.y));
 }
 

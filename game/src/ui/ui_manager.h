@@ -26,16 +26,21 @@ namespace UI
 			return gbf;
 		}
 
-		SERIALIZE_MEMBER_METHOD() static bool CloseGame();
-		SERIALIZE_MEMBER_METHOD() static bool TogglePause();
-		SERIALIZE_MEMBER_METHOD() static bool ResetPlayer();
+		SERIALIZE_MEMBER_METHOD()
+		static bool CloseGame();
+
+		SERIALIZE_MEMBER_METHOD()
+		static bool TogglePause();
+
+		SERIALIZE_MEMBER_METHOD()
+		static bool ResetPlayer();
 	};
 
 	class UIManager
 	{
 	private:
-		hrt::vector<UI::Widget*> widgets_;
-		hrt::unordered_map<hrt::string, sf::Font*> loaded_fonts_;
+		hrt::vector<UI::Widget*> m_widgets;
+		hrt::unordered_map<hrt::string, sf::Font*> m_loadedFonts;
 
 	public:
 		void Initialize();

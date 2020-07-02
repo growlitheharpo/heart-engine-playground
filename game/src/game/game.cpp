@@ -27,9 +27,15 @@ enum InputKey
 
 static entt::registry s_registry;
 
-hrt::unordered_map<sf::Keyboard::Key, InputKey> s_keymap = {{sf::Keyboard::W, InputUp}, {sf::Keyboard::Up, InputUp},
-	{sf::Keyboard::A, InputLeft}, {sf::Keyboard::Left, InputLeft}, {sf::Keyboard::S, InputDown},
-	{sf::Keyboard::Down, InputDown}, {sf::Keyboard::D, InputRight}, {sf::Keyboard::Right, InputRight}};
+hrt::unordered_map<sf::Keyboard::Key, InputKey> s_keymap = {
+	{sf::Keyboard::W, InputUp},
+	{sf::Keyboard::Up, InputUp},
+	{sf::Keyboard::A, InputLeft},
+	{sf::Keyboard::Left, InputLeft},
+	{sf::Keyboard::S, InputDown},
+	{sf::Keyboard::Down, InputDown},
+	{sf::Keyboard::D, InputRight},
+	{sf::Keyboard::Right, InputRight}};
 
 static UI::UIManager s_uiManager;
 static TileManager s_tileManager;

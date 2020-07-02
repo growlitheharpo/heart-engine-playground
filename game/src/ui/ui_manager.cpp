@@ -33,21 +33,21 @@ void UI::UIManager::Initialize()
 
 void UI::UIManager::Cleanup()
 {
-	for (auto w : widgets_)
+	for (auto w : m_widgets)
 	{
 		w->Destroy();
 		delete w;
 	}
 
-	widgets_.clear();
+	m_widgets.clear();
 
-	for (auto& fPair : loaded_fonts_)
+	for (auto& fPair : m_loadedFonts)
 	{
 		delete fPair.second;
 		fPair.second = nullptr;
 	}
 
-	loaded_fonts_.clear();
+	m_loadedFonts.clear();
 }
 
 void UI::UIManager::LoadPanel(const char* panelName)
@@ -58,13 +58,13 @@ void UI::UIManager::LoadPanel(const char* panelName)
 	auto button = new UI::Button(data);
 	button->Initialize();
 
-	widgets_.push_back(button);
+	m_widgets.push_back(button);
 }
 
 sf::Font* UI::UIManager::FindOrLoadFont(const char* fontName)
 {
-	auto iter = loaded_fonts_.find(fontName);
-	if (iter != loaded_fonts_.end())
+	auto iter = m_loadedFonts.find(fontName);
+	if (iter != m_loadedFonts.end())
 	{
 		return iter->second;
 	}
@@ -75,13 +75,13 @@ sf::Font* UI::UIManager::FindOrLoadFont(const char* fontName)
 		return nullptr;
 
 	auto result = new sf::Font(tmp);
-	loaded_fonts_[fontName] = result;
+	m_loadedFonts[fontName] = result;
 	return result;
 }
 
 void UI::UIManager::Update()
 {
-	for (auto w : widgets_)
+	for (auto w : m_widgets)
 	{
 		w->Update();
 	}
@@ -89,7 +89,7 @@ void UI::UIManager::Update()
 
 void UI::UIManager::Render(Renderer& r)
 {
-	for (auto w : widgets_)
+	for (auto w : m_widgets)
 	{
 		w->Draw(r);
 	}

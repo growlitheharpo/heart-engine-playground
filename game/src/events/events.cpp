@@ -12,7 +12,7 @@ EventManager& EventManager::Get()
 
 EventManager::~EventManager()
 {
-	if (renderer_ != nullptr)
+	if (m_rendererRef != nullptr)
 		Dispose();
 }
 
@@ -61,12 +61,12 @@ bool EventManager::RemoveHandler(EventFuncHandle id)
 
 void EventManager::Initialize(Renderer* r)
 {
-	renderer_ = r;
+	m_rendererRef = r;
 }
 
 void EventManager::Dispose()
 {
-	renderer_ = nullptr;
+	m_rendererRef = nullptr;
 	event_handlers_.clear();
 }
 
@@ -77,7 +77,7 @@ void EventManager::ManuallyIssueEvent(sf::Event e)
 
 void EventManager::Process()
 {
-	auto window = renderer_->GetWindow();
+	auto window = m_rendererRef->GetWindow();
 
 	sf::Event e;
 	while (window->pollEvent(e))

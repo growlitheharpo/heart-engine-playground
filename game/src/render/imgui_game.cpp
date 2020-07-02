@@ -11,9 +11,9 @@
 #include <SFML/Window/Event.hpp>
 
 #if IMGUI_ENABLED
-static bool s_imgui_active = false;
-static bool s_was_ever_initialized = false;
-static bool s_awaiting_render = false;
+static bool s_imguiActive = false;
+static bool s_wasEverInitialized = false;
+static bool s_awaitingRender = false;
 #endif
 
 namespace ImGui
@@ -23,10 +23,10 @@ namespace ImGui
 		void Init(sf::RenderWindow* i)
 		{
 #if IMGUI_ENABLED
-			if (i == nullptr || s_was_ever_initialized)
+			if (i == nullptr || s_wasEverInitialized)
 				return;
 
-			s_was_ever_initialized = true;
+			s_wasEverInitialized = true;
 			ImGui::SFML::Init(*i);
 
 			auto fontData = HeartUtilLoadExistingFile("fonts/" FONT_ICON_FILE_NAME_KI);
@@ -51,7 +51,7 @@ namespace ImGui
 		void ProcessEvent(const sf::Event& e)
 		{
 #if IMGUI_ENABLED
-			if (!IsActive() || !s_was_ever_initialized)
+			if (!IsActive() || !s_wasEverInitialized)
 				return;
 
 			ImGui::SFML::ProcessEvent(e);
@@ -61,33 +61,33 @@ namespace ImGui
 		void Tick(sf::RenderWindow* i)
 		{
 #if IMGUI_ENABLED
-			if (!IsActive() || !s_was_ever_initialized || i == nullptr)
+			if (!IsActive() || !s_wasEverInitialized || i == nullptr)
 				return;
 
-			if (s_awaiting_render)
+			if (s_awaitingRender)
 				ImGui::EndFrame();
 
 			static sf::Clock imGuiClock;
 			ImGui::SFML::Update(*i, imGuiClock.restart());
-			s_awaiting_render = true;
+			s_awaitingRender = true;
 #endif
 		}
 
 		void SubmitRender(sf::RenderWindow* i)
 		{
 #if IMGUI_ENABLED
-			if (!IsActive() || !s_was_ever_initialized || i == nullptr)
+			if (!IsActive() || !s_wasEverInitialized || i == nullptr)
 				return;
 
 			ImGui::SFML::Render(*i);
-			s_awaiting_render = false;
+			s_awaitingRender = false;
 #endif
 		}
 
 		void Shutdown()
 		{
 #if IMGUI_ENABLED
-			if (!s_was_ever_initialized)
+			if (!s_wasEverInitialized)
 				return;
 
 			ImGui::SFML::Shutdown();
@@ -97,7 +97,7 @@ namespace ImGui
 		bool IsActive()
 		{
 #if IMGUI_ENABLED
-			return s_imgui_active;
+			return s_imguiActive;
 #else
 			return false;
 #endif
@@ -109,7 +109,7 @@ namespace ImGui
 			if (e.key.code != sf::Keyboard::F3)
 				return false;
 
-			s_imgui_active = !s_imgui_active;
+			s_imguiActive = !s_imguiActive;
 			return true;
 		}
 #endif

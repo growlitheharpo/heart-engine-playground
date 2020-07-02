@@ -37,11 +37,13 @@ namespace hrt
 		pointer data_ptr_;
 
 	public:
-		iterator() : data_ptr_(nullptr)
+		iterator() :
+			data_ptr_(nullptr)
 		{
 		}
 
-		iterator(pointer l) : data_ptr_(l)
+		iterator(pointer l) :
+			data_ptr_(l)
 		{
 		}
 
@@ -106,22 +108,26 @@ namespace hrt
 		const_pointer data_ptr_;
 
 	public:
-		const_iterator() : data_ptr_(nullptr)
+		const_iterator() :
+			data_ptr_(nullptr)
 		{
 		}
 
-		const_iterator(const_pointer l) : data_ptr_(l)
+		const_iterator(const_pointer l) :
+			data_ptr_(l)
 		{
 		}
 
 		USE_DEFAULT_COPY_SEMANTICS(const_iterator);
 		USE_DEFAULT_MOVE_SEMANTICS(const_iterator);
 
-		const_iterator(const base_iterator& o) noexcept : data_ptr_(o.data_ptr_)
+		const_iterator(const base_iterator& o) noexcept :
+			data_ptr_(o.data_ptr_)
 		{
 		}
 
-		const_iterator(base_iterator&& o) noexcept : data_ptr_(o.data_ptr_)
+		const_iterator(base_iterator&& o) noexcept :
+			data_ptr_(o.data_ptr_)
 		{
 		}
 
@@ -201,11 +207,13 @@ namespace hrt
 		iterator data_ptr_;
 
 	public:
-		reverse_iterator() : data_ptr_(nullptr)
+		reverse_iterator() :
+			data_ptr_(nullptr)
 		{
 		}
 
-		reverse_iterator(pointer d) : data_ptr_(d)
+		reverse_iterator(pointer d) :
+			data_ptr_(d)
 		{
 		}
 

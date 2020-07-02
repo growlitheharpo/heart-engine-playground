@@ -21,15 +21,16 @@ namespace UI
 		};
 
 	private:
-		EventManager::EventFuncHandle click_event_handle_;
-		ButtonData data_;
+		EventManager::EventFuncHandle m_clickEventHandle;
+		ButtonData m_data;
 
 		bool OnClick(sf::Event e);
 
 		sf::IntRect GetRect() const;
 
 	public:
-		Button(ButtonData d) : data_(d)
+		Button(ButtonData d) :
+			m_data(d)
 		{
 		}
 

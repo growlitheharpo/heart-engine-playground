@@ -1,7 +1,7 @@
 #pragma once
 
-#include <entt/fwd.hpp>
 #include <entt/core/type_traits.hpp>
+#include <entt/fwd.hpp>
 
 #include <heart/codegen/codegen.h>
 
@@ -9,7 +9,9 @@ SERIALIZE_STRUCT()
 struct PlayerValues
 {
 	float speed = 1.0f;
-	SERIALIZE_AS_REF() SerializedDataPath texture;
+
+	SERIALIZE_AS_REF()
+	SerializedDataPath texture;
 };
 
 class Renderer;
@@ -30,7 +32,7 @@ struct multi_component_return_type
 {
 	using type = T&;
 
-	static T& emplace_wrapper(entt::entity e)
+	static type emplace_wrapper(entt::entity e)
 	{
 		return GetRegistry().emplace<T>(e);
 	}

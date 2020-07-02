@@ -12,7 +12,7 @@
 
 #if IMGUI_ENABLED
 
-#include <imgui.h>
 #include <imgui-SFML.h>
+#include <imgui.h>
 
 #endif

@@ -4,10 +4,10 @@
 
 sf::Transform Camera::GetTransform() const
 {
-	sf::Transform tf(1.0f, 0.0f, -position_.x,
-		0.0f, -1.0f, position_.y + Renderer::Get().GetScreenSize().y,
+	return sf::Transform(
+		1.0f, 0.0f, -m_position.x,
+		0.0f, -1.0f, m_position.y + Renderer::Get().GetScreenSize().y,
 		0.0f, 0.0f, 1.0f);
-	return tf;
 }
 
 sf::Vector2f Camera::ScreenToWorldPosition(sf::Vector2f screenPosition)

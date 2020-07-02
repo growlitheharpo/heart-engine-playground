@@ -5,18 +5,18 @@
 class Camera
 {
 private:
-	sf::Vector2f position_;
+	sf::Vector2f m_position;
 
 public:
 	void SetPosition(sf::Vector2f p)
 	{
-		position_.x = p.x;
-		position_.y = p.y;
+		m_position.x = p.x;
+		m_position.y = p.y;
 	}
 
 	sf::Vector2f GetPosition() const
 	{
-		return position_;
+		return m_position;
 	}
 
 	sf::Transform GetTransform() const;

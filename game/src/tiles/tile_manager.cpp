@@ -25,14 +25,14 @@ constexpr uint32_t TileSeed = 0x288af4b2ULL;
 
 void TileManager::PlaceTile(uint32_t tileKey, float x, float y)
 {
-	auto iter = spritemap_.find(tileKey);
-	if (iter == spritemap_.end())
+	auto iter = m_spritemap.find(tileKey);
+	if (iter == m_spritemap.end())
 		return;
 
 	size_t sheetIndex = iter->second.first;
 	size_t tileIndex = iter->second.second;
 
-	auto& sheet = spritesheets_[sheetIndex];
+	auto& sheet = m_spritesheets[sheetIndex];
 	auto& tile = sheet.spritelist[tileIndex];
 
 	auto newTile = create_multi_component<TransformComponent, DrawableComponent, TileTag>();
@@ -53,10 +53,10 @@ void TileManager::Initialize(const char* listPath)
 
 	for (auto& filename : tilesets.filelist)
 	{
-		auto& entry = spritesheets_.emplace_back();
+		auto& entry = m_spritesheets.emplace_back();
 		if (!HeartDeserializeObjectFromFile(entry, filename.c_str()))
 		{
-			spritesheets_.pop_back();
+			m_spritesheets.pop_back();
 			continue;
 		}
 
@@ -65,20 +65,19 @@ void TileManager::Initialize(const char* listPath)
 		auto extension = strrchr(texturePath, '.');
 		if (extension == nullptr)
 		{
-			spritesheets_.pop_back();
+			m_spritesheets.pop_back();
 			continue;
 		}
 
 		strcpy_s(extension, texturePath + sizeof(texturePath) - extension, ".png");
 		HEART_CHECK(RenderUtils::LoadTextureFromFile(entry.texture, texturePath));
 
-		std::sort(&*entry.spritelist.begin(), &*entry.spritelist.end(),
-			[](auto& lhs, auto& rhs) { return lhs.width * lhs.height < rhs.width * rhs.height; });
+		std::sort(&*entry.spritelist.begin(), &*entry.spritelist.end(), [](auto& lhs, auto& rhs) { return lhs.width * lhs.height < rhs.width * rhs.height; });
 	}
 
-	for (size_t i = 0; i < spritesheets_.size(); ++i)
+	for (size_t i = 0; i < m_spritesheets.size(); ++i)
 	{
-		auto& sheet = spritesheets_[i];
+		auto& sheet = m_spritesheets[i];
 
 		for (size_t j = 0; j < sheet.spritelist.size(); ++j)
 		{
@@ -89,8 +88,8 @@ void TileManager::Initialize(const char* listPath)
 
 			MurmurHash3_x86_32(hashedName.c_str(), int(hashedName.size()), TileSeed, &entry.key);
 
-			HEART_ASSERT(spritemap_.find(entry.key) == spritemap_.end(), "HASH COLLISION IN TILE MANAGER!");
-			spritemap_[entry.key] = hrt::make_pair(i, j);
+			HEART_ASSERT(m_spritemap.find(entry.key) == m_spritemap.end(), "HASH COLLISION IN TILE MANAGER!");
+			m_spritemap[entry.key] = hrt::make_pair(i, j);
 		}
 	}
 }
@@ -117,13 +116,13 @@ void TileManager::Dispose()
 	auto& registry = GetRegistry();
 	registry.view<TileTag>().each([&registry](auto entity) { registry.destroy(entity); });
 
-	spritesheets_.clear();
+	m_spritesheets.clear();
 }
 
 void TileManager::Render(Renderer& r)
 {
 #if IMGUI_ENABLED
-	if (spritesheets_.size() == 0)
+	if (m_spritesheets.size() == 0)
 		return;
 
 	if (!ImGui::Game::IsActive() || !TileManagerImguiPanelActive)
@@ -135,9 +134,7 @@ void TileManager::Render(Renderer& r)
 		// drop target
 		ImGui::SetNextWindowPos(sf::Vector2f(0.0f, 0.0f));
 		ImGui::SetNextWindowSize(r.GetScreenSize());
-		if (ImGui::Begin("##DropTarget", nullptr,
-				ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove //
-					| ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar))
+		if (ImGui::Begin("##DropTarget", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar))
 		{
 			ImGui::Dummy(r.GetScreenSize());
 			if (ImGui::BeginDragDropTarget())
@@ -174,7 +171,7 @@ void TileManager::Render(Renderer& r)
 			int prevSize = -1;
 
 			int id = 0;
-			for (auto& sheet : spritesheets_)
+			for (auto& sheet : m_spritesheets)
 			{
 				for (auto& entry : sheet.spritelist)
 				{
@@ -259,7 +256,7 @@ void TileManager::Render(Renderer& r)
 			int prevSize = -1;
 
 			int id = 0;
-			for (auto& sheet : spritesheets_)
+			for (auto& sheet : m_spritesheets)
 			{
 				for (auto& entry : sheet.spritelist)
 				{
@@ -280,7 +277,7 @@ void TileManager::Render(Renderer& r)
 					if (ImGui::ImageButton(sprite))
 					{
 						auto newTile = GetRegistry()->create<TileTag, TransformComponent, DrawableComponent>();
-						selected_tile_ = std::get<0>(newTile);
+						m_selectedTile = std::get<0>(newTile);
 
 						auto& pos = std::get<2>(newTile);
 						pos.position = {InitialPos, InitialPos};
@@ -298,15 +295,15 @@ void TileManager::Render(Renderer& r)
 		}
 	}
 
-	if (selected_tile_ != entt::null)
+	if (m_selectedTile != entt::null)
 	{
 		HEART_SCOPE_EXIT([]() { ImGui::End(); });
 		if (ImGui::Begin("Selected Sprite"))
 		{
 			if (ImGui::Button("Move Back"))
-				GetRegistry()->get<DrawableComponent>(selected_tile_).z -= 1.0f;
+				GetRegistry()->get<DrawableComponent>(m_selectedTile).z -= 1.0f;
 			if (ImGui::Button("Move Up"))
-				GetRegistry()->get<DrawableComponent>(selected_tile_).z += 1.0f;
+				GetRegistry()->get<DrawableComponent>(m_selectedTile).z += 1.0f;
 
 			// big tile footprint for iso buildings: 64x32
 			// little tiles have an x offset of 16 from their base
@@ -363,7 +360,7 @@ void TileManager::Render(Renderer& r)
 
 			ImGui::Text("X: %.0f Y: %.0f", xAdjust, yAdjust);
 
-			auto& transform = GetRegistry()->get<TransformComponent>(selected_tile_);
+			auto& transform = GetRegistry()->get<TransformComponent>(m_selectedTile);
 			transform.position.x = InitialPos + xAdjust;
 			transform.position.y = InitialPos + yAdjust;
 		}

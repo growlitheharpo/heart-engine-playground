@@ -23,7 +23,7 @@ namespace UI
 		};
 
 	private:
-		sf::Text text_;
+		sf::Text m_text;
 
 	public:
 		Text() = default;
@@ -35,17 +35,17 @@ namespace UI
 
 		void SetText(const char* text)
 		{
-			text_.setString(text);
+			m_text.setString(text);
 		}
 
 		void SetText(const wchar_t* text)
 		{
-			text_.setString(text);
+			m_text.setString(text);
 		}
 
 		string_utf8 GetTextUtf8() const
 		{
-			return text_.getString().toUtf8();
+			return m_text.getString().toUtf8();
 		}
 
 		// Inherited via Widget

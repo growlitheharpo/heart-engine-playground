@@ -24,7 +24,8 @@ struct TileSpritesheetEntry
 SERIALIZE_STRUCT()
 struct TileSpritesheet
 {
-	SERIALIZE_AS_REF() hrt::vector<TileSpritesheetEntry> spritelist;
+	SERIALIZE_AS_REF()
+	hrt::vector<TileSpritesheetEntry> spritelist;
 
 	// Not populated via serialization, must be loaded
 	HIDE_FROM_CODEGEN(sf::Texture texture);
@@ -33,5 +34,6 @@ struct TileSpritesheet
 SERIALIZE_STRUCT()
 struct TileSpritesheetList
 {
-	SERIALIZE_AS_REF() hrt::vector<SerializedDataPath> filelist;
+	SERIALIZE_AS_REF()
+	hrt::vector<SerializedDataPath> filelist;
 };

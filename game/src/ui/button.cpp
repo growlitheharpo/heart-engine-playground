@@ -5,8 +5,8 @@
 
 #include <entt/core/hashed_string.hpp>
 #include <entt/meta/factory.hpp>
-#include <entt/meta/resolve.hpp>
 #include <entt/meta/meta.hpp>
+#include <entt/meta/resolve.hpp>
 
 static bool CheckBounds(sf::IntRect buttonRect)
 {
@@ -30,7 +30,7 @@ bool UI::Button::OnClick(sf::Event e)
 	if (!metaType)
 		return false;
 
-	auto func = metaType.func(entt::hashed_string::value(data_.action.Get()));
+	auto func = metaType.func(entt::hashed_string::value(m_data.action.Get()));
 	if (!func)
 		return false;
 
@@ -43,20 +43,20 @@ bool UI::Button::OnClick(sf::Event e)
 
 sf::IntRect UI::Button::GetRect() const
 {
-	return sf::IntRect(int(data_.offsetX), int(data_.offsetY), int(data_.sizeX), int(data_.sizeY));
+	return sf::IntRect(int(m_data.offsetX), int(m_data.offsetY), int(m_data.sizeX), int(m_data.sizeY));
 	return sf::IntRect();
 }
 
 void UI::Button::Initialize()
 {
 	auto click = EventManager::Get().CreateHandler(sf::Event::MouseButtonPressed);
-	click_event_handle_ = hrt::get<0>(click);
+	m_clickEventHandle = hrt::get<0>(click);
 	hrt::get<1>(click).connect<&UI::Button::OnClick>(*this);
 }
 
 void UI::Button::Destroy()
 {
-	EventManager::Get().RemoveHandler(click_event_handle_);
+	EventManager::Get().RemoveHandler(m_clickEventHandle);
 }
 
 void UI::Button::Update()
@@ -67,8 +67,8 @@ void UI::Button::Draw(Renderer& r) const
 {
 	sf::RectangleShape rs;
 
-	sf::Vector2f origin(data_.offsetX, data_.offsetY);
-	sf::Vector2f size(data_.sizeX, data_.sizeY);
+	sf::Vector2f origin(m_data.offsetX, m_data.offsetY);
+	sf::Vector2f size(m_data.sizeX, m_data.sizeY);
 
 	rs.setPosition(origin);
 	rs.setSize(size);

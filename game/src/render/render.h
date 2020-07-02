@@ -22,9 +22,9 @@ namespace sf
 class Renderer
 {
 private:
-	sf::RenderWindow* window_ = nullptr;
-	sf::Clock clock_;
-	Camera camera_;
+	sf::RenderWindow* m_window = nullptr;
+	sf::Clock m_clock;
+	Camera m_camera;
 
 	bool HandleResize(const sf::Event& e);
 
@@ -55,14 +55,14 @@ public:
 
 	Camera& GetCameraRef()
 	{
-		return camera_;
+		return m_camera;
 	}
 
 private:
 	friend class EventManager;
 	sf::RenderWindow* GetWindow()
 	{
-		return window_;
+		return m_window;
 	}
 };
 

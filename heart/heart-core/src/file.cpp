@@ -11,7 +11,7 @@
 #include <WinBase.h>
 #include <fileapi.h>
 
-static wchar_t s_file_root[MAX_PATH];
+static wchar_t s_fileRoot[MAX_PATH];
 
 static const char* CwdToken = "{%cwd}";
 
@@ -24,12 +24,12 @@ void HeartSetRoot(const char* root)
 	if (cwdToken != nullptr)
 	{
 		HEART_ASSERT(cwdToken == root, "Cannot insert CWD in the middle of the root path!");
-		size_t written = GetCurrentDirectory(MAX_PATH, s_file_root);
-		swprintf_s(s_file_root + written, MAX_PATH - written, L"%S", root + strlen(CwdToken));
+		size_t written = GetCurrentDirectory(MAX_PATH, s_fileRoot);
+		swprintf_s(s_fileRoot + written, MAX_PATH - written, L"%S", root + strlen(CwdToken));
 	}
 	else
 	{
-		swprintf_s(s_file_root, L"%S", root);
+		swprintf_s(s_fileRoot, L"%S", root);
 	}
 }
 
@@ -38,7 +38,7 @@ bool HeartOpenFile(HeartFile& outFile, const char* path, HeartOpenFileMode mode)
 	outFile = {};
 
 	wchar_t filePath[MAX_PATH];
-	int written = swprintf_s(filePath, L"%s", s_file_root);
+	int written = swprintf_s(filePath, L"%s", s_fileRoot);
 	if (written < 0)
 		return false;
 

@@ -1,4 +1,4 @@
-## heart-engine-playground | ![CI](https://github.com/growlitheharpo/heart-engine-playground/workflows/CI/badge.svg)
+## heart-engine-playground | [![CI](https://github.com/growlitheharpo/heart-engine-playground/workflows/CI/badge.svg)](https://github.com/growlitheharpo/heart-engine-playground/actions?query=workflow%3ACI)
 
 This is a tech playground for a "game engine" called Heart.
 

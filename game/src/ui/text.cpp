@@ -12,10 +12,10 @@ UI::Text::Text(TextData data)
 	if (font == nullptr)
 		return;
 
-	text_.setFont(*font);
-	text_.setPosition(data.offsetX, data.offsetY);
-	text_.setFillColor(sf::Color(data.r, data.g, data.b, data.a));
-	text_.setCharacterSize(data.fontSize);
+	m_text.setFont(*font);
+	m_text.setPosition(data.offsetX, data.offsetY);
+	m_text.setFillColor(sf::Color(data.r, data.g, data.b, data.a));
+	m_text.setCharacterSize(data.fontSize);
 
 	if (strlen(data.initialValue.c_str()) > 0)
 		SetText(data.initialValue.c_str());
@@ -35,5 +35,5 @@ void UI::Text::Update()
 
 void UI::Text::Draw(Renderer& r) const
 {
-	r.Draw(text_);
+	r.Draw(m_text);
 }

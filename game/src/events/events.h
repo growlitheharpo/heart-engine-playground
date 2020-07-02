@@ -3,8 +3,8 @@
 #include <heart/copy_move_semantics.h>
 
 #include <heart/stl/unordered_map.h>
-#include <heart/stl/vector.h>
 #include <heart/stl/utility.h>
+#include <heart/stl/vector.h>
 
 #include <entt/signal/delegate.hpp>
 
@@ -19,16 +19,17 @@ public:
 
 	struct EventFuncHandle
 	{
-		friend class EventManager;
 	private:
 		sf::Event::EventType type = sf::Event::Count;
 		uint32_t idx = INT32_MAX;
 
-		EventFuncHandle(sf::Event::EventType e, uint32_t i) : type(e), idx(i)
+		EventFuncHandle(sf::Event::EventType e, uint32_t i) :
+			type(e), idx(i)
 		{
 		}
 
 	public:
+		friend class EventManager;
 		EventFuncHandle() = default;
 
 		USE_DEFAULT_COPY_SEMANTICS(EventFuncHandle);
@@ -37,7 +38,7 @@ public:
 
 private:
 	EventManager() = default;
-	Renderer* renderer_ = nullptr;
+	Renderer* m_rendererRef = nullptr;
 
 public:
 	~EventManager();
