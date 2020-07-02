@@ -4,6 +4,18 @@ on: [push, pull_request]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          clean: 'true'
+          submodules: 'false'
+      - uses: DoozyX/clang-format-lint-action@v0.5
+        with:
+          source: '.'
+          exclude: './external'
+
   build-win:
     runs-on: windows-latest
     strategy:
