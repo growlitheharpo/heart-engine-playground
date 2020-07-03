@@ -2,6 +2,8 @@
 
 #include <heart/allocator.h>
 
+#include <heart/stl/unique_ptr.h>
+
 namespace Memory
 {
 	enum class Pool
@@ -116,25 +118,22 @@ namespace Memory
 		ptr = nullptr;
 	}
 
-	/*
-	TODO: add hrt::unique_ptr and then re-add these
-
 	template <template <class> typename AllocT, typename T>
 	struct PoolDeleter
 	{
-		constexpr PoolDeleter() noexcept = default;
-
 		void operator()(T* ptr) const noexcept
 		{
 			Delete<AllocT, T>(ptr);
 		}
 	};
 
+	template <typename T, template <class> typename AllocT>
+	using unique_ptr_a = hrt::unique_ptr<T, PoolDeleter<AllocT, T>>;
+
 	template <template <class> typename AllocT, typename T, typename... Vs>
-	hrt::unique_ptr<T, PoolDeleter<AllocT, T>> MakeUnique(Vs&&... args)
+	unique_ptr_a<T, AllocT> MakeUnique(Vs&&... args)
 	{
 		T* p = New<AllocT, T>(hrt::forward<Vs>(args)...);
-		return p;
+		return hrt::unique_ptr<T, PoolDeleter<AllocT, T>>(p);
 	}
-	*/
 }
