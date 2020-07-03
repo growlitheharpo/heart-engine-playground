@@ -85,17 +85,17 @@ bool HeartOpenFile(HeartFile& outFile, const char* path, HeartOpenFileMode mode)
 	if (result == INVALID_HANDLE_VALUE)
 		return false;
 
-	outFile.native_handle_ = uintptr_t(result);
+	outFile.nativeHandle = uintptr_t(result);
 	return true;
 }
 
 bool HeartCloseFile(HeartFile& file)
 {
-	if (file.native_handle_ == 0)
+	if (file.nativeHandle == 0)
 		return true;
 
-	auto result = bool(CloseHandle(HANDLE(file.native_handle_)));
-	file.native_handle_ = 0;
+	auto result = bool(CloseHandle(HANDLE(file.nativeHandle)));
+	file.nativeHandle = 0;
 	return result;
 }
 
@@ -103,11 +103,11 @@ bool HeartGetFileSize(HeartFile& file, uint64_t& outSize)
 {
 	outSize = 0;
 
-	if (file.native_handle_ == 0)
+	if (file.nativeHandle == 0)
 		return false;
 
 	LARGE_INTEGER size = {};
-	BOOL result = GetFileSizeEx(HANDLE(file.native_handle_), &size);
+	BOOL result = GetFileSizeEx(HANDLE(file.nativeHandle), &size);
 	if (result == FALSE)
 		return false;
 
@@ -119,12 +119,12 @@ bool HeartGetFileOffset(HeartFile& file, uint64_t& outOffset)
 {
 	outOffset = 0;
 
-	if (file.native_handle_ == 0)
+	if (file.nativeHandle == 0)
 		return false;
 
 	LARGE_INTEGER inMove = {};
 	LARGE_INTEGER outMove = {};
-	BOOL result = SetFilePointerEx(HANDLE(file.native_handle_), inMove, &outMove, FILE_CURRENT);
+	BOOL result = SetFilePointerEx(HANDLE(file.nativeHandle), inMove, &outMove, FILE_CURRENT);
 	if (result == 0)
 		return false;
 
@@ -134,7 +134,7 @@ bool HeartGetFileOffset(HeartFile& file, uint64_t& outOffset)
 
 bool HeartSetFileOffset(HeartFile& file, uint64_t offset, uint64_t* newOffset, HeartSetOffsetMode mode)
 {
-	if (file.native_handle_ == 0)
+	if (file.nativeHandle == 0)
 		return false;
 
 	uint64_t localNewOffset;
@@ -154,7 +154,7 @@ bool HeartSetFileOffset(HeartFile& file, uint64_t offset, uint64_t* newOffset, H
 	case HeartSetOffsetMode::End: moveMode = FILE_END; break;
 	}
 
-	BOOL result = SetFilePointerEx(HANDLE(file.native_handle_), inMove, &outMove, moveMode);
+	BOOL result = SetFilePointerEx(HANDLE(file.nativeHandle), inMove, &outMove, moveMode);
 	if (result == FALSE)
 		return false;
 
@@ -164,7 +164,7 @@ bool HeartSetFileOffset(HeartFile& file, uint64_t offset, uint64_t* newOffset, H
 
 bool HeartReadFile(HeartFile& file, byte_t* buffer, size_t size, size_t bytesToRead, size_t* bytesRead)
 {
-	if (file.native_handle_ == 0)
+	if (file.nativeHandle == 0)
 		return false;
 
 	if (!HEART_CHECK(size >= bytesToRead, "Trying to read into a buffer that's not large enough!"))
@@ -178,7 +178,7 @@ bool HeartReadFile(HeartFile& file, byte_t* buffer, size_t size, size_t bytesToR
 		bytesRead = &localBytesRead;
 
 	DWORD dwBytesRead;
-	BOOL result = ReadFile(HANDLE(file.native_handle_), buffer, DWORD(bytesToRead), &dwBytesRead, NULL);
+	BOOL result = ReadFile(HANDLE(file.nativeHandle), buffer, DWORD(bytesToRead), &dwBytesRead, NULL);
 	if (result == FALSE)
 		return false;
 
@@ -188,7 +188,7 @@ bool HeartReadFile(HeartFile& file, byte_t* buffer, size_t size, size_t bytesToR
 
 bool HeartWriteFile(HeartFile& file, byte_t* buffer, size_t bytesToWrite, size_t* bytesWritten)
 {
-	if (file.native_handle_ == 0)
+	if (file.nativeHandle == 0)
 		return false;
 
 	if (!HEART_CHECK(bytesToWrite < MAXDWORD, "Cannot write more than MAXDWORD at once!", MAXDWORD, bytesToWrite))
@@ -199,7 +199,7 @@ bool HeartWriteFile(HeartFile& file, byte_t* buffer, size_t bytesToWrite, size_t
 		bytesWritten = &localBytesWritten;
 
 	DWORD dwBytesWritten;
-	BOOL result = WriteFile(HANDLE(file.native_handle_), buffer, DWORD(bytesToWrite), &dwBytesWritten, NULL);
+	BOOL result = WriteFile(HANDLE(file.nativeHandle), buffer, DWORD(bytesToWrite), &dwBytesWritten, NULL);
 	if (result == FALSE)
 		return false;
 

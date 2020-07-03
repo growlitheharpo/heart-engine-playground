@@ -52,7 +52,7 @@ bool HeartWriteFile(HeartFile& file, byte_t (&buffer)[N], size_t* bytesWritten =
 
 struct HeartFile
 {
-	uintptr_t native_handle_ = 0;
+	uintptr_t nativeHandle = 0;
 
 	~HeartFile()
 	{
