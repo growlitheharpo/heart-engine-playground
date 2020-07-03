@@ -551,6 +551,6 @@ namespace hrt
 		}
 	};
 
-	template <typename t, template<class> typename alloc>
+	template <typename t, template <class> typename alloc>
 	using vector_a = vector<t, alloc<t>>;
 }

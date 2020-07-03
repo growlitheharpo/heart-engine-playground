@@ -1,7 +1,7 @@
 #include "cmd_line.h"
 
-#include <heart/stl/vector.h>
 #include <heart/stl/string.h>
+#include <heart/stl/vector.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
