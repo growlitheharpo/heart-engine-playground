@@ -123,7 +123,7 @@ void Memory::Init()
 			if (*reentrant)
 				return free(p);
 			else
-				return Free(p);
+				return Free(p, Pool::Debug, Period::Short);
 		},
 		&s_processingImgui);
 #endif
