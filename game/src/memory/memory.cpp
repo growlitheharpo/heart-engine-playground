@@ -1,6 +1,7 @@
 #include "memory.h"
 
 #include <heart/config.h>
+#include <heart/debug/assert.h>
 
 #if !HEART_STRICT_PERF
 #include "render/imgui_game.h"
@@ -14,7 +15,7 @@
 #include <unordered_map>
 
 template <typename T>
-struct debug_allocator : Memory::BaseAllocator<T>
+struct debug_allocator : HeartBaseAllocator<T>
 {
 	debug_allocator() = default;
 	USE_DEFAULT_COPY_SEMANTICS(debug_allocator);
@@ -46,7 +47,7 @@ static auto& GetMap()
 {
 	using namespace hrt;
 	typedef std::tuple<size_t, Memory::Pool, Memory::Period> debug_info_tuple;
-	static unordered_map<void*, debug_info_tuple, std::hash<void*>, std::equal_to<void*>, debug_allocator<pair<const void*, debug_info_tuple>>> s_trackerMap;
+	static hrt::unordered_map_a<void*, debug_info_tuple, debug_allocator> s_trackerMap;
 	return s_trackerMap;
 }
 
@@ -68,7 +69,8 @@ void* operator new(decltype(sizeof(0)) n) noexcept(false)
 
 void operator delete(void* p) noexcept
 {
-	return Memory::Free(p);
+	// Assume if it's coming from global delete, it was allocated using global new.
+	return Memory::Free(p, Memory::Pool::Unknown, Memory::Period::Long);
 }
 
 void* Memory::Alloc(size_t size, Pool p, Period l)
@@ -86,21 +88,24 @@ void* Memory::Alloc(size_t size, Pool p, Period l)
 	return r;
 }
 
-void Memory::Free(void* p)
+void Memory::Free(void* ptr, Pool p, Period l)
 {
 #if !HEART_STRICT_PERF
 	{
 		std::scoped_lock lock {GetMutex()};
-		if (auto iter = GetMap().find(p); iter != GetMap().end())
+		if (auto iter = GetMap().find(ptr); iter != GetMap().end())
 		{
 			auto [size, pool, period] = iter->second;
+			HEART_ASSERT(p == pool, "Ptr was in the wrong pool!");
+			HEART_ASSERT(l == period, "Ptr had the wrong period!");
+
 			s_usageTracker[int(pool)][int(period)] -= size;
 			GetMap().erase(iter);
 		}
 	}
 #endif
 
-	free(p);
+	free(ptr);
 }
 
 void Memory::Init()
@@ -148,6 +153,7 @@ void Memory::DebugDisplay()
 	static_assert(_countof(PeriodLabels) == size_t(Period::Count));
 
 	const char* PoolLabels[] = {
+		"Events",
 		"UI",
 		"Debug",
 		"Generic",

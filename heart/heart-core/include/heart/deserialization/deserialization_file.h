@@ -6,10 +6,10 @@
 
 #include <heart/debug/assert.h>
 
-template <typename OutType, typename Allocator = HeartDefaultAllocator>
+template <typename OutType, typename ByteAllocator = HeartDefaultByteAllocator>
 bool HeartDeserializeObjectFromFile(OutType& outObject, const char* filename)
 {
-	Allocator alloc;
+	ByteAllocator alloc;
 
 	HeartFile file;
 	uint64_t fileSize;
@@ -21,7 +21,7 @@ bool HeartDeserializeObjectFromFile(OutType& outObject, const char* filename)
 
 	size_t bufferSize = size_t(fileSize) + 1;
 
-	uint8_t* filebuffer = (uint8_t*)alloc.allocate(bufferSize);
+	uint8_t* filebuffer = alloc.allocate(bufferSize);
 	filebuffer[bufferSize - 1] = 0;
 
 	if (!HeartReadFile(file, filebuffer, bufferSize, fileSize))

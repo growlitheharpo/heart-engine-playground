@@ -550,4 +550,7 @@ namespace hrt
 			return iterator(loc);
 		}
 	};
+
+	template <typename t, template<class> typename alloc>
+	using vector_a = vector<t, alloc<t>>;
 }

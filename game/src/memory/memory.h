@@ -1,45 +1,12 @@
 #pragma once
 
-#include <heart/copy_move_semantics.h>
-#include <heart/stl/util/canonical_typedefs.h>
-#include <heart/types.h>
+#include <heart/allocator.h>
 
 namespace Memory
 {
-	template <typename V>
-	struct BaseAllocator
-	{
-		DECLARE_STANDARD_TYPEDEFS(V);
-		typedef size_t size_type;
-		typedef ptrdiff_t difference_type;
-
-		BaseAllocator() = default;
-		USE_DEFAULT_COPY_SEMANTICS(BaseAllocator);
-		virtual ~BaseAllocator() = default;
-
-		pointer address(reference r)
-		{
-			return &r;
-		}
-
-		const_pointer address(const_reference r)
-		{
-			return &r;
-		}
-
-		void construct(pointer p, const_reference val)
-		{
-			new ((T*)p) T(val);
-		}
-
-		void destroy(pointer p)
-		{
-			p->~T();
-		}
-	};
-
 	enum class Pool
 	{
+		Events,
 		UI,
 		Debug,
 		Generic,
@@ -58,27 +25,49 @@ namespace Memory
 	};
 
 	void* Alloc(size_t size, Pool p, Period l);
-	void Free(void* p);
 
-	template <typename V, Pool p, Period t>
-	struct BasePoolAllocator : public BaseAllocator<V>
+	void Free(void* ptr, Pool p, Period l);
+
+	template <Pool pool, Period period>
+	void* Alloc(size_t size)
 	{
+		return Alloc(size, pool, period);
+	}
+
+	template <Pool pool, Period period>
+	void Free(void* ptr)
+	{
+		Free(ptr, pool, period);
+	}
+
+	template <typename V, Pool pool, Period period>
+	struct BasePoolAllocator : public HeartBaseAllocator<V>
+	{
+		static constexpr Pool TargetPool = pool;
+		static constexpr Period TargetPeriod = period;
+
 		BasePoolAllocator() = default;
 		USE_DEFAULT_COPY_SEMANTICS(BasePoolAllocator);
 
 		template <typename U>
-		BasePoolAllocator(const BasePoolAllocator<U, p, t>&)
+		BasePoolAllocator(const BasePoolAllocator<U, TargetPool, TargetPeriod>&)
 		{
 		}
+
+		template <typename U>
+		struct rebind
+		{
+			using other = BasePoolAllocator<U, TargetPool, TargetPeriod>;
+		};
 
 		pointer allocate(size_type count, void* hint = nullptr)
 		{
-			return pointer(Alloc(count * sizeof(V), p, t));
+			return pointer(Alloc<TargetPool, TargetPeriod>(count * sizeof(V)));
 		}
 
-		void deallocate(pointer p, size_type count = 0)
+		void deallocate(pointer ptr, size_type count = 0)
 		{
-			Free(p);
+			Free<TargetPool, TargetPeriod>(ptr);
 		}
 	};
 
@@ -90,6 +79,7 @@ namespace Memory
 	template <typename V>                                                   \
 	using P##FrameAllocator = BasePoolAllocator<V, Pool::P, Period::Frame>;
 
+	TYPEDEF_ALLOCATOR(Events);
 	TYPEDEF_ALLOCATOR(UI);
 	TYPEDEF_ALLOCATOR(Debug);
 	TYPEDEF_ALLOCATOR(Generic);
@@ -103,4 +93,48 @@ namespace Memory
 	constexpr size_t Kilo = 1024;
 	constexpr size_t Meg = Kilo * Kilo;
 	constexpr size_t Gig = Meg * Kilo;
+
+	template <template <class> typename AllocT, typename T, typename... Vs>
+	inline static T* New(Vs&&... args)
+	{
+		using A = AllocT<T>;
+		USING_STANDARD_TYPEDEFS(A);
+
+		A alloc;
+		pointer p = alloc.allocate(1);
+		::new (typename A::void_pointer(p)) value_type(std::forward<Vs>(args)...);
+
+		return p;
+	}
+
+	template <template <class> typename AllocT, typename T>
+	inline static void Delete(T*& ptr)
+	{
+		using A = AllocT<T>;
+		Free<A::TargetPool, A::TargetPeriod>(ptr);
+
+		ptr = nullptr;
+	}
+
+	/*
+	TODO: add hrt::unique_ptr and then re-add these
+
+	template <template <class> typename AllocT, typename T>
+	struct PoolDeleter
+	{
+		constexpr PoolDeleter() noexcept = default;
+
+		void operator()(T* ptr) const noexcept
+		{
+			Delete<AllocT, T>(ptr);
+		}
+	};
+
+	template <template <class> typename AllocT, typename T, typename... Vs>
+	hrt::unique_ptr<T, PoolDeleter<AllocT, T>> MakeUnique(Vs&&... args)
+	{
+		T* p = New<AllocT, T>(hrt::forward<Vs>(args)...);
+		return p;
+	}
+	*/
 }
