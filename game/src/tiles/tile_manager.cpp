@@ -49,12 +49,12 @@ void TileManager::PlaceTile(uint32_t tileKey, float x, float y)
 void TileManager::Initialize(const char* listPath)
 {
 	TileSpritesheetList tilesets;
-	HeartDeserializeObjectFromFile(tilesets, "json/tileset_list.json");
+	HeartDeserializeObjectFromFile<TileSpritesheetList, Memory::UIShortAllocator<uint8_t>>(tilesets, "json/tileset_list.json");
 
 	for (auto& filename : tilesets.filelist)
 	{
 		auto& entry = m_spritesheets.emplace_back();
-		if (!HeartDeserializeObjectFromFile(entry, filename.c_str()))
+		if (!HeartDeserializeObjectFromFile<TileSpritesheet, Memory::UIShortAllocator<uint8_t>>(entry, filename.c_str()))
 		{
 			m_spritesheets.pop_back();
 			continue;

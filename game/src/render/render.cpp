@@ -22,8 +22,12 @@ static void sDrawMenuPanel()
 	};
 
 	extern bool TileManagerImguiPanelActive;
+	extern bool MemoryImguiPanelActive;
 
-	ToolType tools[] = {"Tile Manager", &TileManagerImguiPanelActive};
+	ToolType tools[] = {
+		{"Tile Manager", &TileManagerImguiPanelActive},
+		{"Memory", &MemoryImguiPanelActive},
+	};
 
 	if (ImGui::BeginMainMenuBar())
 	{

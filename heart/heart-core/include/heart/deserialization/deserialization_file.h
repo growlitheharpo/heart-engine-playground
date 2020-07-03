@@ -21,7 +21,7 @@ bool HeartDeserializeObjectFromFile(OutType& outObject, const char* filename)
 
 	size_t bufferSize = size_t(fileSize) + 1;
 
-	uint8_t* filebuffer = (uint8_t*)alloc.Allocate(bufferSize);
+	uint8_t* filebuffer = (uint8_t*)alloc.allocate(bufferSize);
 	filebuffer[bufferSize - 1] = 0;
 
 	if (!HeartReadFile(file, filebuffer, bufferSize, fileSize))
@@ -34,7 +34,7 @@ bool HeartDeserializeObjectFromFile(OutType& outObject, const char* filename)
 		return false;
 
 	bool result = HeartDeserializeObject(outObject, jsonDoc);
-	alloc.Deallocate(filebuffer, bufferSize);
+	alloc.deallocate(filebuffer);
 
 	return result;
 }

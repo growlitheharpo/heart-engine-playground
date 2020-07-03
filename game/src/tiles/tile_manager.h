@@ -2,6 +2,8 @@
 
 #include "tiles/tile_spritesheet.h"
 
+#include "memory/memory.h"
+
 #include <heart/copy_move_semantics.h>
 #include <heart/stl/unordered_map.h>
 #include <heart/stl/utility.h>
@@ -15,7 +17,7 @@ using TileTag = entt::tag<"TileTag"_hs>;
 class TileManager
 {
 private:
-	hrt::vector<TileSpritesheet> m_spritesheets;
+	hrt::vector<TileSpritesheet, Memory::UILongAllocator<TileSpritesheet>> m_spritesheets;
 	hrt::unordered_map<uint32_t, hrt::pair<size_t, size_t>> m_spritemap;
 
 #ifdef _DEBUG
