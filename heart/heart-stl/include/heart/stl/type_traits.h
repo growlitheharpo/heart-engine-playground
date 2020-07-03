@@ -105,6 +105,35 @@ namespace hrt
 	template <class T>
 	add_rvalue_reference_t<T> declval() noexcept;
 
+	template <bool Test, class T = void>
+	struct enable_if
+	{
+	}; // no member "type" when !Test
+
+	template <class T>
+	struct enable_if<true, T>
+	{
+		using type = T;
+	};
+
+	template <bool Test, class T = void>
+	using enable_if_t = typename enable_if<Test, T>::type;
+
+	template <class>
+	constexpr bool is_pointer_v = false;
+
+	template <class T>
+	constexpr bool is_pointer_v<T*> = true;
+
+	template <class T>
+	constexpr bool is_pointer_v<T* const> = true;
+
+	template <class T>
+	constexpr bool is_pointer_v<T* volatile> = true;
+
+	template <class T>
+	constexpr bool is_pointer_v<T* const volatile> = true;
+
 	// Boooo, having to use MSVC extensions for these...
 
 	template <class T, class... Args>
@@ -157,4 +186,21 @@ namespace hrt
 	struct is_same : bool_constant<is_same_v<T1, T2>>
 	{
 	};
+
+	template <typename From, typename To>
+	inline constexpr bool is_convertible_v = __is_convertible_to(From, To);
+
+	template <typename From, typename To>
+	struct is_convertible : bool_constant<is_convertible_v<From, To>>
+	{
+	};
+
+	template <class T>
+	constexpr T* addressof(T& v) noexcept
+	{
+		return __builtin_addressof(v);
+	}
+
+	template <class T>
+	const T* addressof(const T&&) = delete;
 }
