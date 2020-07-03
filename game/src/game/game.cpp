@@ -82,7 +82,7 @@ void InitializeGame()
 		HeartDeserializeObjectFromFile(s_playerVals, "json/player_constants.json");
 
 		auto player = create_multi_component<PlayerTag, InputStatusComponent, TransformComponent, DrawableComponent>();
-		auto& drawable = std::get<4>(player);
+		auto& drawable = hrt::get<4>(player);
 
 		drawable.texture = new sf::Texture();
 		HEART_CHECK(RenderUtils::LoadTextureFromFile(*drawable.texture, s_playerVals.texture.c_str()));
@@ -93,7 +93,7 @@ void InitializeGame()
 	// Create our origin marker
 	{
 		auto originMarker = create_multi_component<TransformComponent, DrawableComponent>();
-		auto& drawable = std::get<2>(originMarker);
+		auto& drawable = hrt::get<2>(originMarker);
 
 		sf::Image i;
 		i.create(2, 2, sf::Color::Magenta);
@@ -108,7 +108,7 @@ void InitializeGame()
 	// Create the background
 	{
 		auto bg = create_multi_component<TransformComponent, DrawableComponent>();
-		auto& drawable = std::get<2>(bg);
+		auto& drawable = hrt::get<2>(bg);
 
 		drawable.texture = new sf::Texture();
 		HEART_CHECK(RenderUtils::LoadTextureFromFile(*drawable.texture, "textures/bg.png"));
@@ -116,7 +116,7 @@ void InitializeGame()
 		drawable.sprite = new sf::Sprite(*drawable.texture);
 		drawable.z = -10.0f;
 
-		auto& tf = std::get<1>(bg);
+		auto& tf = hrt::get<1>(bg);
 		tf.position = sf::Vector2f(0.0f, -250.0f);
 	}
 

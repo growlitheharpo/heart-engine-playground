@@ -45,7 +45,6 @@ static auto& GetMutex()
 
 static auto& GetMap()
 {
-	using namespace hrt;
 	typedef std::tuple<size_t, Memory::Pool, Memory::Period> debug_info_tuple;
 	static hrt::unordered_map_a<void*, debug_info_tuple, debug_allocator> s_trackerMap;
 	return s_trackerMap;

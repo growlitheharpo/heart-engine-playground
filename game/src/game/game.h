@@ -54,13 +54,13 @@ template <typename... T>
 auto create_multi_component()
 {
 	entt::entity e = GetRegistry().create();
-	return std::tuple<entt::entity, multi_component_return_type<T>::type...>(e, multi_component_return_type<T>::emplace_wrapper(e)...);
+	return hrt::tuple<entt::entity, multi_component_return_type<T>::type...>(e, multi_component_return_type<T>::emplace_wrapper(e)...);
 }
 
 template <typename... T>
 auto assign_multi_component(entt::entity e)
 {
-	return std::tuple<multi_component_return_type<T>::type...>(multi_component_return_type<T>::emplace_wrapper(e)...);
+	return hrt::tuple<multi_component_return_type<T>::type...>(multi_component_return_type<T>::emplace_wrapper(e)...);
 }
 
 UI::UIManager& GetUIManager();
