@@ -2,6 +2,7 @@
 #include "base_components.h"
 
 #include "events/events.h"
+#include "memory/memory.h"
 #include "render/imgui_game.h"
 #include "render/render.h"
 #include "tiles/tile_manager.h"
@@ -192,4 +193,6 @@ void DrawGame(Renderer& r)
 
 	s_tileManager.Render(r);
 	s_uiManager.Render(r);
+
+	Memory::DebugDisplay();
 }

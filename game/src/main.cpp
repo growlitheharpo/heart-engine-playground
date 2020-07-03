@@ -1,6 +1,7 @@
 #include "cmd_line.h"
 
 #include "game/game.h"
+#include "memory/memory.h"
 
 #include "events/events.h"
 #include "render/imgui_game.h"
@@ -30,6 +31,8 @@ bool EscapeKeyHitEvent(sf::Event e)
 
 int WinMain()
 {
+	Memory::Init();
+
 	auto commandLine = ParseCommandLine();
 
 	// TODO: Move this to somewhere else (like the command line??)
