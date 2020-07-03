@@ -36,15 +36,14 @@ void UI::UIManager::Cleanup()
 	for (auto w : m_widgets)
 	{
 		w->Destroy();
-		delete w;
+		Memory::Delete<Memory::UILongAllocator>(w);
 	}
 
 	m_widgets.clear();
 
 	for (auto& fPair : m_loadedFonts)
 	{
-		delete fPair.second;
-		fPair.second = nullptr;
+		Memory::Delete<Memory::UILongAllocator>(fPair.second);
 	}
 
 	m_loadedFonts.clear();
@@ -55,7 +54,7 @@ void UI::UIManager::LoadPanel(const char* panelName)
 	UI::Button::ButtonData data;
 	HeartDeserializeObjectFromFile(data, "json/button1.json");
 
-	auto button = new UI::Button(data);
+	auto button = Memory::New<Memory::UILongAllocator, UI::Button>(data);
 	button->Initialize();
 
 	m_widgets.push_back(button);
@@ -74,7 +73,7 @@ sf::Font* UI::UIManager::FindOrLoadFont(const char* fontName)
 	if (!tmp.loadFromMemory(fileData.data(), fileData.size()))
 		return nullptr;
 
-	auto result = new sf::Font(tmp);
+	auto result = Memory::New<Memory::UILongAllocator, sf::Font>(tmp);
 	m_loadedFonts[fontName] = result;
 	return result;
 }

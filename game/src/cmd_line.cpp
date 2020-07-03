@@ -1,5 +1,8 @@
 #include "cmd_line.h"
 
+#include <heart/stl/string.h>
+#include <heart/stl/vector.h>
+
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <shellapi.h>
@@ -29,8 +32,8 @@ cxxopts::ParseResult ParseCommandLine()
 		}
 	}
 
-	std::vector<char*> cstrs;
-	std::transform(strs.begin(), strs.end(), std::back_inserter(cstrs), [](std::string& s) { return s.data(); });
+	hrt::vector<char*> cstrs;
+	std::transform(strs.begin(), strs.end(), std::back_inserter(cstrs), [](auto& s) { return s.data(); });
 
 	char** argv = cstrs.data();
 	auto r = options.parse(argc, argv);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "memory/memory.h"
+
 #include <heart/copy_move_semantics.h>
 
 #include <heart/stl/unordered_map.h>
@@ -50,7 +52,11 @@ public:
 	void ProcessAndDispatch();
 
 private:
-	hrt::unordered_map<sf::Event::EventType, hrt::vector<EventFilterFunc>> event_handlers_;
+	hrt::unordered_map_a<
+		sf::Event::EventType,
+		hrt::vector_a<EventFilterFunc, Memory::EventsLongAllocator>,
+		Memory::EventsLongAllocator>
+		event_handlers_;
 	void ProcessEvent(sf::Event e);
 
 public:

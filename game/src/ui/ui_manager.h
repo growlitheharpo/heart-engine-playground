@@ -1,5 +1,7 @@
 #pragma once
 
+#include "memory/memory.h"
+
 #include <heart/codegen/codegen.h>
 
 #include <heart/stl/string.h>
@@ -39,8 +41,8 @@ namespace UI
 	class UIManager
 	{
 	private:
-		hrt::vector<UI::Widget*> m_widgets;
-		hrt::unordered_map<hrt::string, sf::Font*> m_loadedFonts;
+		hrt::vector_a<UI::Widget*, Memory::UILongAllocator> m_widgets;
+		hrt::unordered_map_a<hrt::string, sf::Font*, Memory::UILongAllocator> m_loadedFonts;
 
 	public:
 		void Initialize();
