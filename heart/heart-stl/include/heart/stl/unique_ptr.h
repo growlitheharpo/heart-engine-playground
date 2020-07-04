@@ -2,6 +2,8 @@
 
 #include <heart/config.h>
 
+#include <heart/stl/forward.h>
+#include <heart/stl/move.h>
 #include <heart/stl/type_traits.h>
 
 namespace hrt
@@ -88,7 +90,7 @@ namespace hrt
 
 		template <enable_if_t<is_move_constructible_v<D>, int> = 0>
 		unique_ptr(unique_ptr&& u) noexcept :
-			m_deleter(std::forward(u.m_deleter)),
+			m_deleter(hrt::forward(u.m_deleter)),
 			m_pointer(nullptr)
 		{
 			reset(u.release());
@@ -99,7 +101,7 @@ namespace hrt
 			if (this != addressof(u))
 			{
 				reset(u.release());
-				m_deleter = std::move(u.m_deleter);
+				m_deleter = hrt::move(u.m_deleter);
 			}
 
 			return *this;
@@ -185,6 +187,6 @@ namespace hrt
 	template <typename T, typename... Args>
 	unique_ptr<T> make_unique(Args&&... args)
 	{
-		return unique_ptr<T>(new T(std::forward<Args>(args)...));
+		return unique_ptr<T>(new T(hrt::forward<Args>(args)...));
 	}
 }
