@@ -7,5 +7,9 @@
 
 namespace hrt
 {
-	using namespace boost;
+	template <typename... T>
+	using bind = boost::bind<T...>;
+
+	template <typename... T>
+	using function = boost::function<T...>;
 }

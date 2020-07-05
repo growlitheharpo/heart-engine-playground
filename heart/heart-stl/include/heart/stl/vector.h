@@ -8,7 +8,9 @@
 #include <heart/stl/util/canonical_typedefs.h>
 
 #include <heart/stl/allocator.h>
+#include <heart/stl/forward.h>
 #include <heart/stl/iterator.h>
+#include <heart/stl/move.h>
 
 // We include initializer_list from STD no matter what
 #include <initializer_list>
