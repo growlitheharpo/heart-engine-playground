@@ -210,7 +210,5 @@ project "murmerhash"
 	warnings "Off"
 	include_murmerhash()
 	files {
-		"smhasher/smhasher/src/MurmurHash1.cpp",
-		"smhasher/smhasher/src/MurmurHash2.cpp",
-		"smhasher/smhasher/src/MurmurHash3.cpp",
+		"smhasher/smhasher/src/MurmurHash**",
 	}
