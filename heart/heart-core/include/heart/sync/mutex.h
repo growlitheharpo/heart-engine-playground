@@ -23,6 +23,11 @@ public:
 
 	void Unlock();
 	void UnlockShared();
+
+	void** NativeHandle()
+	{
+		return &m_handle;
+	}
 };
 
 struct HeartLockMethod
