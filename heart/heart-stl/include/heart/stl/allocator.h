@@ -3,6 +3,8 @@
 #include <heart/config.h>
 #include <heart/stl/type_traits.h>
 
+#include <new>
+
 namespace hrt
 {
 	// In C++20, the standard allocator is totally stateless (and basically useless)
