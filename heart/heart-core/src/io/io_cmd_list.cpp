@@ -26,7 +26,8 @@ void IoCmdList::BindIoFileDescriptor(const IoFileDescriptor& d)
 	HeartStreamWriter writer(m_cmdPool, m_writeHead);
 
 	HEART_CHECK(writer.Write(IoOpType::BindDescriptor));
-	HEART_CHECK(writer.Write(d));
+	HEART_CHECK(writer.Write(d.GetSize()));
+	HEART_CHECK(writer.Write(d.GetFilename(), d.GetSize()));
 }
 
 void IoCmdList::BindIoTargetBuffer(const IoUncheckedTargetBuffer& b)

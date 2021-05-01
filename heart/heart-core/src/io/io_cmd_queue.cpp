@@ -134,7 +134,7 @@ void IoCmdQueue::ProcessCmdPage(CmdPage& page)
 	{
 		// TODO: true async io
 		HeartFile currentFile = {};
-		const IoFileDescriptor* currentDescriptor = nullptr;
+		bool descriptorBound = false;
 		void* currentTargetBuffer = nullptr;
 		int64_t currentTargetBufferSize = -1;
 	} state;
@@ -147,14 +147,16 @@ void IoCmdQueue::ProcessCmdPage(CmdPage& page)
 		switch (operation)
 		{
 		case IoOpType::BindDescriptor: {
-			const IoFileDescriptor* d = reader.Read<IoFileDescriptor>(reader.GetPtr);
-			state.currentDescriptor = d;
+			uint8_t pathSize = reader.Read<uint8_t>(reader.Copy);
+			const char* pathStr = reader.ReadSpan<char>(pathSize);
+
+			state.descriptorBound = true;
 
 			if (state.currentFile)
 				HeartCloseFile(state.currentFile);
 
 			char path[MAX_PATH] = {};
-			strncpy_s(path, state.currentDescriptor->GetFilename(), state.currentDescriptor->GetSize());
+			strncpy_s(path, pathStr,  pathSize);
 
 			HeartOpenFile(state.currentFile, path, HeartOpenFileMode::ReadExisting);
 
@@ -173,7 +175,7 @@ void IoCmdQueue::ProcessCmdPage(CmdPage& page)
 			break;
 		}
 		case IoOpType::ReadEntire: {
-			HEART_ASSERT(state.currentDescriptor != nullptr);
+			HEART_ASSERT(state.descriptorBound);
 			HEART_ASSERT(state.currentTargetBuffer != nullptr);
 
 			if (state.currentFile)
@@ -192,7 +194,7 @@ void IoCmdQueue::ProcessCmdPage(CmdPage& page)
 			break;
 		}
 		case IoOpType::ReadPartial: {
-			HEART_ASSERT(state.currentDescriptor != nullptr);
+			HEART_ASSERT(state.descriptorBound);
 			HEART_ASSERT(state.currentTargetBuffer != nullptr);
 
 			size_t toRead = reader.Read<size_t>(reader.Copy);
@@ -206,7 +208,7 @@ void IoCmdQueue::ProcessCmdPage(CmdPage& page)
 			break;
 		}
 		case IoOpType::Offset: {
-			HEART_ASSERT(state.currentDescriptor != nullptr);
+			HEART_ASSERT(state.descriptorBound);
 
 			int64_t offset = reader.Read<int64_t>(reader.Copy);
 			IoOffsetType type = reader.Read<IoOffsetType>(reader.Copy);
@@ -227,7 +229,7 @@ void IoCmdQueue::ProcessCmdPage(CmdPage& page)
 			break;
 		}
 		case IoOpType::UnbindDescriptor: {
-			state.currentDescriptor = nullptr;
+			state.descriptorBound = false;
 			break;
 		}
 		case IoOpType::UnbindTarget: {

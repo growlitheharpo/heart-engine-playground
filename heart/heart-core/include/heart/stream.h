@@ -60,13 +60,13 @@ public:
 		if (!Check(sizeof(v) * count))
 			return false;
 
-		memcpy(m_buffer + *m_head, v, sizeof(v) * count);
-		*m_head += BufferSizeT(sizeof(v) * count);
+		memcpy(m_buffer + *m_head, v, sizeof(T) * count);
+		*m_head += BufferSizeT(sizeof(T) * count);
 		return true;
 	}
 };
 
-template <typename BufferSizeT>
+template <typename BufferSizeT = size_t>
 class HeartStreamReader
 {
 	const uint8_t* m_buffer;
@@ -120,6 +120,15 @@ public:
 	{
 		const T* h = reinterpret_cast<const T*>(m_buffer + *m_head);
 		*m_head += BufferSizeT(sizeof(T));
+
+		return h;
+	}
+
+	template <typename T>
+	const T* ReadSpan(BufferSizeT count)
+	{
+		const T* h = reinterpret_cast<const T*>(m_buffer + *m_head);
+		*m_head += BufferSizeT(sizeof(T) * count);
 
 		return h;
 	}
