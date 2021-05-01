@@ -9,15 +9,20 @@
 #include "heart/sync/fence.h"
 
 #include <algorithm>
+#include <iterator>
 
 #define NOMINMAX 1
 #define WIN32_LEAN_AND_MEAN 1
 #include <Windows.h>
 
-IoCmdQueue::IoCmdQueue() :
-	m_thread(&ThreadEntryPoint, this)
+IoCmdQueue::IoCmdQueue(int threadCount)
 {
-	m_thread.SetName("IoCmdQueue Thread");
+	threadCount = std::max(threadCount, 1);
+	std::generate_n(std::back_inserter(m_threads), threadCount, [this]() {
+		HeartThread t(&ThreadEntryPoint, this);
+		t.SetName("IoCmdQueue Thread");
+		return hrt::move(t);
+	});
 }
 
 IoCmdQueue::~IoCmdQueue()
@@ -39,57 +44,65 @@ void IoCmdQueue::Flush()
 
 void IoCmdQueue::Close()
 {
-	if (m_thread)
+	if (!m_threads.empty())
 	{
 		Flush();
 
 		m_threadExit = true;
-		m_thread.Join();
+		m_cv.NotifyAll();
+
+		for (auto& t : m_threads)
+			t.Join();
+
+		m_threads.clear();
 	}
 }
 
 void IoCmdQueue::Submit(IoCmdList* cmdList)
 {
-	HeartLockGuard lock(m_mutex);
-
-	// Find a free page
-	CmdPage* tgtPage = nullptr;
-	for (auto& p : m_pages)
 	{
-		if (!p.inUse)
+		HeartUniqueLock lock(m_mutex);
+
+		// Find a free page
+		CmdPage* tgtPage = nullptr;
+		for (auto& p : m_pages)
 		{
-			tgtPage = &p;
+			if (!p.inUse)
+			{
+				tgtPage = &p;
+				break;
+			}
 		}
+
+		// Copy our data
+		tgtPage->size = cmdList->m_writeHead;
+		memcpy_s(tgtPage->data, HeartCountOf(tgtPage->data), cmdList->m_cmdPool, cmdList->m_writeHead);
+
+		// Point to the new page
+		CmdPage** tgt = &m_head;
+		while (*tgt != nullptr)
+		{
+			tgt = &(*tgt)->next;
+		}
+
+		*tgt = tgtPage;
 	}
-
-	// Copy our data
-	tgtPage->size = cmdList->m_writeHead;
-	memcpy_s(tgtPage->data, HeartCountOf(tgtPage->data), cmdList->m_cmdPool, cmdList->m_writeHead);
-
-	// Point to the new page
-	CmdPage** tgt = &m_head;
-	while (*tgt != nullptr)
-	{
-		tgt = &(*tgt)->next;
-	}
-
-	*tgt = tgtPage;
 
 	// Reset the cmd list
 	cmdList->Finalize();
 
 	// Wake the thread
-	m_cv.NotifyOne();
+	m_cv.NotifyAll();
 }
 
 void IoCmdQueue::ThreadThink()
 {
 	CmdPage* workingPage = nullptr;
 
-	while (m_threadExit.load(std::memory_order_relaxed) == false)
+	while (true)
 	{
 		{
-			HeartLockGuard lock(m_mutex);
+			HeartUniqueLock lock(m_mutex);
 
 			if (workingPage != nullptr)
 			{
@@ -97,10 +110,13 @@ void IoCmdQueue::ThreadThink()
 				workingPage = nullptr;
 			}
 
-			while (m_head == nullptr)
+			while (m_head == nullptr && m_threadExit.load(std::memory_order_relaxed) == false)
 			{
 				m_cv.Wait(m_mutex);
 			}
+
+			if (m_threadExit)
+				break;
 
 			workingPage = m_head;
 			m_head = workingPage->next;
@@ -137,7 +153,10 @@ void IoCmdQueue::ProcessCmdPage(CmdPage& page)
 			if (state.currentFile)
 				HeartCloseFile(state.currentFile);
 
-			HeartOpenFile(state.currentFile, state.currentDescriptor->GetFilename(), HeartOpenFileMode::ReadExisting);
+			char path[MAX_PATH] = {};
+			strncpy_s(path, state.currentDescriptor->GetFilename(), state.currentDescriptor->GetSize());
+
+			HeartOpenFile(state.currentFile, path, HeartOpenFileMode::ReadExisting);
 
 			break;
 		}

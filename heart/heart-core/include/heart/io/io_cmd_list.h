@@ -21,6 +21,11 @@ public:
 		return m_filename;
 	}
 
+	uint8_t GetSize() const
+	{
+		return m_size;
+	}
+
 private:
 	static_assert(MaxFilePath < 255, "Cannot fit MaxFilePath size in uint8!");
 

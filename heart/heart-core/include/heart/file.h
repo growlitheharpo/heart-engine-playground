@@ -30,6 +30,8 @@ bool HeartCloseFile(HeartFile& file);
 
 bool HeartGetFileSize(HeartFile& file, uint64_t& outSize);
 
+bool HeartGetFileSize(const char* path, uint64_t& outSize);
+
 bool HeartGetFileOffset(HeartFile& file, uint64_t& outOffset);
 
 bool HeartSetFileOffset(HeartFile& file, int64_t offset, uint64_t* newOffset = nullptr, HeartSetOffsetMode mode = HeartSetOffsetMode::Beginning);

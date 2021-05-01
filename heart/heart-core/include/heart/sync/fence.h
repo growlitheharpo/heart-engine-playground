@@ -8,7 +8,7 @@ class HeartFence
 private:
 	HeartConditionVariable m_cv;
 	HeartMutex m_mutex;
-	uint32_t m_currentRevision;
+	uint32_t m_currentRevision = 0;
 
 public:
 	HeartFence() = default;

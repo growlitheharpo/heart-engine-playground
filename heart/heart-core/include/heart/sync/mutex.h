@@ -118,6 +118,7 @@ public:
 		HEART_ASSERT(!m_owns);
 
 		m_mutex->LockExclusive();
+		m_owns = true;
 	}
 
 	bool TryLock()

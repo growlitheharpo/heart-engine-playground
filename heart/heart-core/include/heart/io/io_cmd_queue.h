@@ -6,12 +6,14 @@
 #include <heart/sync/mutex.h>
 #include <heart/thread.h>
 
+#include <heart/stl/vector.h>
+
 #include <atomic>
 
 class IoCmdQueue
 {
 public:
-	IoCmdQueue();
+	IoCmdQueue(int threadCount = 1);
 	~IoCmdQueue();
 
 	void Submit(IoCmdList* cmdList);
@@ -19,7 +21,7 @@ public:
 	void Close();
 
 private:
-	HeartThread m_thread;
+	hrt::vector<HeartThread> m_threads;
 	HeartMutex m_mutex;
 	HeartConditionVariable m_cv;
 
