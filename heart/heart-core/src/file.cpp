@@ -132,7 +132,7 @@ bool HeartGetFileOffset(HeartFile& file, uint64_t& outOffset)
 	return true;
 }
 
-bool HeartSetFileOffset(HeartFile& file, uint64_t offset, uint64_t* newOffset, HeartSetOffsetMode mode)
+bool HeartSetFileOffset(HeartFile& file, int64_t offset, uint64_t* newOffset, HeartSetOffsetMode mode)
 {
 	if (file.nativeHandle == 0)
 		return false;

@@ -34,4 +34,27 @@ public:
 
 	void Join();
 	void Detach();
+	void SetName(const char* name);
+
+	explicit operator bool() const;
+
+	friend bool operator==(decltype(nullptr), const HeartThread& t)
+	{
+		return !t;
+	}
+
+	friend bool operator==(const HeartThread& t, decltype(nullptr))
+	{
+		return !t;
+	}
+
+	friend bool operator!=(decltype(nullptr), const HeartThread& t)
+	{
+		return !!t;
+	}
+
+	friend bool operator!=(const HeartThread& t, decltype(nullptr))
+	{
+		return !!t;
+	}
 };

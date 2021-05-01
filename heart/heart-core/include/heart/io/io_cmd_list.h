@@ -16,7 +16,7 @@ public:
 	IoFileDescriptor(const char* f);
 	IoFileDescriptor(const char* f, size_t l);
 
-	const char* GetFilename()
+	const char* GetFilename() const
 	{
 		return m_filename;
 	}
@@ -48,6 +48,8 @@ enum class IoOffsetType : uint8_t
 
 class IoCmdList
 {
+	friend class IoCmdQueue;
+
 public:
 	void BindIoFileDescriptor(const IoFileDescriptor& d);
 
