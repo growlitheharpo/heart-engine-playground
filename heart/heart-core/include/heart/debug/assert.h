@@ -2,5 +2,5 @@
 
 #include <cassert>
 
-#define HEART_ASSERT(expression, ...) (void)0
+#define HEART_ASSERT(expression, ...) assert(expression)
 #define HEART_CHECK(expr, ...) (!!(expr))
