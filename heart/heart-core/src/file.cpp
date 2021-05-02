@@ -115,6 +115,31 @@ bool HeartGetFileSize(HeartFile& file, uint64_t& outSize)
 	return true;
 }
 
+bool HeartGetFileSize(const char* path, uint64_t& outSize)
+{
+	outSize = 0;
+
+	wchar_t filePath[MAX_PATH];
+	int written = swprintf_s(filePath, L"%s", s_fileRoot);
+	if (written < 0)
+		return false;
+
+	written = swprintf_s(filePath + written, MAX_PATH - written, L"%S", path);
+	if (written <= 0)
+		return false;
+
+	LARGE_INTEGER size = {};
+	WIN32_FILE_ATTRIBUTE_DATA resultData = {};
+	if (!::GetFileAttributesEx(filePath, GetFileExInfoStandard, &resultData))
+		return false;
+
+	size.LowPart = resultData.nFileSizeLow;
+	size.HighPart = resultData.nFileSizeHigh;
+
+	outSize = size.QuadPart;
+	return true;
+}
+
 bool HeartGetFileOffset(HeartFile& file, uint64_t& outOffset)
 {
 	outOffset = 0;
@@ -132,7 +157,7 @@ bool HeartGetFileOffset(HeartFile& file, uint64_t& outOffset)
 	return true;
 }
 
-bool HeartSetFileOffset(HeartFile& file, uint64_t offset, uint64_t* newOffset, HeartSetOffsetMode mode)
+bool HeartSetFileOffset(HeartFile& file, int64_t offset, uint64_t* newOffset, HeartSetOffsetMode mode)
 {
 	if (file.nativeHandle == 0)
 		return false;

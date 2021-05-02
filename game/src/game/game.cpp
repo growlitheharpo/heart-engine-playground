@@ -16,6 +16,10 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 
+#include <heart/io/io_cmd_list.h>
+#include <heart/io/io_cmd_queue.h>
+#include <heart/sync/fence.h>
+
 #include <entt/entt.hpp>
 
 enum InputKey
@@ -77,17 +81,93 @@ void InitializeGame()
 {
 	s_registry.on_destroy<DrawableComponent>().connect<&DrawableComponent::OnDestroy>();
 
-	// Create our player
 	{
-		HeartDeserializeObjectFromFile(s_playerVals, "json/player_constants.json");
+		IoCmdQueue queue;
+		HeartFence fence;
+		IoCmdList cmdList;
 
-		auto player = create_multi_component<PlayerTag, InputStatusComponent, TransformComponent, DrawableComponent>();
-		auto& drawable = hrt::get<4>(player);
+		uint64_t size = 0;
 
-		drawable.texture = new sf::Texture();
-		HEART_CHECK(RenderUtils::LoadTextureFromFile(*drawable.texture, s_playerVals.texture.c_str()));
+		// Load the player constants
+		HeartGetFileSize("json/player_constants.json", size);
+		hrt::vector<uint8_t> playerConstantsBuffer(size, 0);
+		cmdList.BindIoFileDescriptor("json/player_constants.json");
+		cmdList.BindIoTargetBuffer(IoCheckedTargetBuffer {playerConstantsBuffer.data(), playerConstantsBuffer.size()});
+		cmdList.ReadEntire();
+		cmdList.Signal(&fence, 1);
 
-		drawable.sprite = new sf::Sprite(*drawable.texture);
+		// Load the background image
+		HeartGetFileSize("textures/bg.png", size);
+		hrt::vector<uint8_t> bgTextureBuffer(size, 0);
+		cmdList.BindIoFileDescriptor("textures/bg.png");
+		cmdList.BindIoTargetBuffer(IoCheckedTargetBuffer {bgTextureBuffer.data(), bgTextureBuffer.size()});
+		cmdList.ReadEntire();
+		cmdList.Signal(&fence, 2);
+
+		// Load the tileset data (not actually used, just a test)
+		HeartGetFileSize("json/tileset_list.json", size);
+		hrt::vector<uint8_t> tilesetBuffer(size, 0);
+		cmdList.BindIoFileDescriptor("json/tileset_list.json");
+		cmdList.BindIoTargetBuffer(IoCheckedTargetBuffer {tilesetBuffer.data(), tilesetBuffer.size()});
+		cmdList.ReadEntire();
+		cmdList.Signal(&fence, 3);
+
+		// Start loads
+		queue.Submit(&cmdList);
+
+		// Wait for the player constants
+		fence.Wait(1);
+
+		hrt::vector<uint8_t> playerTextureBuffer;
+		{
+			// Parse the constants
+			rapidjson::Document jsonDoc;
+			jsonDoc.Parse((const char*)playerConstantsBuffer.data(), playerConstantsBuffer.size());
+			if (!jsonDoc.HasParseError())
+			{
+				HeartDeserializeObject(s_playerVals, jsonDoc);
+
+				if (HeartGetFileSize(s_playerVals.texture.c_str(), size) && size)
+				{
+					playerTextureBuffer.resize(size);
+					cmdList.BindIoFileDescriptor(s_playerVals.texture.c_str());
+					cmdList.BindIoTargetBuffer(IoCheckedTargetBuffer {playerTextureBuffer.data(), playerTextureBuffer.size()});
+					cmdList.ReadEntire();
+					cmdList.Signal(&fence, 4);
+					queue.Submit(&cmdList);
+				}
+			}
+		}
+
+		// Create the background
+		fence.Wait(2);
+		{
+			auto bg = create_multi_component<TransformComponent, DrawableComponent>();
+			auto& drawable = hrt::get<2>(bg);
+
+			drawable.texture = new sf::Texture();
+			drawable.texture->loadFromMemory(bgTextureBuffer.data(), bgTextureBuffer.size());
+
+			drawable.sprite = new sf::Sprite(*drawable.texture);
+			drawable.z = -10.0f;
+
+			auto& tf = hrt::get<1>(bg);
+			tf.position = sf::Vector2f(0.0f, -250.0f);
+		}
+
+		// Wait for the player texture if it existed, then create the player
+		if (!playerTextureBuffer.empty())
+		{
+			fence.Wait(4);
+
+			auto player = create_multi_component<PlayerTag, InputStatusComponent, TransformComponent, DrawableComponent>();
+			auto& drawable = hrt::get<4>(player);
+
+			drawable.texture = new sf::Texture();
+			drawable.texture->loadFromMemory(playerTextureBuffer.data(), playerTextureBuffer.size());
+
+			drawable.sprite = new sf::Sprite(*drawable.texture);
+		}
 	}
 
 	// Create our origin marker
@@ -103,21 +183,6 @@ void InitializeGame()
 
 		auto rect = new sf::Sprite(*drawable.texture);
 		drawable.sprite = rect;
-	}
-
-	// Create the background
-	{
-		auto bg = create_multi_component<TransformComponent, DrawableComponent>();
-		auto& drawable = hrt::get<2>(bg);
-
-		drawable.texture = new sf::Texture();
-		HEART_CHECK(RenderUtils::LoadTextureFromFile(*drawable.texture, "textures/bg.png"));
-
-		drawable.sprite = new sf::Sprite(*drawable.texture);
-		drawable.z = -10.0f;
-
-		auto& tf = hrt::get<1>(bg);
-		tf.position = sf::Vector2f(0.0f, -250.0f);
 	}
 
 	// Load and create a UI button
