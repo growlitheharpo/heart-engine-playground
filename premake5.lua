@@ -1,9 +1,3 @@
-newoption {
-	trigger		= "boostlib",
-	value		= nil,
-	description = "Specify a different include path for boost",
-}
-
 function get_root_location()
 	return "%{wks.location}/../"
 end

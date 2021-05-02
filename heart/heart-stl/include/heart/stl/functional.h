@@ -2,14 +2,13 @@
 
 #include <heart/config.h>
 
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
+#include <functional>
 
 namespace hrt
 {
 	template <typename... T>
-	using bind = boost::bind<T...>;
+	using bind = std::bind<T...>;
 
 	template <typename... T>
-	using function = boost::function<T...>;
+	using function = std::function<T...>;
 }
