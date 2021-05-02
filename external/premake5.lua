@@ -81,6 +81,12 @@ function boost_is_lib(libName)
 	end
 end
 
+if _OPTIONS["boostlib"] then
+	print("Using boost location: " .. _OPTIONS["boostlib"])
+else
+	print("Using boost location: " .. export_include_root .. "boost/")
+end
+
 function include_boost(should_link)
 	if _OPTIONS["boostlib"] then
 		sysincludedirs(_OPTIONS["boostlib"])
