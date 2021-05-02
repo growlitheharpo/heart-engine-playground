@@ -23,6 +23,11 @@ public:
 
 	void Unlock();
 	void UnlockShared();
+
+	void** NativeHandle()
+	{
+		return &m_handle;
+	}
 };
 
 struct HeartLockMethod
@@ -113,6 +118,7 @@ public:
 		HEART_ASSERT(!m_owns);
 
 		m_mutex->LockExclusive();
+		m_owns = true;
 	}
 
 	bool TryLock()
