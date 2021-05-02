@@ -27,8 +27,8 @@ public:
 	void NotifyAll();
 	void Wait(HeartMutex& mutex, WaitOwnership = WaitOwnership::Exclusive);
 
-	void* NativeHandle()
+	void** NativeHandle()
 	{
-		return m_handle;
+		return &m_handle;
 	}
 };
