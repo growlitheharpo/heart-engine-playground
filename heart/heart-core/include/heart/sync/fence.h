@@ -18,4 +18,6 @@ public:
 
 	void Signal(uint32_t revision);
 	void Wait(uint32_t revision);
+
+	bool Test(uint32_t revision);
 };

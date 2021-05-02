@@ -114,3 +114,9 @@ void HeartFence::Wait(uint32_t revision)
 		m_cv.Wait(m_mutex);
 	}
 }
+
+bool HeartFence::Test(uint32_t revision)
+{
+	HeartLockGuard lock(m_mutex);
+	return m_currentRevision >= revision;
+}

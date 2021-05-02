@@ -3,6 +3,7 @@
 #include <heart/debug/assert.h>
 
 #include <atomic>
+#include <malloc.h>
 
 #define NOMINMAX 1
 #define WIN32_LEAN_AND_MEAN 1
@@ -85,7 +86,10 @@ void HeartThread::Join()
 	HANDLE h = m_handle;
 	m_handle = nullptr;
 
-	WaitForSingleObject(h, INFINITE);
+	if (h)
+	{
+		WaitForSingleObject(h, INFINITE);
+	}
 }
 
 void HeartThread::Detach()
@@ -93,5 +97,21 @@ void HeartThread::Detach()
 	HANDLE h = m_handle;
 	m_handle = nullptr;
 
-	CloseHandle(h);
+	if (h)
+	{
+		CloseHandle(h);
+	}
+}
+
+void HeartThread::SetName(const char* name)
+{
+	auto wideLength = ::MultiByteToWideChar(0, 0, name, -1, NULL, 0);
+	wchar_t* buffer = (wchar_t*)_alloca(wideLength * sizeof(wchar_t));
+	::MultiByteToWideChar(0, 0, name, -1, buffer, wideLength);
+	::SetThreadDescription(HANDLE(m_handle), buffer);
+}
+
+HeartThread::operator bool() const
+{
+	return (m_handle != nullptr);
 }
