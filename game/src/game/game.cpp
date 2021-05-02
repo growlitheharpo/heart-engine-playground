@@ -100,7 +100,7 @@ void InitializeGame()
 		HeartGetFileSize("textures/bg.png", size);
 		hrt::vector<uint8_t> bgTextureBuffer(size, 0);
 		cmdList.BindIoFileDescriptor("textures/bg.png");
-		cmdList.BindIoTargetBuffer(IoCheckedTargetBuffer { bgTextureBuffer.data(), bgTextureBuffer.size() });
+		cmdList.BindIoTargetBuffer(IoCheckedTargetBuffer {bgTextureBuffer.data(), bgTextureBuffer.size()});
 		cmdList.ReadEntire();
 		cmdList.Signal(&fence, 2);
 
@@ -108,7 +108,7 @@ void InitializeGame()
 		HeartGetFileSize("json/tileset_list.json", size);
 		hrt::vector<uint8_t> tilesetBuffer(size, 0);
 		cmdList.BindIoFileDescriptor("json/tileset_list.json");
-		cmdList.BindIoTargetBuffer(IoCheckedTargetBuffer {tilesetBuffer.data(), tilesetBuffer.size() });
+		cmdList.BindIoTargetBuffer(IoCheckedTargetBuffer {tilesetBuffer.data(), tilesetBuffer.size()});
 		cmdList.ReadEntire();
 		cmdList.Signal(&fence, 3);
 

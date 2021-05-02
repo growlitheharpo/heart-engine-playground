@@ -156,7 +156,7 @@ void IoCmdQueue::ProcessCmdPage(CmdPage& page)
 				HeartCloseFile(state.currentFile);
 
 			char path[MAX_PATH] = {};
-			strncpy_s(path, pathStr,  pathSize);
+			strncpy_s(path, pathStr, pathSize);
 
 			HeartOpenFile(state.currentFile, path, HeartOpenFileMode::ReadExisting);
 
