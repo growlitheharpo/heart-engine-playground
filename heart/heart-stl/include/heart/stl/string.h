@@ -3,9 +3,9 @@
 #include <heart/config.h>
 #include <heart/types.h>
 
-#include <boost/container/string.hpp>
+#include <string>
 
 namespace hrt
 {
-	using string = boost::container::string;
+	using string = std::string;
 }
