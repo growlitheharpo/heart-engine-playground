@@ -1,4 +1,5 @@
 #include <heart/sync/mutex.h>
+
 #include <gtest/gtest.h>
 
 #include <thread>
@@ -37,7 +38,7 @@ TEST(HeartMutex, LockGuard)
 
 	std::thread([&m]() {
 		EXPECT_TRUE(m.TryLockExclusive()) << "LockGuard should have released the lock";
-		m.Unlock(); 
+		m.Unlock();
 	}).join();
 
 	EXPECT_TRUE(m.TryLockExclusive()) << "LockGuard should have released the lock";

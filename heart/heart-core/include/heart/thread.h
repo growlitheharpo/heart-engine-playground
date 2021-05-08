@@ -35,7 +35,7 @@ public:
 	void Join();
 	void Detach();
 	void SetName(const char* name);
-	
+
 	void** GetNativeHandle()
 	{
 		return &m_handle;

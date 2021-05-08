@@ -32,7 +32,7 @@ TEST(HeartThread, Threading)
 
 		// Wait for the main thread to release the mutex
 		mutex.lock();
-		
+
 		EXPECT_EQ(value.load(), 1);
 		++value;
 		mutex.unlock();

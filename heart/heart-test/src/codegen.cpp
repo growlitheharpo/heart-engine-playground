@@ -17,6 +17,7 @@ public:
 	}
 };
 
+// clang-format off
 const char* BasicDeserializationTestJsonData = "{ "
 		"\"type\": \"DeserializationTestStruct\","
 		"\"contents\": {"
@@ -25,6 +26,7 @@ const char* BasicDeserializationTestJsonData = "{ "
 			"\"stringValue\": \"789\""
 		"}"
 	"}";
+// clang-format on
 
 TEST_F(HeartDeserializationFixture, BasicDeserialization)
 {
@@ -45,6 +47,7 @@ TEST_F(HeartDeserializationFixture, BasicDeserialization)
 	EXPECT_EQ(strcmp(target.stringValue.c_str(), "789"), 0);
 }
 
+// clang-format off
 const char* NestedDeserializationTestJsonData = "{ "
 		"\"type\": \"NestedDeserializationTestStruct\","
 		"\"contents\": {"
@@ -59,6 +62,7 @@ const char* NestedDeserializationTestJsonData = "{ "
 			"}"
 		"}"
 	"}";
+// clang-format on
 
 TEST_F(HeartDeserializationFixture, NestedDeserialization)
 {
@@ -81,6 +85,7 @@ TEST_F(HeartDeserializationFixture, NestedDeserialization)
 	EXPECT_EQ(strcmp(target.testStruct.stringValue.c_str(), "hello world"), 0);
 }
 
+// clang-format off
 const char* VectorDeserializationTestJsonData = "{ "
 		"\"type\": \"VectorDeserializationTestStruct\","
 		"\"contents\": {"
@@ -108,6 +113,7 @@ const char* VectorDeserializationTestJsonData = "{ "
 			"}]"
 		"}"
 	"}";
+// clang-format on
 
 TEST_F(HeartDeserializationFixture, VectorDeserialization)
 {
@@ -135,6 +141,7 @@ TEST_F(HeartDeserializationFixture, VectorDeserialization)
 	EXPECT_EQ(strcmp(target.values[2].stringValue.c_str(), "hello world 3"), 0);
 }
 
+// clang-format off
 const char* ArrayDeserializationTestJsonData = "{ "
 		"\"type\": \"ArrayDeserializationTestStruct\","
 		"\"contents\": {"
@@ -162,6 +169,7 @@ const char* ArrayDeserializationTestJsonData = "{ "
 			"}]"
 		"}"
 	"}";
+// clang-format on
 
 TEST_F(HeartDeserializationFixture, ArrayDeserialization)
 {
