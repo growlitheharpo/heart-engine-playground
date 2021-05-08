@@ -231,6 +231,7 @@ public:
 		HEART_ASSERT(!m_owns);
 
 		m_mutex->LockShared();
+		m_owns = true;
 	}
 
 	bool TryLock()

@@ -36,6 +36,11 @@ public:
 	void Detach();
 	void SetName(const char* name);
 
+	void** GetNativeHandle()
+	{
+		return &m_handle;
+	}
+
 	explicit operator bool() const;
 
 	friend bool operator==(decltype(nullptr), const HeartThread& t)

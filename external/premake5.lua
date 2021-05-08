@@ -212,3 +212,36 @@ project "murmerhash"
 	files {
 		"smhasher/smhasher/src/MurmurHash**",
 	}
+
+function include_googletest(should_link)
+	includedirs {
+		export_include_root .. "googletest/googletest/include/",
+	}
+
+	defines {
+		"GTEST_LINKED_AS_SHARED_LIBRARY=0",
+		"GTEST_CREATE_SHARED_LIBRARY=0",
+		"GTEST_HAS_TR1_TUPLE=0",
+		"GTEST_HAS_CLONE=0",
+		"GTEST_HAS_SEH=0",
+	}
+
+	if should_link then
+		links {
+			"googletest"
+		}
+	end
+end
+
+project "googletest"
+	kind "StaticLib"
+	set_location()
+	removeflags { "FatalWarnings" }
+	warnings "Off"
+	include_googletest()
+	includedirs {
+		export_include_root .. "googletest/googletest/",
+	}
+	files {
+		"googletest/googletest/src/**",
+	}
