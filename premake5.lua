@@ -73,6 +73,7 @@ group "heart"
 	include "heart/heart-core"
 	include "heart/heart-codegen"
 	include "heart/heart-stl"
+	include "heart/heart-test"
 group "*"
 
 include "game/"
