@@ -17,16 +17,15 @@ public:
 	}
 };
 
-// clang-format off
-const char* BasicDeserializationTestJsonData = "{ "
-		"\"type\": \"DeserializationTestStruct\","
-		"\"contents\": {"
-			"\"floatValue\":123.0,"
-			"\"intValue\": 456,"
-			"\"stringValue\": \"789\""
-		"}"
-	"}";
-// clang-format on
+const char* BasicDeserializationTestJsonData = R"(
+{ 
+	"type": "DeserializationTestStruct",
+	"contents": {
+			"floatValue": 123.0,
+			"intValue": 456,
+			"stringValue": "789"
+	}
+})";
 
 TEST_F(HeartDeserializationFixture, BasicDeserialization)
 {
@@ -47,22 +46,21 @@ TEST_F(HeartDeserializationFixture, BasicDeserialization)
 	EXPECT_EQ(strcmp(target.stringValue.c_str(), "789"), 0);
 }
 
-// clang-format off
-const char* NestedDeserializationTestJsonData = "{ "
-		"\"type\": \"NestedDeserializationTestStruct\","
-		"\"contents\": {"
-			"\"outerIntValue\": 123,"
-			"\"testStruct\": {"
-				"\"type\": \"DeserializationTestStruct\","
-				"\"contents\": {"
-					"\"floatValue\":456.0,"
-					"\"intValue\": 789,"
-					"\"stringValue\": \"hello world\""
-				"}"
-			"}"
-		"}"
-	"}";
-// clang-format on
+const char* NestedDeserializationTestJsonData = R"(
+{
+	"type": "NestedDeserializationTestStruct",
+	"contents": {
+		"outerIntValue": 123,
+		"testStruct": {
+			"type": "DeserializationTestStruct",
+			"contents": {
+				"floatValue": 456.0,
+				"intValue": 789,
+				"stringValue": "hello world"
+			}
+		}
+	}
+})";
 
 TEST_F(HeartDeserializationFixture, NestedDeserialization)
 {
@@ -85,35 +83,34 @@ TEST_F(HeartDeserializationFixture, NestedDeserialization)
 	EXPECT_EQ(strcmp(target.testStruct.stringValue.c_str(), "hello world"), 0);
 }
 
-// clang-format off
-const char* VectorDeserializationTestJsonData = "{ "
-		"\"type\": \"VectorDeserializationTestStruct\","
-		"\"contents\": {"
-			"\"values\": [{"
-				"\"type\": \"DeserializationTestStruct\","
-				"\"contents\": {"
-					"\"floatValue\":111.0,"
-					"\"intValue\": 111,"
-					"\"stringValue\": \"hello world 1\""
-				"}"
-			"},{"
-				"\"type\": \"DeserializationTestStruct\","
-				"\"contents\": {"
-					"\"floatValue\":222.0,"
-					"\"intValue\": 222,"
-					"\"stringValue\": \"hello world 2\""
-				"}"
-			"},{"
-				"\"type\": \"DeserializationTestStruct\","
-				"\"contents\": {"
-					"\"floatValue\":333.0,"
-					"\"intValue\": 333,"
-					"\"stringValue\": \"hello world 3\""
-				"}"
-			"}]"
-		"}"
-	"}";
-// clang-format on
+const char* VectorDeserializationTestJsonData = R"(
+{
+	"type": "VectorDeserializationTestStruct",
+	"contents": {
+		"values": [{
+			"type": "DeserializationTestStruct",
+			"contents": {
+				"floatValue": 111.0,
+				"intValue": 111,
+				"stringValue": "hello world 1"
+			}
+		},{
+			"type": "DeserializationTestStruct",
+			"contents": {
+				"floatValue": 222.0,
+				"intValue": 222,
+				"stringValue": "hello world 2"
+			}
+		},{
+			"type": "DeserializationTestStruct",
+			"contents": {
+				"floatValue": 333.0,
+				"intValue": 333,
+				"stringValue": "hello world 3"
+			}
+		}]
+	}
+})";
 
 TEST_F(HeartDeserializationFixture, VectorDeserialization)
 {
@@ -141,35 +138,34 @@ TEST_F(HeartDeserializationFixture, VectorDeserialization)
 	EXPECT_EQ(strcmp(target.values[2].stringValue.c_str(), "hello world 3"), 0);
 }
 
-// clang-format off
-const char* ArrayDeserializationTestJsonData = "{ "
-		"\"type\": \"ArrayDeserializationTestStruct\","
-		"\"contents\": {"
-			"\"values\": [{"
-				"\"type\": \"DeserializationTestStruct\","
-				"\"contents\": {"
-					"\"floatValue\":111.0,"
-					"\"intValue\": 111,"
-					"\"stringValue\": \"hello world 1\""
-				"}"
-			"},{"
-				"\"type\": \"DeserializationTestStruct\","
-				"\"contents\": {"
-					"\"floatValue\":222.0,"
-					"\"intValue\": 222,"
-					"\"stringValue\": \"hello world 2\""
-				"}"
-			"},{"
-				"\"type\": \"DeserializationTestStruct\","
-				"\"contents\": {"
-					"\"floatValue\":333.0,"
-					"\"intValue\": 333,"
-					"\"stringValue\": \"hello world 3\""
-				"}"
-			"}]"
-		"}"
-	"}";
-// clang-format on
+const char* ArrayDeserializationTestJsonData = R"(
+{
+	"type": "ArrayDeserializationTestStruct",
+	"contents": {
+		"values": [{
+			"type": "DeserializationTestStruct",
+			"contents": {
+				"floatValue": 111.0,
+				"intValue": 111,
+				"stringValue": "hello world 1"
+			}
+		},{
+			"type": "DeserializationTestStruct",
+			"contents": {
+				"floatValue": 222.0,
+				"intValue": 222,
+				"stringValue": "hello world 2"
+			}
+		},{
+			"type": "DeserializationTestStruct",
+			"contents": {
+				"floatValue": 333.0,
+				"intValue": 333,
+				"stringValue": "hello world 3"
+			}
+		}]
+	}
+})";
 
 TEST_F(HeartDeserializationFixture, ArrayDeserialization)
 {
