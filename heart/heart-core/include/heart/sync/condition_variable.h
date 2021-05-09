@@ -26,6 +26,7 @@ public:
 	void NotifyOne();
 	void NotifyAll();
 	void Wait(HeartMutex& mutex, WaitOwnership = WaitOwnership::Exclusive);
+	bool TryWaitFor(HeartMutex& mutex, uint32_t milliseconds, WaitOwnership = WaitOwnership::Exclusive);
 
 	void** NativeHandle()
 	{
