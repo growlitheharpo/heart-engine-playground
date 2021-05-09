@@ -58,6 +58,8 @@ TEST(HeartFunction, SwappableToEmpty)
 	EXPECT_TRUE(adapter2);
 	EXPECT_FALSE(adapter1);
 
+	EXPECT_DEATH(adapter1(), ".*");
+
 	int result2 = adapter2();
 	EXPECT_EQ(result2, SecretValue);
 	EXPECT_EQ(result1, result2);
@@ -156,6 +158,7 @@ TEST(HeartFunction, Moveable)
 	adapter2 = hrt::move(adapter1);
 
 	EXPECT_FALSE(adapter1);
+	EXPECT_DEATH(adapter1(), ".*");
 	EXPECT_TRUE(adapter2);
 
 	int result = adapter2();

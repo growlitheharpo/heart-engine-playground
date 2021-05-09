@@ -60,7 +60,7 @@ private:
 	using ImplType = details::HeartFunctionImpl<F, R, Args...>;
 
 	bool m_set = false;
-	StorageType m_storage;
+	StorageType m_storage = {};
 
 	BaseType* GetPtr()
 	{
@@ -144,8 +144,13 @@ public:
 
 	void Clear()
 	{
-		GetPtr()->~BaseType();
-		m_set = false;
+		if (m_set)
+		{
+			GetPtr()->~BaseType();
+			m_set = false;
+			for (char* p = (char*)&m_storage; p < (char*)&m_storage + sizeof(m_storage); ++p)
+				*p = 0;
+		}
 	}
 
 	explicit operator bool() const
