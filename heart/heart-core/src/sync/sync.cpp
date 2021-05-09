@@ -42,6 +42,15 @@ void HeartConditionVariable::Wait(HeartMutex& mutex, WaitOwnership ownership)
 	SleepConditionVariableSRW(&cv, &lock, INFINITE, flags);
 }
 
+bool HeartConditionVariable::TryWaitFor(HeartMutex& mutex, uint32_t milliseconds, WaitOwnership ownership)
+{
+	SRWLOCK& lock = *(SRWLOCK*)mutex.NativeHandle();
+	CONDITION_VARIABLE& cv = *(CONDITION_VARIABLE*)NativeHandle();
+
+	ULONG flags = ownership == WaitOwnership::Shared ? CONDITION_VARIABLE_LOCKMODE_SHARED : 0;
+	return SleepConditionVariableSRW(&cv, &lock, milliseconds, flags);
+}
+
 HeartMutex::HeartMutex()
 {
 	static_assert(sizeof(m_handle) <= sizeof(SRWLOCK), "SRWLOCK has grown! We need more storage.");
