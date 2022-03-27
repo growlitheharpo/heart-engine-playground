@@ -47,8 +47,8 @@ int WinMain()
 
 	ImGui::Game::RegisterEvents();
 	r.RegisterEvents();
-	hrt::get<1>(e.CreateHandler(sf::Event::Closed)).connect<WindowClosedEvent>();
-	hrt::get<1>(e.CreateHandler(sf::Event::KeyPressed)).connect<EscapeKeyHitEvent>();
+	std::get<1>(e.CreateHandler(sf::Event::Closed)).connect<WindowClosedEvent>();
+	std::get<1>(e.CreateHandler(sf::Event::KeyPressed)).connect<EscapeKeyHitEvent>();
 
 	sf::Clock deltaClock;
 

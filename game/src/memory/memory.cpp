@@ -19,6 +19,9 @@ struct debug_allocator : HeartBaseAllocator<T>
 {
 	debug_allocator() = default;
 	USE_DEFAULT_COPY_SEMANTICS(debug_allocator);
+	USING_STANDARD_TYPEDEFS(HeartBaseAllocator<T>);
+	using size_type = HeartBaseAllocator<T>::size_type;
+	using difference_type = HeartBaseAllocator<T>::difference_type;
 
 	template <typename U>
 	debug_allocator(const debug_allocator<U>&)

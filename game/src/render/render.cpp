@@ -89,7 +89,7 @@ Renderer& Renderer::Get()
 void Renderer::RegisterEvents()
 {
 	auto eventHandle = EventManager::Get().CreateHandler(sf::Event::Resized);
-	hrt::get<1>(eventHandle).connect<&Renderer::HandleResize>(*this);
+	std::get<1>(eventHandle).connect<&Renderer::HandleResize>(*this);
 }
 
 void Renderer::BeginFrame()

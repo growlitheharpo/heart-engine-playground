@@ -50,8 +50,8 @@ sf::IntRect UI::Button::GetRect() const
 void UI::Button::Initialize()
 {
 	auto click = EventManager::Get().CreateHandler(sf::Event::MouseButtonPressed);
-	m_clickEventHandle = hrt::get<0>(click);
-	hrt::get<1>(click).connect<&UI::Button::OnClick>(*this);
+	m_clickEventHandle = std::get<0>(click);
+	std::get<1>(click).connect<&UI::Button::OnClick>(*this);
 }
 
 void UI::Button::Destroy()

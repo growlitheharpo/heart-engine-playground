@@ -29,12 +29,12 @@ struct HeartBaseAllocator
 
 	void construct(pointer p, const_reference val)
 	{
-		new ((T*)p) T(val);
+		new ((V*)p) V(val);
 	}
 
 	void destroy(pointer p)
 	{
-		p->~T();
+		p->~V();
 	}
 
 	size_type max_size() const noexcept
@@ -47,10 +47,13 @@ struct HeartBaseAllocator
 // Provides an example of how to make a subclass of HeartBaseAllocator
 // fully std-compliant.
 template <typename T>
-struct HeartDefaultAllocator : HeartBaseAllocator<T>
+struct HeartDefaultAllocator : public HeartBaseAllocator<T>
 {
 	HeartDefaultAllocator() = default;
 	USE_DEFAULT_COPY_SEMANTICS(HeartDefaultAllocator);
+	USING_STANDARD_TYPEDEFS(HeartBaseAllocator<T>);
+	using size_type = HeartBaseAllocator<T>::size_type;
+	using difference_type = HeartBaseAllocator<T>::difference_type;
 
 	template <typename U>
 	HeartDefaultAllocator(const HeartDefaultAllocator<U>&)

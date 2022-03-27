@@ -60,7 +60,7 @@ private:
 	void ProcessEvent(sf::Event e);
 
 public:
-	hrt::tuple<EventFuncHandle, EventFilterFunc&> CreateHandler(sf::Event::EventType e);
+	std::tuple<EventFuncHandle, EventFilterFunc&> CreateHandler(sf::Event::EventType e);
 	bool RemoveHandler(EventFuncHandle id);
 
 	void Initialize(Renderer* r);
