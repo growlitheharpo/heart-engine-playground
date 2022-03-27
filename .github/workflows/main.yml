@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -42,7 +42,7 @@ jobs:
       run: nuget restore build\heart-engine-playground.sln
 
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.2
+      uses: microsoft/setup-msbuild@v1.1
 
     - name: Build
       run: msbuild build\heart-engine-playground.sln -m /p:platform=x64 /p:configuration=${{ matrix.config }}
