@@ -25,7 +25,7 @@ namespace hrt
 		return std::get<N>(v);
 	}
 
-	template <auto N, typename T>
+	template <size_t N, typename T>
 	auto& get(T& v)
 	{
 		return std::get<N>(v);

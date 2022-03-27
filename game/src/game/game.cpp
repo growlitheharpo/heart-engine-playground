@@ -143,7 +143,7 @@ void InitializeGame()
 		fence.Wait(2);
 		{
 			auto bg = create_multi_component<TransformComponent, DrawableComponent>();
-			auto& drawable = hrt::get<2>(bg);
+			auto& drawable = std::get<2>(bg);
 
 			drawable.texture = new sf::Texture();
 			drawable.texture->loadFromMemory(bgTextureBuffer.data(), bgTextureBuffer.size());
@@ -151,7 +151,7 @@ void InitializeGame()
 			drawable.sprite = new sf::Sprite(*drawable.texture);
 			drawable.z = -10.0f;
 
-			auto& tf = hrt::get<1>(bg);
+			auto& tf = std::get<1>(bg);
 			tf.position = sf::Vector2f(0.0f, -250.0f);
 		}
 
@@ -161,7 +161,7 @@ void InitializeGame()
 			fence.Wait(4);
 
 			auto player = create_multi_component<PlayerTag, InputStatusComponent, TransformComponent, DrawableComponent>();
-			auto& drawable = hrt::get<4>(player);
+			auto& drawable = std::get<4>(player);
 
 			drawable.texture = new sf::Texture();
 			drawable.texture->loadFromMemory(playerTextureBuffer.data(), playerTextureBuffer.size());
@@ -173,7 +173,7 @@ void InitializeGame()
 	// Create our origin marker
 	{
 		auto originMarker = create_multi_component<TransformComponent, DrawableComponent>();
-		auto& drawable = hrt::get<2>(originMarker);
+		auto& drawable = std::get<2>(originMarker);
 
 		sf::Image i;
 		i.create(2, 2, sf::Color::Magenta);
@@ -198,12 +198,12 @@ void InitializeGame()
 
 	{
 		auto handle = EventManager::Get().CreateHandler(sf::Event::KeyPressed);
-		hrt::get<1>(handle).connect<sPlayerInputDown>();
+		std::get<1>(handle).connect<sPlayerInputDown>();
 	}
 
 	{
 		auto handle = EventManager::Get().CreateHandler(sf::Event::KeyReleased);
-		hrt::get<1>(handle).connect<sPlayerInputUp>();
+		std::get<1>(handle).connect<sPlayerInputUp>();
 	}
 }
 

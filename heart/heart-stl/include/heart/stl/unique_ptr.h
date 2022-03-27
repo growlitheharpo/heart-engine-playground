@@ -5,6 +5,7 @@
 #include <heart/stl/forward.h>
 #include <heart/stl/move.h>
 #include <heart/stl/type_traits.h>
+#include <heart/stl/utility.h>
 
 namespace hrt
 {
@@ -110,7 +111,7 @@ namespace hrt
 		template <typename U, typename E, enable_if_t<is_convertible_v<typename unique_ptr<U, E>::pointer, pointer>, int> = 0>
 		unique_ptr(unique_ptr<U, E>&& u) noexcept :
 			m_deleter(u.m_deleter),
-			m_pointer(u.m_pointer),
+			m_pointer(u.m_pointer)
 		{
 			u.m_pointer = nullptr;
 		}

@@ -14,6 +14,7 @@
 
 // We include initializer_list from STD no matter what
 #include <initializer_list>
+#include <limits>
 
 // we include <string> for memset... bleck
 #include <string.h>

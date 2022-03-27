@@ -4,6 +4,7 @@
 
 #include <heart/stl/forward.h>
 #include <heart/stl/move.h>
+#include <heart/stl/type_traits/add_remove_ref_cv.h>
 #include <heart/stl/type_traits/aligned_storage.h>
 #include <heart/stl/type_traits/enable_if.h>
 
@@ -23,6 +24,7 @@ namespace details
 	template <typename F, typename R, typename... Args>
 	class HeartFunctionImpl : public HeartFunctionBase<R, Args...>
 	{
+		static_assert(hrt::is_same_v<F, hrt::remove_reference_t<F>>);
 		F f;
 
 	public:
@@ -57,7 +59,7 @@ private:
 	using StorageType = hrt::aligned_storage_t<Storage>;
 
 	template <typename F>
-	using ImplType = details::HeartFunctionImpl<F, R, Args...>;
+	using ImplType = details::HeartFunctionImpl<hrt::remove_reference_t<F>, R, Args...>;
 
 	bool m_set = false;
 	StorageType m_storage = {};
@@ -93,7 +95,7 @@ public:
 	}
 
 	template <typename F, hrt::enable_if_t<SizeCheck<F>, void*> = nullptr>
-	HeartFunction(F&& f)
+	HeartFunction(F f)
 	{
 		Set(hrt::forward<F>(f));
 	}
@@ -133,6 +135,13 @@ public:
 			// Put "other" in this (via tmp)
 			tmp.Swap(*this);
 		}
+	}
+
+	template <typename F, hrt::enable_if_t<SizeCheck<F>, void*> = nullptr>
+	void Set(F& f)
+	{
+		new (GetPtr()) ImplType<F>(hrt::forward<F>(f));
+		m_set = true;
 	}
 
 	template <typename F, hrt::enable_if_t<SizeCheck<F>, void*> = nullptr>

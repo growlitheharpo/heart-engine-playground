@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string.h>
+
 #ifndef __HEART_CODEGEN_ACTIVE
 #define SERIALIZE_STRUCT()
 #define SERIALIZE_AS_REF()

@@ -17,3 +17,7 @@
 #define REF_AND_CONST_REF(func_signature, implementation) \
 	reference func_signature implementation;              \
 	const_reference func_signature const implementation
+
+#define POINTER_AND_CONST_POINTER(func_signature, implementation) \
+	pointer func_signature implementation;                        \
+	const_pointer func_signature const implementation

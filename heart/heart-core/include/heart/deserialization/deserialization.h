@@ -15,7 +15,7 @@
 namespace heart_priv
 {
 	template <typename OutType, typename MetaType, typename RapidjsonType>
-	static bool ReadSingleProperty(OutType& outObject, MetaType& metaData, RapidjsonType& jsonNode);
+	static bool ReadSingleProperty(OutType& outObject, MetaType&& metaData, RapidjsonType& jsonNode);
 }
 
 template <typename OutType, typename RapidjsonType>
@@ -60,11 +60,11 @@ bool HeartDeserializeObject(OutType& outObject, RapidjsonType& node)
 namespace heart_priv
 {
 	template <typename OutType, typename MetaType, typename RapidjsonType>
-	static bool ReadSingleProperty(OutType& outObject, MetaType& metaData, RapidjsonType& jsonNode, size_t index)
+	static bool ReadSingleProperty(OutType& outObject, MetaType&& metaData, RapidjsonType& jsonNode, size_t index)
 	{
 		if (jsonNode.IsObject())
 		{
-			auto& instance = metaData.get(outObject, index);
+			auto&& instance = metaData.get(outObject, index);
 			if (!HeartDeserializeObject(instance, jsonNode))
 				return false;
 		}
@@ -98,11 +98,11 @@ namespace heart_priv
 	}
 
 	template <typename OutType, typename MetaType, typename RapidjsonType>
-	static bool ReadSingleProperty(OutType& outObject, MetaType& metaData, RapidjsonType& jsonNode)
+	static bool ReadSingleProperty(OutType& outObject, MetaType&& metaData, RapidjsonType& jsonNode)
 	{
 		if (jsonNode.IsObject())
 		{
-			auto& instance = metaData.get(outObject);
+			auto&& instance = metaData.get(outObject);
 			if (!HeartDeserializeObject(instance, jsonNode))
 				return false;
 		}

@@ -2,6 +2,7 @@
 
 #include <heart/allocator.h>
 
+#include <heart/stl/forward.h>
 #include <heart/stl/unique_ptr.h>
 
 namespace Memory
@@ -50,6 +51,9 @@ namespace Memory
 
 		BasePoolAllocator() = default;
 		USE_DEFAULT_COPY_SEMANTICS(BasePoolAllocator);
+		USING_STANDARD_TYPEDEFS(HeartBaseAllocator<V>);
+		using size_type = HeartBaseAllocator<V>::size_type;
+		using difference_type = HeartBaseAllocator<V>::difference_type;
 
 		template <typename U>
 		BasePoolAllocator(const BasePoolAllocator<U, TargetPool, TargetPeriod>&)
@@ -104,7 +108,7 @@ namespace Memory
 
 		A alloc;
 		pointer p = alloc.allocate(1);
-		::new (typename A::void_pointer(p)) value_type(std::forward<Vs>(args)...);
+		::new (typename A::void_pointer(p)) value_type(hrt::forward<Vs>(args)...);
 
 		return p;
 	}

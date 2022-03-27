@@ -149,7 +149,7 @@ TEST(HeartFunction, ComplexSwap)
 
 TEST(HeartFunction, Moveable)
 {
-	HeartFunction<int()> adapter1(StaticFunction);
+	HeartFunction<int()> adapter1(&StaticFunction);
 	EXPECT_TRUE(adapter1);
 
 	HeartFunction<int()> adapter2;

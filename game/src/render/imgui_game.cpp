@@ -117,7 +117,7 @@ namespace ImGui
 		void RegisterEvents()
 		{
 #if IMGUI_ENABLED
-			hrt::get<1>(EventManager::Get().CreateHandler(sf::Event::KeyPressed)).connect<sToggleImGuiEvent>();
+			std::get<1>(EventManager::Get().CreateHandler(sf::Event::KeyPressed)).connect<sToggleImGuiEvent>();
 #endif
 		}
 	}

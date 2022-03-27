@@ -37,7 +37,7 @@ end
 workspace "heart-engine-playground"
 	location "build/"
 	language "C++"
-	cppdialect "c++17"
+	cppdialect "c++20"
 	startproject "sfml-demo"
 
 	architecture "x86_64"
@@ -58,6 +58,10 @@ workspace "heart-engine-playground"
 
 	flags {
 		"FatalWarnings"
+	}
+
+	disablewarnings {
+		"5056",
 	}
 
 	defines {

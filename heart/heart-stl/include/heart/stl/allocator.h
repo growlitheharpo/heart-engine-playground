@@ -1,6 +1,7 @@
 #pragma once
 
 #include <heart/config.h>
+#include <heart/stl/forward.h>
 #include <heart/stl/type_traits.h>
 
 #include <new>
