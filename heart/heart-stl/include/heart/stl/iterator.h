@@ -20,12 +20,33 @@ namespace hrt
 	template <typename IteratorType>
 	class reverse_iterator;
 
+	struct input_iterator_tag
+	{
+	};
+
+	struct output_iterator_tag
+	{
+	};
+
+	struct forward_iterator_tag : input_iterator_tag
+	{
+	};
+
+	struct bidirectional_iterator_tag : forward_iterator_tag
+	{
+	};
+
+	struct random_access_iterator_tag : bidirectional_iterator_tag
+	{
+	};
+
 	template <typename DataType, typename s, typename d>
 	class iterator
 	{
 	public:
 		DECLARE_STANDARD_TYPEDEFS(DataType);
 
+		typedef random_access_iterator_tag iterator_category;
 		typedef s size_type;
 		typedef d difference_type;
 		typedef iterator<DataType, size_type, difference_type> this_type;
@@ -99,6 +120,7 @@ namespace hrt
 	public:
 		DECLARE_STANDARD_TYPEDEFS(DataType);
 
+		typedef random_access_iterator_tag iterator_category;
 		typedef s size_type;
 		typedef d difference_type;
 		typedef const_iterator<DataType, size_type, difference_type> this_type;
