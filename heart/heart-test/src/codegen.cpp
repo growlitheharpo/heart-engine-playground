@@ -118,6 +118,7 @@ TEST_F(HeartDeserializationFixture, VectorDeserialization)
 	doc.Parse(VectorDeserializationTestJsonData);
 
 	ASSERT_TRUE(!doc.HasParseError());
+	static_assert(entt::is_complete_v<entt::meta_sequence_container_traits<hrt::vector<DeserializationTestStruct>>>);
 
 	VectorDeserializationTestStruct target;
 	EXPECT_TRUE(target.values.empty());

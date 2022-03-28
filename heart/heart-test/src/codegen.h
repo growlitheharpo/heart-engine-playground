@@ -4,6 +4,8 @@
 
 #include <heart/stl/vector.h>
 
+#include <array>
+
 SERIALIZE_STRUCT()
 struct DeserializationTestStruct
 {
@@ -32,5 +34,5 @@ SERIALIZE_STRUCT()
 struct ArrayDeserializationTestStruct
 {
 	SERIALIZE_AS_REF()
-	DeserializationTestStruct values[4] = {};
+	std::array<DeserializationTestStruct, 4> values = {};
 };

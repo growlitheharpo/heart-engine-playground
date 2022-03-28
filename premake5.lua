@@ -60,10 +60,6 @@ workspace "heart-engine-playground"
 		"FatalWarnings"
 	}
 
-	disablewarnings {
-		"5056",
-	}
-
 	defines {
 		"_ITERATOR_DEBUG_LEVEL=0",
 	}

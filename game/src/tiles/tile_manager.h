@@ -12,7 +12,7 @@
 
 class Renderer;
 
-using TileTag = entt::tag<"TileTag"_hs>;
+using TileTag = entt::tag<entt::hashed_string {"TileTag"}>;
 
 class TileManager
 {
