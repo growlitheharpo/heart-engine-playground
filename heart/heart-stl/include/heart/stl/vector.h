@@ -233,6 +233,7 @@ namespace hrt
 		vector& operator=(vector&& other)
 		{
 			swap(other);
+			return *this;
 		}
 
 		~vector()
@@ -455,26 +456,29 @@ namespace hrt
 #endif
 		}
 
-		void insert(const_iterator position, const_reference val)
+		iterator insert(const_iterator position, const_reference val)
 		{
 			pointer loc = insert_get_location(position);
 			alloc_traits::construct(allocator_, loc, val);
+			return iterator(loc);
 		}
 
-		void insert(const_iterator position, value_type&& val)
+		iterator insert(const_iterator position, value_type&& val)
 		{
 			pointer loc = insert_get_location(position);
 			alloc_traits::construct(allocator_, loc, hrt::forward<value_type>(val));
+			return iterator(loc);
 		}
 
-		void erase(iterator position)
+		iterator erase(iterator position)
 		{
-			erase(position, position + 1);
+			return erase(position, position + 1);
 		}
 
-		void erase(iterator first, iterator last)
+		iterator erase(iterator first, iterator last)
 		{
 			size_type destroyed_count = 0;
+			difference_type offset = first - begin();
 			pointer destruct_ptr = &*first;
 			pointer destruct_end = &*last;
 
@@ -492,6 +496,7 @@ namespace hrt
 			}
 
 			size_ -= destroyed_count;
+			return begin() + offset;
 		}
 
 		void swap(this_type& other) noexcept

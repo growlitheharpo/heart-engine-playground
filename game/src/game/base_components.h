@@ -31,4 +31,4 @@ struct InputStatusComponent
 	uint8_t flags = 0;
 };
 
-using PlayerTag = entt::tag<"PlayerTag"_hs>;
+using PlayerTag = entt::tag<entt::hashed_string{"PlayerTag"}>;

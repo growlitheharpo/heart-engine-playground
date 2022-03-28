@@ -48,7 +48,6 @@ namespace Heart.Codegen
 		private string _directory;
 		private HashSet<string> _includes = new HashSet<string>();
 		private HashSet<int> _serializedStringSizes = new HashSet<int>();
-		private HashSet<string> _serializedVectorTypes = new HashSet<string>();
 		private Dictionary<string, List<FieldToken>> _typeFields = new Dictionary<string, List<FieldToken>>();
 
 		private SerializationGen(string dir, string[] heartDirs)
@@ -92,9 +91,11 @@ namespace Heart.Codegen
 
 					using (var function = new FunctionBlock(writer, "void ReflectSerializedData()"))
 					{
+						function.WriteLine("using namespace entt::literals;");
+						function.WriteLine();
+
 						ReflectBaseTypes(function);
 						ReflectSerializedStrings(function);
-						ReflectSerializedVectors(function);
 						ReflectSerializedStructs(function);
 					}
 
@@ -202,21 +203,6 @@ namespace Heart.Codegen
 			}
 		}
 
-		private void ReflectSerializedVectors(ICodeWriter writer)
-		{
-			foreach (var vectorType in _serializedVectorTypes)
-			{
-				string type = $"hrt::vector<{vectorType}>";
-
-				using (var vec = new IndentLevel(writer, $"BEGIN_SERIALIZE_TYPE({type})", $"END_SERIALIZE_TYPE({type})"))
-				{
-					vec.WriteLine($"SERIALIZE_FUNCTION_ALIAS({type}, emplace_back<>)");
-					vec.WriteLine($"SERIALIZE_FUNCTION_ALIAS({type}, reserve)");
-				}
-				writer.WriteLine();
-			}
-		}
-
 		private void ReflectSerializedStructs(ICodeWriter writer)
 		{
 			foreach (var typePair in _typeFields)
@@ -242,7 +228,7 @@ namespace Heart.Codegen
 
 		private void TraverseCodebase()
 		{
-			var codeExtensions = new[] { ".cpp", ".c", ".h", ".hpp" };
+			var codeExtensions = new[] { /*".cpp", ".c",*/ ".h", ".hpp" };
 
 			foreach (var file in Directory.GetFiles(_directory, "*.*", SearchOption.AllDirectories))
 			{
@@ -422,6 +408,12 @@ namespace Heart.Codegen
 				bool asFunc = shouldBeFunc;
 				_state.state = SerializeState.SerializeCurrentParent;
 
+				if (cursor.Type.ArraySize >= 1)
+				{
+					EncounterError($"Codegen does not support raw C arrays, use std::array instead. {_state.serializedParent.Value.Spelling.CString}::{fieldName}", cursor.Location);
+					return CXChildVisitResult.CXChildVisit_Continue;
+				}
+
 				// TODO: Don't do this linearly?
 				if (!_typeFields[parentType].Any(x => x.name == fieldName))
 				{
@@ -439,12 +431,6 @@ namespace Heart.Codegen
 				{
 					int size = int.Parse(serializedStringRgx.Match(fieldType).Groups[2].Value);
 					_serializedStringSizes.Add(size);
-				}
-				var hrtVectorRgx = new Regex("(hrt::vector<)(.+)(>)");
-				if (hrtVectorRgx.IsMatch(fieldType))
-				{
-					string typeName = hrtVectorRgx.Match(fieldType).Groups[2].Value;
-					_serializedVectorTypes.Add(typeName);
 				}
 
 				return CXChildVisitResult.CXChildVisit_Continue;

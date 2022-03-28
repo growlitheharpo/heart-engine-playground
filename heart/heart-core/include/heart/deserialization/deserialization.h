@@ -3,19 +3,33 @@
 #include <heart/debug/assert.h>
 #include <heart/types.h>
 
+// TODO: including hrt::vector here causes types to be redefined as belonging to
+//  std in heart-codegen if we parse cpp files... what the hell is happening?
+#include <heart/stl/vector.h>
+
 #include <heart/stl/type_traits.h>
 
 #include <entt/core/hashed_string.hpp>
+#include <entt/meta/container.hpp>
 #include <entt/meta/factory.hpp>
 #include <entt/meta/meta.hpp>
 #include <entt/meta/resolve.hpp>
 
 #include <rapidjson/document.h>
 
+namespace entt
+{
+	template <typename Type, typename... Args>
+	struct meta_sequence_container_traits<hrt::vector<Type, Args...>> :
+		public internal::basic_meta_sequence_container_traits<hrt::vector<Type, Args...>>
+	{
+	};
+}
+
 namespace heart_priv
 {
-	template <typename OutType, typename MetaType, typename RapidjsonType>
-	static bool ReadSingleProperty(OutType& outObject, MetaType&& metaData, RapidjsonType& jsonNode);
+	template <typename OutType>
+	static bool ReadSingleProperty(OutType& targetObject, entt::meta_data metaField, rapidjson::Value& jsonNode);
 }
 
 template <typename OutType, typename RapidjsonType>
@@ -30,7 +44,7 @@ bool HeartDeserializeObject(OutType& outObject, RapidjsonType& node)
 		return false;
 
 	auto typeStr = typeIter->value.GetString();
-	auto metaType = entt::resolve_id(entt::hashed_string::value(typeStr));
+	auto metaType = entt::resolve(entt::hashed_string::value(typeStr));
 	if (!HEART_CHECK(metaType, "Type is not reflected!", typeStr))
 		return false;
 
@@ -48,9 +62,9 @@ bool HeartDeserializeObject(OutType& outObject, RapidjsonType& node)
 	for (auto& child : contents)
 	{
 		HEART_CHECK(child.name.IsString());
-		auto childId = entt::hashed_string::value(child.name.GetString());
+		auto fieldId = entt::hashed_string::value(child.name.GetString());
 
-		if (!heart_priv::ReadSingleProperty(outObject, metaType.data(childId), child.value))
+		if (!heart_priv::ReadSingleProperty(outObject, metaType.data(fieldId), child.value))
 			return false;
 	}
 
@@ -59,107 +73,67 @@ bool HeartDeserializeObject(OutType& outObject, RapidjsonType& node)
 
 namespace heart_priv
 {
-	template <typename OutType, typename MetaType, typename RapidjsonType>
-	static bool ReadSingleProperty(OutType& outObject, MetaType&& metaData, RapidjsonType& jsonNode, size_t index)
+	template <typename OutType>
+	static bool ReadSingleProperty(OutType& targetObject, entt::meta_data metaField, rapidjson::Value& jsonNode)
 	{
+		using namespace entt::literals;
+
 		if (jsonNode.IsObject())
 		{
-			auto&& instance = metaData.get(outObject, index);
-			if (!HeartDeserializeObject(instance, jsonNode))
+			// "Recurse" back into HeartDeserializeObject with a meta_any if
+			// this is an object and let it determine type, fields, etc
+			auto&& fieldInstance = metaField.get(targetObject);
+			if (!HeartDeserializeObject(fieldInstance, jsonNode))
 				return false;
 		}
 		else if (jsonNode.IsString())
 		{
-			metaData.set(outObject, index, jsonNode.GetString());
+			metaField.set(targetObject, jsonNode.GetString());
 		}
 		else if (jsonNode.IsBool())
 		{
-			metaData.set(outObject, index, jsonNode.GetBool());
+			metaField.set(targetObject, jsonNode.GetBool());
 		}
 		else if (jsonNode.IsInt())
 		{
-			metaData.set(outObject, index, jsonNode.GetInt());
+			metaField.set(targetObject, jsonNode.GetInt());
 		}
 		else if (jsonNode.IsUint())
 		{
-			metaData.set(outObject, index, jsonNode.GetUint());
+			metaField.set(targetObject, jsonNode.GetUint());
 		}
 		else if (jsonNode.IsFloat())
 		{
-			metaData.set(outObject, index, jsonNode.GetFloat());
-		}
-		else if (jsonNode.IsArray())
-		{
-			HEART_ASSERT(false, "Heart Deserialization cannot parse 2D arrays!");
-			return false;
-		}
-
-		return true;
-	}
-
-	template <typename OutType, typename MetaType, typename RapidjsonType>
-	static bool ReadSingleProperty(OutType& outObject, MetaType&& metaData, RapidjsonType& jsonNode)
-	{
-		if (jsonNode.IsObject())
-		{
-			auto&& instance = metaData.get(outObject);
-			if (!HeartDeserializeObject(instance, jsonNode))
-				return false;
-		}
-		else if (jsonNode.IsString())
-		{
-			metaData.set(outObject, jsonNode.GetString());
-		}
-		else if (jsonNode.IsBool())
-		{
-			metaData.set(outObject, jsonNode.GetBool());
-		}
-		else if (jsonNode.IsInt())
-		{
-			metaData.set(outObject, jsonNode.GetInt());
-		}
-		else if (jsonNode.IsUint())
-		{
-			metaData.set(outObject, jsonNode.GetUint());
-		}
-		else if (jsonNode.IsFloat())
-		{
-			metaData.set(outObject, jsonNode.GetFloat());
+			metaField.set(targetObject, jsonNode.GetFloat());
 		}
 		else if (jsonNode.IsArray())
 		{
 			auto jsonArr = jsonNode.GetArray();
+			auto targetAny = metaField.get(targetObject);
 
 			// If the real type is an actual array, we can set by-index
-			if (metaData.type().is_array())
+			if (auto targetSequence = targetAny.as_sequence_container(); targetSequence)
 			{
-				for (rapidjson::SizeType i = 0; i < jsonArr.Size() && i < metaData.type().extent(); ++i)
-				{
-					if (!ReadSingleProperty(outObject, metaData, jsonArr[i], size_t(i)))
-						return false;
-				}
-			}
-			// otherwise, look for an emplace_back<> member (i.e. STL-like) and insert dynamically
-			else if (auto inserterFunc = metaData.type().func("emplace_back<>"_hs); inserterFunc)
-			{
-				// Attempt to reserve the amount of space we need - this is not fatal if it cannot be found
-				if (auto reserverFunc = metaData.type().func("reserve"_hs); reserverFunc)
-				{
-					reserverFunc.invoke(metaData.get(outObject), size_t(jsonArr.Size()));
-				}
+				// Attempt to resize, silently fail if it's fixed-size
+				targetSequence.resize(jsonArr.Size());
 
-				for (rapidjson::SizeType i = 0; i < jsonArr.Size(); ++i)
+				// Loop over min(jsonArr.Size(), targetSequence.size())
+				for (rapidjson::SizeType i = 0; i < jsonArr.Size() && i < targetSequence.size(); ++i)
 				{
-					auto newMetaObject = inserterFunc.invoke(metaData.get(outObject));
+					// Get the object at this index
+					auto metaObject = targetSequence[i];
 
 					if (jsonArr[i].IsObject())
 					{
-						if (!HeartDeserializeObject(newMetaObject, jsonArr[i]))
+						// "Recurse" back into HeartDeserializeObject with a meta_any if
+						// this is an object and let it determine type, fields, etc
+						if (!HeartDeserializeObject(metaObject, jsonArr[i]))
 							return false;
 					}
-					else if (auto metaSelf = newMetaObject.type().data("self"_hs); metaSelf)
+					else if (auto metaSelf = metaObject.type().data("self"_hs); metaSelf)
 					{
-						if (!ReadSingleProperty(newMetaObject, metaSelf, jsonArr[i]))
+						// Use self reflection otherwise
+						if (!ReadSingleProperty(metaObject, metaSelf, jsonArr[i]))
 							return false;
 					}
 					else
