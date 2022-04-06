@@ -44,16 +44,16 @@ namespace Memory
 	}
 
 	template <typename V, Pool pool, Period period>
-	struct BasePoolAllocator : public HeartBaseAllocator<V>
+	struct BasePoolAllocator : public HeartBaseTypedAllocator<V>
 	{
 		static constexpr Pool TargetPool = pool;
 		static constexpr Period TargetPeriod = period;
 
 		BasePoolAllocator() = default;
 		USE_DEFAULT_COPY_SEMANTICS(BasePoolAllocator);
-		USING_STANDARD_TYPEDEFS(HeartBaseAllocator<V>);
-		using size_type = HeartBaseAllocator<V>::size_type;
-		using difference_type = HeartBaseAllocator<V>::difference_type;
+		USING_STANDARD_TYPEDEFS(HeartBaseTypedAllocator<V>);
+		using size_type = HeartBaseTypedAllocator<V>::size_type;
+		using difference_type = HeartBaseTypedAllocator<V>::difference_type;
 
 		template <typename U>
 		BasePoolAllocator(const BasePoolAllocator<U, TargetPool, TargetPeriod>&)
@@ -66,12 +66,12 @@ namespace Memory
 			using other = BasePoolAllocator<U, TargetPool, TargetPeriod>;
 		};
 
-		pointer allocate(size_type count, void* hint = nullptr)
+		void* RawAllocate(size_type bytes, void* hint = nullptr) override
 		{
-			return pointer(Alloc<TargetPool, TargetPeriod>(count * sizeof(V)));
+			return Alloc<TargetPool, TargetPeriod>(bytes);
 		}
 
-		void deallocate(pointer ptr, size_type count = 0)
+		void RawDeallocate(void* ptr, size_type n = 0) override
 		{
 			Free<TargetPool, TargetPeriod>(ptr);
 		}

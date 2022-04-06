@@ -6,7 +6,7 @@
 
 #include <heart/debug/assert.h>
 
-template <typename OutType, typename ByteAllocator = HeartDefaultByteAllocator>
+template <typename OutType, typename ByteAllocator = HeartDefaultTypedAllocator<uint8_t>>
 bool HeartDeserializeObjectFromFile(OutType& outObject, const char* filename)
 {
 	ByteAllocator alloc;

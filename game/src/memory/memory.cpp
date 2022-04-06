@@ -15,25 +15,25 @@
 #include <unordered_map>
 
 template <typename T>
-struct debug_allocator : HeartBaseAllocator<T>
+struct debug_allocator : HeartBaseTypedAllocator<T>
 {
 	debug_allocator() = default;
 	USE_DEFAULT_COPY_SEMANTICS(debug_allocator);
-	USING_STANDARD_TYPEDEFS(HeartBaseAllocator<T>);
-	using size_type = HeartBaseAllocator<T>::size_type;
-	using difference_type = HeartBaseAllocator<T>::difference_type;
+	USING_STANDARD_TYPEDEFS(HeartBaseTypedAllocator<T>);
+	using size_type = HeartBaseTypedAllocator<T>::size_type;
+	using difference_type = HeartBaseTypedAllocator<T>::difference_type;
 
 	template <typename U>
 	debug_allocator(const debug_allocator<U>&)
 	{
 	}
 
-	pointer allocate(size_type count, void* hint = nullptr)
+	void* RawAllocate(size_type bytes, void* hint = nullptr)
 	{
-		return pointer(malloc(count * sizeof(value_type)));
+		return pointer(malloc(bytes));
 	}
 
-	void deallocate(pointer p, size_t count = 0)
+	void RawDeallocate(void* p, size_t count = 0)
 	{
 		free(p);
 	}
