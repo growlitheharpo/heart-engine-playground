@@ -172,7 +172,6 @@ TEST(HeartJobSystem, Priorities)
 		return HeartJobResult::Success;
 	};
 
-
 	// Add a job that just sleeps so that we can enqueue our jobs in the "wrong" order without anything being processed
 	std::atomic_bool threadOccupied = false;
 	std::atomic_bool priorityJobsQueued = false;
