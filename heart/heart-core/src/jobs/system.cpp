@@ -46,6 +46,11 @@ void* HeartJobSystem::ThreadEntryPoint(void* p)
 	return nullptr;
 }
 
+HeartJobSystem::HeartJobSystem(HeartBaseAllocator& allocator) :
+	m_allocator(allocator)
+{
+}
+
 HeartJobSystem::~HeartJobSystem()
 {
 	if (!m_exit)
