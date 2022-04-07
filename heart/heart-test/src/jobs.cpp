@@ -85,6 +85,64 @@ TEST(HeartJobSystem, EightThreads)
 	system.Shutdown();
 }
 
+TEST(HeartJobSystem, Allocation)
+{
+	HeartJobSystem::Settings settings = HeartJobSystem::GetDefaultSettings();
+	settings.threadCount = 4;
+
+	struct : public HeartBaseAllocator
+	{
+		int32_t allocationCount = 0;
+
+		void* RawAllocate(size_type n, void* hint = nullptr) override
+		{
+			++allocationCount;
+			return malloc(n);
+		}
+
+		void RawDeallocate(void* p, size_type n = 1) override
+		{
+			--allocationCount;
+			free(p);
+		}
+
+	} allocator;
+
+	{
+		HeartJobSystem system(allocator);
+		system.Initialize(settings);
+
+		const int JobCount = 512;
+		std::vector<HeartJobRef> jobs;
+		std::generate_n(std::back_inserter(jobs), JobCount, [&]() {
+			return system.EnqueueJob([]() {
+				return HeartJobResult::Success;
+			});
+		});
+
+		EXPECT_GE(allocator.allocationCount, JobCount);
+
+		// Wait for them to finish
+		while (std::any_of(std::begin(jobs), std::end(jobs), [](const HeartJobRef& j) { return j->status == HeartJobStatus::Pending; }))
+		{
+			std::this_thread::yield();
+		}
+
+		// We still hold a ref, so nothing should've expired
+		EXPECT_GE(allocator.allocationCount, JobCount);
+
+		int32_t previousCount = allocator.allocationCount;
+
+		// Lose our refs
+		jobs.clear();
+		EXPECT_EQ(allocator.allocationCount, previousCount - JobCount);
+
+		system.Shutdown();
+	}
+
+	EXPECT_EQ(allocator.allocationCount, 0);
+}
+
 TEST(HeartJobSystem, Priorities)
 {
 	HeartJobSystem::Settings settings = HeartJobSystem::GetDefaultSettings();
@@ -114,18 +172,38 @@ TEST(HeartJobSystem, Priorities)
 		return HeartJobResult::Success;
 	};
 
+
 	// Add a job that just sleeps so that we can enqueue our jobs in the "wrong" order without anything being processed
-	system.EnqueueJob([]() {
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	std::atomic_bool threadOccupied = false;
+	std::atomic_bool priorityJobsQueued = false;
+
+	system.EnqueueJob([&]() {
+		threadOccupied = true;
+
+		while (!priorityJobsQueued)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}
+
 		return HeartJobResult::Success;
 	});
 
+	// Wait for the system to actually pick up the "staller" job
+	while (!threadOccupied)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+
+	// Issue our jobs
 	auto job1 = system.EnqueueJob(normPriWorker, HeartJobPriority::Normal);
 	auto job2 = system.EnqueueJob(hiPriWorker, HeartJobPriority::High);
 	auto job3 = system.EnqueueJob(urgentPriWorker, HeartJobPriority::Urgent);
 
-	// Ensure nothing has completed at this point. If this fails, we need to increase our sleep time.
+	// None of them should've started yet, so make sure completeCound hasn't been modified
 	ASSERT_EQ(completeCount.load(), 0);
+
+	// Release the "staller" job
+	priorityJobsQueued = true;
 
 	HeartJobRef jobs[] = {job1, job2, job3};
 	while (std::any_of(std::begin(jobs), std::end(jobs), [](const HeartJobRef& j) { return j->status == HeartJobStatus::Pending; }))
