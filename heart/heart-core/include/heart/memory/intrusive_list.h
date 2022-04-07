@@ -14,75 +14,26 @@ struct HeartIntrusiveListLink
 	HeartIntrusiveListLink* next = nullptr;
 };
 
+template <typename T>
+struct HeartIntrusiveListIterator;
+
+template <typename T>
+struct HeartIntrusiveListConstIterator;
+
 template <typename T, HeartIntrusiveListLink T::*LinkPointer>
 class HeartIntrusiveList
 {
 public:
 	DECLARE_STANDARD_TYPEDEFS(T);
-	typedef HeartIntrusiveListLink value_type::*link_pointer_t;
+	using iterator = HeartIntrusiveListIterator<HeartIntrusiveList<T, LinkPointer>>;
+	using const_iterator = HeartIntrusiveListConstIterator<HeartIntrusiveList<T, LinkPointer>>;
+	using link_type = HeartIntrusiveListLink;
+	typedef link_type value_type::*link_pointer_t;
+
+	friend struct iterator;
+	friend struct const_iterator;
 
 	static_assert(std::is_standard_layout<value_type>::value);
-
-public:
-	struct HeartIntrusiveListIterator
-	{
-		HeartIntrusiveList& list;
-		HeartIntrusiveListLink* link;
-
-		HeartIntrusiveListIterator(HeartIntrusiveList& l, HeartIntrusiveListLink* p) :
-			list(l),
-			link(p)
-		{
-		}
-
-		REF_AND_CONST_REF(operator*(),
-			{
-				return *list.PointerFromLink(link);
-			})
-
-		POINTER_AND_CONST_POINTER(operator->(),
-			{
-				return list.PointerFromLink(link);
-			})
-
-		friend bool operator==(const HeartIntrusiveListIterator& lhs, const HeartIntrusiveListIterator& rhs)
-		{
-			return lhs.link == rhs.link;
-		}
-
-		bool operator<(const HeartIntrusiveListIterator& rhs) const
-		{
-			auto& lhs = *this;
-
-			HeartIntrusiveListLink& root = lhs.list.m_root;
-			HeartIntrusiveListLink* link = root.next;
-			while (link != &root)
-			{
-				if (link == lhs.link)
-					return true;
-
-				if (link == rhs.link)
-					return false;
-
-				link = link->next;
-			}
-
-			return false;
-		}
-
-		HeartIntrusiveListIterator& operator++()
-		{
-			link = link->next;
-			return *this;
-		}
-
-		HeartIntrusiveListIterator operator++(int)
-		{
-			HeartIntrusiveListIterator tmp(list, link);
-			this->operator++();
-			return tmp;
-		}
-	};
 
 public:
 	HeartIntrusiveList()
@@ -92,20 +43,67 @@ public:
 		m_size = 0;
 	}
 
-	// TODO: This should be movable
-	DISABLE_COPY_AND_MOVE_SEMANTICS(HeartIntrusiveList);
+	DISABLE_COPY_SEMANTICS(HeartIntrusiveList);
 
-	void AddHead(pointer p)
+	HeartIntrusiveList(HeartIntrusiveList&& o) :
+		HeartIntrusiveList()
+	{
+		AddLinkBetweenLinks(&m_root, &o.m_root, o.m_root.next);
+		RemoveLink(&o.m_root);
+		m_size = o.m_size;
+
+		o.m_root.next = &o.m_root;
+		o.m_root.prev = &o.m_root;
+		o.m_size = 0;
+	}
+
+	HeartIntrusiveList& operator=(HeartIntrusiveList&& o)
+	{
+		// Should this be an error if we're not empty?
+		Clear();
+
+		AddLinkBetweenLinks(&m_root, &o.m_root, o.m_root.next);
+		RemoveLink(&o.m_root);
+		m_size = o.m_size;
+
+		o.m_root.next = &o.m_root;
+		o.m_root.prev = &o.m_root;
+		o.m_size = 0;
+
+		return *this;
+	}
+
+	void PushFront(pointer p)
 	{
 		AddLinkBetweenLinks(LinkFromPointer(p), &m_root, m_root.next);
 	}
 
-	void AddTail(pointer p)
+	void PushBack(pointer p)
 	{
 		AddLinkBetweenLinks(LinkFromPointer(p), m_root.prev, &m_root);
 	}
 
-	POINTER_AND_CONST_POINTER(GetHead(),
+	pointer PopFront()
+	{
+		if (IsEmpty())
+			return nullptr;
+
+		pointer element = PointerFromLink(m_root.next);
+		Remove(element);
+		return element;
+	}
+
+	pointer PopBack()
+	{
+		if (IsEmpty())
+			return nullptr;
+
+		pointer element = PointerFromLink(m_root.prev);
+		Remove(element);
+		return element;
+	}
+
+	POINTER_AND_CONST_POINTER(Front(),
 		{
 			if (IsEmpty())
 				return nullptr;
@@ -113,7 +111,7 @@ public:
 			return PointerFromLink(m_root.next);
 		})
 
-	POINTER_AND_CONST_POINTER(GetTail(),
+	POINTER_AND_CONST_POINTER(Back(),
 		{
 			if (IsEmpty())
 				return nullptr;
@@ -126,25 +124,31 @@ public:
 		RemoveLink(LinkFromPointer(p));
 	}
 
-	void Remove(HeartIntrusiveListIterator iterator)
+	void Remove(iterator iterator)
 	{
 		RemoveLink(iterator.link);
 	}
 
 	void Clear()
 	{
-		if (!IsEmpty())
+		while (!IsEmpty())
 		{
-			HeartIntrusiveListLink* link = m_root.next;
-			while (link != &m_root)
-			{
-				HeartIntrusiveListLink* safeNext = link->next;
-
-				RemoveLink(link);
-
-				link = safeNext;
-			}
+			RemoveLink(m_root.prev);
 		}
+	}
+
+	bool Contains(pointer p) const
+	{
+		const link_type* link = m_root.next;
+		while (link != &m_root)
+		{
+			if (PointerFromLink(link) == p)
+				return true;
+
+			link = link->next;
+		}
+
+		return false;
 	}
 
 	size_t Size() const
@@ -157,23 +161,33 @@ public:
 		return Size() == 0;
 	}
 
-	HeartIntrusiveListIterator begin()
+	iterator begin()
 	{
-		return HeartIntrusiveListIterator(*this, m_root.next);
+		return iterator(*this, m_root.next);
 	}
 
-	HeartIntrusiveListIterator end()
+	iterator end()
 	{
-		return HeartIntrusiveListIterator(*this, &m_root);
+		return iterator(*this, &m_root);
+	}
+
+	const_iterator begin() const
+	{
+		return const_iterator(*this, m_root.next);
+	}
+
+	const_iterator end() const
+	{
+		return const_iterator(*this, &m_root);
 	}
 
 private:
-	static HeartIntrusiveListLink* LinkFromPointer(pointer p)
+	static link_type* LinkFromPointer(pointer p)
 	{
 		return &(p->*LinkPointer);
 	}
 
-	pointer PointerFromLink(HeartIntrusiveListLink* link) const
+	pointer PointerFromLink(link_type* link) const
 	{
 		if (link == &m_root)
 			return nullptr;
@@ -181,7 +195,7 @@ private:
 		return reinterpret_cast<pointer>(reinterpret_cast<char*>(link) - reinterpret_cast<ptrdiff_t>(&(reinterpret_cast<value_type const*>(NULL)->*LinkPointer)));
 	}
 
-	const_pointer PointerFromLink(const HeartIntrusiveListLink* link) const
+	const_pointer PointerFromLink(const link_type* link) const
 	{
 		if (link == &m_root)
 			return nullptr;
@@ -189,7 +203,7 @@ private:
 		return reinterpret_cast<const_pointer>(reinterpret_cast<const char*>(link) - reinterpret_cast<ptrdiff_t>(&(reinterpret_cast<value_type const*>(NULL)->*LinkPointer)));
 	}
 
-	void AddLinkBetweenLinks(HeartIntrusiveListLink* item, HeartIntrusiveListLink* prev, HeartIntrusiveListLink* next)
+	void AddLinkBetweenLinks(link_type* item, link_type* prev, link_type* next)
 	{
 		item->next = next;
 		item->prev = prev;
@@ -198,7 +212,7 @@ private:
 		++m_size;
 	}
 
-	void RemoveLink(HeartIntrusiveListLink* item)
+	void RemoveLink(link_type* item)
 	{
 		if (item == &m_root)
 			return;
@@ -211,6 +225,138 @@ private:
 	}
 
 private:
-	HeartIntrusiveListLink m_root;
+	link_type m_root;
 	size_t m_size;
+};
+
+template <typename ListType>
+struct HeartIntrusiveListIterator
+{
+	using list_type = ListType;
+	using link_type = list_type::link_type;
+	using this_type = HeartIntrusiveListIterator<ListType>;
+	USING_STANDARD_TYPEDEFS(list_type);
+
+	list_type& list;
+	link_type* link;
+
+	HeartIntrusiveListIterator(list_type& l, link_type* p) :
+		list(l),
+		link(p)
+	{
+	}
+
+	REF_AND_CONST_REF(operator*(),
+		{
+			return *list.PointerFromLink(link);
+		})
+
+	POINTER_AND_CONST_POINTER(operator->(),
+		{
+			return list.PointerFromLink(link);
+		})
+
+	friend bool operator==(const this_type& lhs, const this_type& rhs)
+	{
+		return lhs.link == rhs.link;
+	}
+
+	bool operator<(const this_type& rhs) const
+	{
+		const auto& lhs = *this;
+
+		const link_type& root = lhs.list.m_root;
+		const link_type* link = root.next;
+		while (link != &root)
+		{
+			if (link == lhs.link)
+				return true;
+
+			if (link == rhs.link)
+				return false;
+
+			link = link->next;
+		}
+
+		return false;
+	}
+
+	this_type& operator++()
+	{
+		link = link->next;
+		return *this;
+	}
+
+	this_type operator++(int)
+	{
+		this_type tmp(list, link);
+		this->operator++();
+		return tmp;
+	}
+};
+
+template <typename ListType>
+struct HeartIntrusiveListConstIterator
+{
+	using list_type = ListType;
+	using link_type = list_type::link_type;
+	using this_type = HeartIntrusiveListConstIterator<ListType>;
+	USING_STANDARD_TYPEDEFS(list_type);
+
+	const list_type& list;
+	const link_type* link;
+
+	HeartIntrusiveListConstIterator(const list_type& l, const link_type* p) :
+		list(l),
+		link(p)
+	{
+	}
+
+	const_reference operator*() const
+	{
+		return *list.PointerFromLink(link);
+	}
+
+	const_pointer operator->() const
+	{
+		return list.PointerFromLink(link);
+	}
+
+	friend bool operator==(const this_type& lhs, const this_type& rhs)
+	{
+		return lhs.link == rhs.link;
+	}
+
+	bool operator<(const this_type& rhs) const
+	{
+		auto& lhs = *this;
+
+		const link_type& root = lhs.list.m_root;
+		const link_type* link = root.next;
+		while (link != &root)
+		{
+			if (link == lhs.link)
+				return true;
+
+			if (link == rhs.link)
+				return false;
+
+			link = link->next;
+		}
+
+		return false;
+	}
+
+	this_type& operator++()
+	{
+		link = link->next;
+		return *this;
+	}
+
+	this_type operator++(int)
+	{
+		this_type tmp(list, link);
+		this->operator++();
+		return tmp;
+	}
 };
