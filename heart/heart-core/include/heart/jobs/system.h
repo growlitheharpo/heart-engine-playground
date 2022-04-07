@@ -2,15 +2,14 @@
 
 #include <heart/allocator.h>
 #include <heart/function.h>
+#include <heart/memory/intrusive_list.h>
 #include <heart/memory/intrusive_ptr.h>
+#include <heart/memory/vector.h>
 #include <heart/sync/condition_variable.h>
 #include <heart/sync/mutex.h>
 #include <heart/thread.h>
 
-#include <heart/stl/vector.h>
-
 #include <atomic>
-#include <deque>
 
 static constexpr size_t HeartJobStorage = 256;
 
@@ -68,9 +67,18 @@ private:
 	};
 	static constexpr ConstructorSecretType ConstructorSecret = {};
 
-	mutable uint32_t useCount = 0;
+	mutable std::atomic<uint32_t> useCount = 0;
+
+	// The mask for executing this job
 	uint32_t mask = HeartJobMaskDefault;
+
+	// Our intrusive link into the job queue
+	HeartIntrusiveListLink link;
+
+	// The allocator from which we were created
 	HeartBaseAllocator& allocator;
+
+	// Our actual job execution function
 	HeartFunction<HeartJobResult(), HeartJobStorage> worker = {};
 
 public:
@@ -124,20 +132,40 @@ public:
 	static Settings GetDefaultSettings();
 
 private:
+	typedef HeartIntrusiveList<HeartJob, &HeartJob::link> JobQueue;
+
+	// Our allocator. All allocations from the job system must come out of this allocator.
 	HeartBaseAllocator& m_allocator;
 
+	// Synchronization for the job queue and worker threads
 	HeartMutex m_queueMutex;
 	HeartConditionVariable m_conditionVar;
 
-	std::deque<HeartJobRef> m_queues[(uint32_t)HeartJobPriority::Count];
+	// The queues. "Zero" allocation intrusive lists which link together our job nodes.
+	JobQueue m_queues[(uint32_t)HeartJobPriority::Count];
 
-	hrt::vector<HeartThread> m_workerThreads;
+	// The vector of our workers
+	heart_priv::HeartVector<HeartThread> m_workerThreads;
+
+	// Exit flag
 	std::atomic_bool m_exit = false;
 
+private:
+	// Thread entry point and workers for the job system threads
 	static void* ThreadEntryPoint(void* p);
 	void ThreadWorker(HeartJobPriority lowestPriority);
 
+	// Insert a new job into the queue. Do NOT hold the mutex when calling this.
+	void InsertJobIntoQueue(HeartJob* rawJob, HeartJobPriority pri);
+
+	// Remove a job from the queue. You MUST hold the mutex when calling this.
+	HeartJobRef RemoveJobFromQueue(JobQueue& queue, JobQueue::iterator iterator);
+
+	// Attempt to pop a job from the queue with the given mask and priority limit.
+	// Returns true if a job was successfully popped.
 	bool TryAcquireOneJob(HeartJobRef& outJob, HeartJobPriority& outPri, HeartJobPriority lowestPri, uint32_t mask = HeartJobMaskAll);
+
+	// Executes the provided job. If the job returns Retry, requeues it with the provided priority.
 	void ProcessOneJob(HeartJobRef job, HeartJobPriority priority);
 
 public:
@@ -162,12 +190,9 @@ public:
 	{
 		HeartJobRef newJob = m_allocator.AllocateAndConstruct<HeartJob>(HeartJob::ConstructorSecret, m_allocator, hrt::forward<F>(f), mask);
 
-		{
-			HeartLockGuard lock(m_queueMutex);
-			m_queues[int(pri)].push_back(newJob);
-		}
-
+		InsertJobIntoQueue(newJob.Get(), pri);
 		m_conditionVar.NotifyOne();
+
 		return newJob;
 	}
 
