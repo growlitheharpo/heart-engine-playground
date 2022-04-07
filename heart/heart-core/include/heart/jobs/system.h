@@ -1,11 +1,12 @@
 #pragma once
 
+#include <heart/allocator.h>
 #include <heart/function.h>
+#include <heart/memory/intrusive_ptr.h>
 #include <heart/sync/condition_variable.h>
 #include <heart/sync/mutex.h>
 #include <heart/thread.h>
 
-#include <heart/stl/memory.h>
 #include <heart/stl/vector.h>
 
 #include <atomic>
@@ -67,13 +68,16 @@ private:
 	};
 	static constexpr ConstructorSecretType ConstructorSecret = {};
 
+	mutable uint32_t useCount = 0;
 	uint32_t mask = HeartJobMaskDefault;
+	HeartBaseAllocator& allocator;
 	HeartFunction<HeartJobResult(), HeartJobStorage> worker = {};
 
 public:
 	template <typename F>
-	HeartJob(ConstructorSecretType, F&& f, uint32_t m) :
+	HeartJob(ConstructorSecretType, HeartBaseAllocator& a, F&& f, uint32_t m) :
 		worker(hrt::forward<F>(f)),
+		allocator(a),
 		mask(m),
 		status(HeartJobStatus::Pending)
 	{
@@ -82,9 +86,27 @@ public:
 	// The status of this job. Side effects of the job should not
 	// be inspected until status does not equal Pending.
 	std::atomic<HeartJobStatus> status = HeartJobStatus::Pending;
+
+	void IncrementRef() const
+	{
+		++useCount;
+	}
+
+	void DecrementRef() const
+	{
+		if (--useCount == 0)
+		{
+			allocator.DestroyAndFree(this);
+		}
+	}
+
+	uint32_t GetRefCount()
+	{
+		return useCount;
+	}
 };
 
-using HeartJobRef = hrt::shared_ptr<HeartJob>;
+using HeartJobRef = HeartIntrusivePtr<HeartJob>;
 
 class HeartJobSystem final
 {
@@ -102,6 +124,8 @@ public:
 	static Settings GetDefaultSettings();
 
 private:
+	HeartBaseAllocator& m_allocator;
+
 	HeartMutex m_queueMutex;
 	HeartConditionVariable m_conditionVar;
 
@@ -117,7 +141,7 @@ private:
 	void ProcessOneJob(HeartJobRef job, HeartJobPriority priority);
 
 public:
-	HeartJobSystem() = default;
+	HeartJobSystem(HeartBaseAllocator& allocator = GetHeartDefaultAllocator());
 	~HeartJobSystem();
 
 	// Prepare the job system.
@@ -136,7 +160,7 @@ public:
 	template <typename F>
 	HeartJobRef EnqueueJob(F&& f, HeartJobPriority pri = HeartJobPriority::Normal, uint32_t mask = HeartJobMaskDefault)
 	{
-		HeartJobRef newJob = hrt::make_shared<HeartJob>(HeartJob::ConstructorSecret, hrt::forward<F>(f), mask);
+		HeartJobRef newJob = m_allocator.AllocateAndConstruct<HeartJob>(HeartJob::ConstructorSecret, m_allocator, hrt::forward<F>(f), mask);
 
 		{
 			HeartLockGuard lock(m_queueMutex);
