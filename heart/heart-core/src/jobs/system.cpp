@@ -40,14 +40,19 @@ void* HeartJobSystem::ThreadEntryPoint(void* p)
 
 	HeartJobSystem* s = userData->system;
 	HeartJobPriority pri = userData->lowestPriority;
-	userData->started.store(true, std::memory_order_relaxed);
+
+	// Once we store true in `started`, the userData itself is no longer valid
+	// and the thread that provided it is free to reuse the memory.
+	userData->started.store(true, std::memory_order_release);
+	userData = nullptr;
 
 	s->ThreadWorker(pri);
 	return nullptr;
 }
 
 HeartJobSystem::HeartJobSystem(HeartBaseAllocator& allocator) :
-	m_allocator(allocator)
+	m_allocator(allocator),
+	m_workerThreads(allocator)
 {
 }
 
@@ -64,14 +69,15 @@ void HeartJobSystem::Initialize(Settings s)
 	int threadCount = s.threadCount < 1 ? 1 : s.threadCount;
 	int urgentThreadCount = threadCount > 1 ? 1 : 0;
 
+	m_workerThreads.Reserve(threadCount);
 	for (int i = 0; i < threadCount; ++i)
 	{
 		ThreadUserData ud;
 		ud.system = this;
 		ud.lowestPriority = i < urgentThreadCount ? HeartJobPriority::Urgent : HeartJobPriority::Normal;
 
-		auto& t = m_workerThreads.emplace_back(&ThreadEntryPoint, &ud, s.threadPriority);
-		t.SetName("HeartJobSystem Thread");
+		HeartThread& thread = m_workerThreads.EmplaceBack(&ThreadEntryPoint, &ud, s.threadPriority);
+		thread.SetName("HeartJobSystem Thread");
 
 		while (!ud.started.load(std::memory_order_relaxed))
 		{
@@ -92,7 +98,7 @@ void HeartJobSystem::Flush()
 			HeartLockGuard lock(m_queueMutex);
 			for (auto& q : m_queues)
 			{
-				if (!q.empty())
+				if (!q.IsEmpty())
 				{
 					any = true;
 					break;
@@ -114,9 +120,12 @@ void HeartJobSystem::Shutdown()
 	m_exit = true;
 	m_conditionVar.NotifyAll();
 
-	for (auto& t : m_workerThreads)
-		t.Join();
-	m_workerThreads.clear();
+	for (HeartThread& workerThread : m_workerThreads)
+	{
+		workerThread.Join();
+	}
+
+	m_workerThreads.Clear();
 }
 
 void HeartJobSystem::ThreadWorker(HeartJobPriority lowestPriority)
@@ -143,6 +152,34 @@ void HeartJobSystem::ThreadWorker(HeartJobPriority lowestPriority)
 	}
 }
 
+void HeartJobSystem::InsertJobIntoQueue(HeartJob* rawJob, HeartJobPriority pri)
+{
+	HeartLockGuard lock(m_queueMutex);
+	m_queues[int(pri)].PushBack(rawJob);
+
+	// We manually increment the ref count here. This is the "queue ref"
+	// since the queue itself holds raw pointers, not intrusive pointers
+	rawJob->IncrementRef();
+}
+
+HeartJobRef HeartJobSystem::RemoveJobFromQueue(JobQueue& queue, JobQueue::iterator iterator)
+{
+	// PRE-CONDITION: The caller *must* be holding the queue mutex!
+
+	HeartJob* rawPtr = iterator.operator->();
+	HeartJobRef strongRef = rawPtr;
+
+	// We manually decrement the ref count here. This is the "queue ref"
+	// since the queue itself holds raw pointers, not intrusive pointers.
+	// This must come *after* we assign strongRef above, or else it could
+	// cause the job to be deleted before we return it.
+	rawPtr->DecrementRef();
+
+	queue.Remove(iterator);
+
+	return strongRef;
+}
+
 bool HeartJobSystem::TryAcquireOneJob(HeartJobRef& outJob, HeartJobPriority& outPri, HeartJobPriority lowestPri, uint32_t mask)
 {
 	// PRE-CONDITION: The caller *must* be holding the queue mutex!
@@ -155,12 +192,11 @@ bool HeartJobSystem::TryAcquireOneJob(HeartJobRef& outJob, HeartJobPriority& out
 
 		for (auto iter = q.begin(); iter != q.end(); ++iter)
 		{
-			HeartJobRef& job = *iter;
-			if (job->mask & mask)
+			HeartJob& job = *iter;
+			if (job.mask & mask)
 			{
-				outJob = job;
 				outPri = HeartJobPriority(i);
-				q.erase(iter);
+				outJob = RemoveJobFromQueue(q, iter);
 				return true;
 			}
 		}
@@ -184,11 +220,7 @@ void HeartJobSystem::ProcessOneJob(HeartJobRef job, HeartJobPriority priority)
 	}
 	else if (result == HeartJobResult::Retry)
 	{
-		{
-			HeartLockGuard lock(m_queueMutex);
-			m_queues[int(priority)].push_back(job);
-		}
-
+		InsertJobIntoQueue(job.Get(), priority);
 		m_conditionVar.NotifyOne();
 	}
 }

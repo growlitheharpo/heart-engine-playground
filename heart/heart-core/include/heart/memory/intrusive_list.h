@@ -33,8 +33,6 @@ public:
 	friend struct iterator;
 	friend struct const_iterator;
 
-	static_assert(std::is_standard_layout<value_type>::value);
-
 public:
 	HeartIntrusiveList()
 	{
