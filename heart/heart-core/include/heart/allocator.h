@@ -71,6 +71,12 @@ struct HeartBaseAllocator
 		new ((T*)p) T(val);
 	}
 
+	template <typename T, typename... Args>
+	void construct(T* p, Args&&... a)
+	{
+		new ((T*)p) T(hrt::forward<Args>(a)...);
+	}
+
 	template <typename T>
 	void destroy(T* p)
 	{
@@ -143,6 +149,12 @@ struct HeartBaseTypedAllocator : public HeartBaseAllocator
 	void construct(pointer p, const_reference val)
 	{
 		HeartBaseAllocator::construct<T>(p, val);
+	}
+
+	template <typename... Args>
+	void construct(pointer p, Args... a)
+	{
+		HeartBaseAllocator::construct<T>(p, hrt::forward<Args>(a)...);
 	}
 
 	void destroy(pointer p)
