@@ -9,6 +9,7 @@ end
 function include_self()
 	includedirs {
 		"include/",
+		"src/",
 	}
 	files {
 		"include/**",

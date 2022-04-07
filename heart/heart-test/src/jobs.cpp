@@ -221,7 +221,7 @@ TEST(HeartJobSystem, Priorities)
 
 TEST(HeartJobSystem, MoveOnlyJob)
 {
-	static bool deleted = false;
+	static std::atomic<bool> deleted = false;
 
 	struct SomeBigType
 	{
