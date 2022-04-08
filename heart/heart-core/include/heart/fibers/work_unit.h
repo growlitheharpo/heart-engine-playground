@@ -29,6 +29,11 @@ private:
 	WorkerFunction m_worker = {};
 
 public:
+	HeartFiberWorkUnit(ConstructorSecretType) :
+		HeartFiberWorkUnit()
+	{
+	}
+
 	template <typename F>
 	HeartFiberWorkUnit(ConstructorSecretType, F&& f) :
 		m_nativeHandle(nullptr),

@@ -34,7 +34,7 @@ void* HeartFiberSystem::HeartFiberThreadEntry(void* parameter)
 	}
 
 	// This thread is now a fiber
-	::ConvertThreadToFiberEx(NULL, FIBER_FLAG_FLOAT_SWITCH);
+	void* nativeStartupHandle = ::ConvertThreadToFiberEx(NULL, FIBER_FLAG_FLOAT_SWITCH);
 
 	// Prepare the context for this thread
 	HeartFiberContext& threadContext = HeartFiberContext::Get();
@@ -45,9 +45,14 @@ void* HeartFiberSystem::HeartFiberThreadEntry(void* parameter)
 	currentThread->state = HeartFiberThreadEntryParam::Done;
 	currentThread = nullptr;
 
+	// Put the startup context into the destroy queue
+	auto* startupWorkUnit = threadContext.currentSystem->m_allocator.AllocateAndConstruct<HeartFiberWorkUnit>(HeartFiberWorkUnit::ConstructorSecret);
+	startupWorkUnit->m_nativeHandle = nativeStartupHandle;
+	threadContext.destroyQueue.PushBack(startupWorkUnit);
+
 	// Initialize and execute the pump
 	threadContext.currentSystem->InitializeWorkUnitNativeHandle(threadContext.pump);
-	threadContext.currentSystem->NativeSwitchToFiber(threadContext.pump);
+	threadContext.currentSystem->NativeSwitchToFiberNoReturn(threadContext.pump);
 }
 
 void HeartFiberSystem::HeartFiberStartRoutine(void* parameter)
@@ -117,6 +122,7 @@ HeartFiberStatus HeartFiberSystem::PumpRoutine()
 			}
 
 			NativeSwitchToFiber(*next);
+			next = nullptr;
 		}
 		else
 		{
@@ -139,7 +145,7 @@ void HeartFiberSystem::CompleteWorkUnit(HeartFiberWorkUnit& unit)
 {
 	HeartFiberContext::Get().destroyQueue.PushBack(&unit);
 
-	NativeSwitchToFiber(HeartFiberContext::Get().pump);
+	NativeSwitchToFiberNoReturn(HeartFiberContext::Get().pump);
 }
 
 void HeartFiberSystem::RequeueWorkUnit(HeartFiberWorkUnit& unit)
@@ -167,6 +173,11 @@ void HeartFiberSystem::NativeSwitchToFiber(HeartFiberWorkUnit& target)
 
 	// Execute
 	::SwitchToFiber(target.m_nativeHandle);
+}
+
+void HeartFiberSystem::NativeSwitchToFiberNoReturn(HeartFiberWorkUnit& target)
+{
+	NativeSwitchToFiber(target);
 }
 
 HeartFiberSystem::HeartFiberSystem(HeartBaseAllocator& allocator) :

@@ -74,7 +74,14 @@ private:
 	void YieldUnit(HeartFiberWorkUnit& unit);
 
 	// Invoke the native method to pass execution to the given work unit.
-	[[noreturn]] void NativeSwitchToFiber(HeartFiberWorkUnit& target);
+	// Could return, if the current fiber is switched back to
+	void NativeSwitchToFiber(HeartFiberWorkUnit& target);
+
+	// Invoke the native method to pass execution to the given work unit.
+	// Can only be used in contexts where we know the current fiber will
+	// never be switched back to (eg the startup context, and when a work
+	// unit completes).
+	[[noreturn]] void NativeSwitchToFiberNoReturn(HeartFiberWorkUnit& target);
 
 public:
 	HeartFiberSystem(HeartBaseAllocator& allocator = GetHeartDefaultAllocator());
