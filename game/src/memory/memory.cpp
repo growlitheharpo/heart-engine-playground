@@ -159,6 +159,7 @@ void Memory::DebugDisplay()
 		"UI",
 		"Debug",
 		"Generic",
+		"Fibers",
 		"Unknown",
 	};
 	static_assert(_countof(PoolLabels) == size_t(Pool::Count));

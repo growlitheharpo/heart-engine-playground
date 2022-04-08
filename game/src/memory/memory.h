@@ -13,6 +13,7 @@ namespace Memory
 		UI,
 		Debug,
 		Generic,
+		Fibers,
 		Unknown,
 
 		Count,

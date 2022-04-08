@@ -1,4 +1,5 @@
 #include "heart/sync/condition_variable.h"
+#include "heart/sync/event.h"
 #include "heart/sync/fence.h"
 #include "heart/sync/mutex.h"
 
@@ -126,4 +127,48 @@ bool HeartFence::Test(uint32_t revision)
 {
 	HeartLockGuard lock(m_mutex);
 	return m_currentRevision >= revision;
+}
+
+HeartEvent::HeartEvent(ResetType rt)
+{
+	HANDLE& handle = GetNativeHandleAs<HANDLE>();
+	handle = ::CreateEvent(NULL, rt == ResetType::Manual ? TRUE : FALSE, FALSE, NULL);
+}
+
+HeartEvent::~HeartEvent()
+{
+	HANDLE& handle = GetNativeHandleAs<HANDLE>();
+	CloseHandle(handle);
+	handle = NULL;
+}
+
+void HeartEvent::Set()
+{
+	HANDLE& handle = GetNativeHandleAs<HANDLE>();
+	::SetEvent(handle);
+}
+
+void HeartEvent::Reset()
+{
+	HANDLE& handle = GetNativeHandleAs<HANDLE>();
+	::ResetEvent(handle);
+}
+
+void HeartEvent::Wait()
+{
+	HANDLE& handle = GetNativeHandleAs<HANDLE>();
+	::WaitForSingleObject(handle, INFINITE);
+}
+
+void HeartEvent::Wait(uint32_t waitDurationMs)
+{
+	HANDLE& handle = GetNativeHandleAs<HANDLE>();
+	::WaitForSingleObject(handle, DWORD(waitDurationMs));
+}
+
+void HeartEvent::SignalAndWait(HeartEvent& other)
+{
+	HANDLE& handle = GetNativeHandleAs<HANDLE>();
+	::SetEvent(handle);
+	::WaitForSingleObject(other.GetNativeHandleAs<HANDLE>(), INFINITE);
 }

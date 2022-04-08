@@ -14,11 +14,27 @@ public:
 		Automatic,
 	};
 
+private:
+	uintptr_t m_handle = 0;
+
+	uintptr_t* NativeHandle()
+	{
+		return &m_handle;
+	}
+
+	template <typename T>
+	T& GetNativeHandleAs()
+	{
+		return *(T*)NativeHandle();
+	}
+
 public:
 	HeartEvent(ResetType rt = ResetType::Automatic);
 	~HeartEvent();
 
-	DISABLE_COPY_AND_MOVE_SEMANTICS(HeartEvent);
+	DISABLE_COPY_SEMANTICS(HeartEvent);
+
+	USE_DEFAULT_MOVE_SEMANTICS(HeartEvent);
 
 	void Set();
 	void Reset();
