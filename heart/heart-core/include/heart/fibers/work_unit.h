@@ -10,7 +10,7 @@
 class HeartFiberWorkUnit
 {
 public:
-	using WorkerFunction = HeartFunction<HeartFiberStatus()>;
+	using WorkerFunction = HeartFunction<HeartFiberStatus(), 96>;
 
 private:
 	struct ConstructorSecretType

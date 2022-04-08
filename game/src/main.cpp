@@ -1,3 +1,7 @@
+#include <heart/fibers/status.h>
+#include <heart/fibers/system.h>
+#include <heart/sync/event.h>
+
 #include "cmd_line.h"
 
 #include "game/game.h"
@@ -14,6 +18,12 @@
 
 static bool s_shutdown = false;
 
+static HeartEvent s_exitEvent;
+
+static sf::Clock s_deltaClock = {};
+
+constexpr uint64_t DESIRED_FRAME_TIME = 16667;
+
 bool WindowClosedEvent(sf::Event e)
 {
 	s_shutdown = true;
@@ -29,60 +39,97 @@ bool EscapeKeyHitEvent(sf::Event e)
 	return true;
 }
 
+HeartFiberStatus MainGameLoop(EventManager& e, Renderer& r, uint64_t& frameNumber, uint64_t frameLimit)
+{
+	e.Process();
+
+	auto elapsed = s_deltaClock.getElapsedTime();
+	if (elapsed.asMicroseconds() >= DESIRED_FRAME_TIME)
+	{
+		s_deltaClock.restart();
+		TweenManager::Tick(elapsed.asMilliseconds());
+		RunGameTick(elapsed.asMicroseconds() / float(1000000.0f));
+
+		++frameNumber;
+	}
+
+	r.BeginFrame();
+	DrawGame(r);
+	r.SubmitFrame();
+
+	if (!s_shutdown && frameNumber < frameLimit)
+	{
+		return HeartFiberStatus::Requeue;
+	}
+	else
+	{
+		s_exitEvent.Set();
+		return HeartFiberStatus::Complete;
+	}
+}
+
 int WinMain()
 {
 	Memory::Init();
 
-	auto commandLine = ParseCommandLine();
+	HeartFiberSystem::Settings fiberSettings;
+	fiberSettings.threadCount = 1;
+	Memory::BasePoolAllocator<byte_t, Memory::Pool::Fibers, Memory::Period::Long> fiberAllocator;
 
-	// TODO: Move this to somewhere else (like the command line??)
-	HeartSetRoot(commandLine["dataroot"].as<std::string>().c_str());
-	ReflectSerializedData();
+	HeartFiberSystem system(fiberAllocator);
+	system.Initialize(fiberSettings);
 
 	Renderer& r = Renderer::Get();
-	r.Initialize();
-
 	EventManager& e = EventManager::Get();
-	e.Initialize(&r);
 
-	ImGui::Game::RegisterEvents();
-	r.RegisterEvents();
-	std::get<1>(e.CreateHandler(sf::Event::Closed)).connect<WindowClosedEvent>();
-	std::get<1>(e.CreateHandler(sf::Event::KeyPressed)).connect<EscapeKeyHitEvent>();
-
-	sf::Clock deltaClock;
-
-	InitializeGame();
-
-	constexpr uint64_t DESIRED_FRAME_TIME = 16667;
-
-	uint64_t frameLimit = uint64_t(commandLine["framecount"].as<int>());
+	uint64_t frameLimit = 0;
 	uint64_t frameNumber = 0;
 
-	while (!s_shutdown && frameNumber < frameLimit)
-	{
-		e.Process();
+	system.EnqueueFiber([&] {
+		auto commandLine = ParseCommandLine();
 
-		auto elapsed = deltaClock.getElapsedTime();
-		if (elapsed.asMicroseconds() >= DESIRED_FRAME_TIME)
-		{
-			deltaClock.restart();
-			TweenManager::Tick(elapsed.asMilliseconds());
-			RunGameTick(elapsed.asMicroseconds() / float(1000000.0f));
+		HeartSetRoot(commandLine["dataroot"].as<std::string>().c_str());
 
-			++frameNumber;
-		}
+		ReflectSerializedData();
 
-		r.BeginFrame();
-		DrawGame(r);
-		r.SubmitFrame();
-	}
+		frameLimit = uint64_t(commandLine["framecount"].as<int>());
 
-	ShutdownGame();
-	sf::err() << "Succesfully ran " << frameNumber << " frames\n";
+		r.Initialize();
 
-	e.Dispose();
-	r.Dispose();
+		e.Initialize(&r);
+
+		ImGui::Game::RegisterEvents();
+		r.RegisterEvents();
+		std::get<1>(e.CreateHandler(sf::Event::Closed)).connect<WindowClosedEvent>();
+		std::get<1>(e.CreateHandler(sf::Event::KeyPressed)).connect<EscapeKeyHitEvent>();
+
+		InitializeGame();
+
+		return HeartFiberStatus::Complete;
+	});
+
+	s_deltaClock.restart();
+
+	system.EnqueueFiber([&] {
+		return MainGameLoop(e, r, frameNumber, frameLimit);
+	});
+
+	// Put the "main thread" to sleep
+	s_exitEvent.Wait();
+	// We've woken up, time to shutdown the game
+
+	system.EnqueueFiber([&] {
+		ShutdownGame();
+
+		sf::err() << "Succesfully ran " << frameNumber << " frames\n";
+
+		e.Dispose();
+		r.Dispose();
+
+		return HeartFiberStatus::Complete;
+	});
+
+	system.Shutdown();
 
 	return 0;
 }
