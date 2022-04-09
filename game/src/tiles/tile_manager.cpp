@@ -6,6 +6,7 @@
 #include "render/imgui_game.h"
 #include "render/render.h"
 
+#include <heart/hash/murmur.h>
 #include <heart/scope_exit.h>
 
 #include <heart/deserialization/deserialization_file.h>
@@ -13,7 +14,6 @@
 
 #include <SFML/Graphics.hpp>
 #include <icons/IconsKenney.h>
-#include <smhasher/src/MurmurHash3.h>
 
 #include <algorithm>
 
@@ -86,7 +86,7 @@ void TileManager::Initialize(const char* listPath)
 			hrt::string hashedName = tilesets.filelist[i].c_str();
 			hashedName.append(entry.name.c_str());
 
-			MurmurHash3_x86_32(hashedName.c_str(), int(hashedName.size()), TileSeed, &entry.key);
+			entry.key = HeartMurmurHash3(hashedName, TileSeed);
 
 			HEART_ASSERT(m_spritemap.find(entry.key) == m_spritemap.end(), "HASH COLLISION IN TILE MANAGER!");
 			m_spritemap[entry.key] = hrt::make_pair(i, j);

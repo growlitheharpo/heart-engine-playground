@@ -5,6 +5,7 @@ project "heart-test"
 	include_self()
 	include_heart(true)
 	include_entt()
+	include_murmerhash(true)
 	include_googletest(true)
 
 	includedirs {
