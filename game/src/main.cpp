@@ -1,7 +1,3 @@
-#include <heart/fibers/status.h>
-#include <heart/fibers/system.h>
-#include <heart/sync/event.h>
-
 #include "cmd_line.h"
 
 #include "game/game.h"
@@ -15,6 +11,10 @@
 #include "tween/tween_manager.h"
 
 #include <heart/file.h>
+
+#include <heart/fibers/status.h>
+#include <heart/fibers/system.h>
+#include <heart/sync/event.h>
 
 static bool s_shutdown = false;
 
