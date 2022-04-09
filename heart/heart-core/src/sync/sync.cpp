@@ -169,6 +169,5 @@ void HeartEvent::Wait(uint32_t waitDurationMs)
 void HeartEvent::SignalAndWait(HeartEvent& other)
 {
 	HANDLE& handle = GetNativeHandleAs<HANDLE>();
-	::SetEvent(handle);
-	::WaitForSingleObject(other.GetNativeHandleAs<HANDLE>(), INFINITE);
+	::SignalObjectAndWait(GetNativeHandleAs<HANDLE>(), other.GetNativeHandleAs<HANDLE>(), INFINITE, FALSE);
 }
