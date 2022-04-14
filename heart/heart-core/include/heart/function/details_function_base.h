@@ -12,8 +12,9 @@ namespace heart_priv
 	{
 	public:
 		virtual R Call(Args&&... args) = 0;
-		virtual void Move(void* location) = 0;
+		virtual HeartFunctionBase* Move(void* location) = 0;
 		virtual ~HeartFunctionBase() = default;
+		virtual size_t GetSize() const = 0;
 	};
 
 	template <typename F, typename R, typename... Args>
@@ -35,9 +36,15 @@ namespace heart_priv
 			return f(hrt::forward<Args>(args)...);
 		}
 
-		void Move(void* location) override
+		HeartFunctionBase<R, Args...>* Move(void* location) override
 		{
-			new (location) HeartFunctionImpl<F, R, Args...>(hrt::move(f));
+			auto* p = new (location) HeartFunctionImpl<F, R, Args...>(hrt::move(f));
+			return p;
+		}
+
+		size_t GetSize() const override
+		{
+			return sizeof(HeartFunctionImpl<F, R, Args...>);
 		}
 	};
 }

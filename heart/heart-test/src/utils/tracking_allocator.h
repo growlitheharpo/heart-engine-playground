@@ -1,0 +1,50 @@
+#pragma once
+
+#include <heart/allocator.h>
+
+#include <atomic>
+#include <mutex>
+#include <unordered_map>
+
+struct TestTrackingAllocator final : public HeartBaseAllocator
+{
+	using size_type = HeartBaseAllocator::size_type;
+	using difference_type = HeartBaseAllocator::difference_type;
+	using void_pointer = HeartBaseAllocator::void_pointer;
+
+	std::atomic_uint64_t m_allocatedSize;
+	std::atomic_uint64_t m_allocatedCount;
+	std::mutex m_mapMutex;
+	std::unordered_map<void*, size_t> m_allocationMap;
+
+	void* RawAllocate(size_type n, void* hint = nullptr) override
+	{
+		void* ptr = operator new(n);
+
+		++m_allocatedCount;
+		m_allocatedSize += n;
+
+		{
+			std::lock_guard lock(m_mapMutex);
+			m_allocationMap.emplace(std::make_pair(ptr, n));
+		}
+
+		return ptr;
+	}
+
+	void RawDeallocate(void* p, size_type n = 1) override
+	{
+		--m_allocatedCount;
+
+		{
+			std::lock_guard lock(m_mapMutex);
+			if (auto iter = m_allocationMap.find(p); iter != m_allocationMap.end())
+			{
+				m_allocatedSize -= iter->second;
+				m_allocationMap.erase(iter);
+			}
+		}
+
+		operator delete(p);
+	}
+};
