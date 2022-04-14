@@ -1,7 +1,7 @@
 #pragma once
 
 #include <heart/allocator.h>
-#include <heart/function.h>
+#include <heart/function/embedded_function.h>
 #include <heart/memory/intrusive_list.h>
 #include <heart/memory/intrusive_ptr.h>
 #include <heart/memory/vector.h>
@@ -79,7 +79,7 @@ private:
 	HeartBaseAllocator& allocator;
 
 	// Our actual job execution function
-	HeartFunction<HeartJobResult(), HeartJobStorage> worker = {};
+	HeartEmbeddedFunction<HeartJobResult(), HeartJobStorage> worker = {};
 
 public:
 	template <typename F>

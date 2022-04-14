@@ -2,7 +2,7 @@
 
 #include <heart/fibers/fwd.h>
 
-#include <heart/function.h>
+#include <heart/function/embedded_function.h>
 #include <heart/memory/intrusive_list.h>
 
 #include <heart/stl/forward.h>
@@ -10,7 +10,7 @@
 class HeartFiberWorkUnit
 {
 public:
-	using WorkerFunction = HeartFunction<HeartFiberStatus(), 96>;
+	using WorkerFunction = HeartEmbeddedFunction<HeartFiberStatus(), 96>;
 
 private:
 	struct ConstructorSecretType
