@@ -210,13 +210,13 @@ void HeartJobSystem::ProcessOneJob(HeartJobRef job, HeartJobPriority priority)
 	auto result = job->worker();
 	if (result == HeartJobResult::Success)
 	{
-		job->status = HeartJobStatus::Success;
 		job->worker.Clear();
+		job->status = HeartJobStatus::Success;
 	}
 	else if (result == HeartJobResult::Failure)
 	{
-		job->status = HeartJobStatus::Failure;
 		job->worker.Clear();
+		job->status = HeartJobStatus::Failure;
 	}
 	else if (result == HeartJobResult::Retry)
 	{
