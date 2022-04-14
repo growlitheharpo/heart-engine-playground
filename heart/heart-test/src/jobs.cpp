@@ -2,6 +2,8 @@
 
 #include <gtest/gtest.h>
 
+#include "utils/tracking_allocator.h"
+
 #include <algorithm>
 #include <memory>
 #include <mutex>
@@ -90,23 +92,7 @@ TEST(HeartJobSystem, Allocation)
 	HeartJobSystem::Settings settings = HeartJobSystem::GetDefaultSettings();
 	settings.threadCount = 4;
 
-	struct : public HeartBaseAllocator
-	{
-		int32_t allocationCount = 0;
-
-		void* RawAllocate(size_type n, void* hint = nullptr) override
-		{
-			++allocationCount;
-			return malloc(n);
-		}
-
-		void RawDeallocate(void* p, size_type n = 1) override
-		{
-			--allocationCount;
-			free(p);
-		}
-
-	} allocator;
+	TestTrackingAllocator allocator;
 
 	{
 		HeartJobSystem system(allocator);
@@ -120,7 +106,7 @@ TEST(HeartJobSystem, Allocation)
 			});
 		});
 
-		EXPECT_GE(allocator.allocationCount, JobCount);
+		EXPECT_GE(allocator.m_allocatedCount, JobCount);
 
 		// Wait for them to finish
 		while (std::any_of(std::begin(jobs), std::end(jobs), [](const HeartJobRef& j) { return j->status == HeartJobStatus::Pending; }))
@@ -129,18 +115,18 @@ TEST(HeartJobSystem, Allocation)
 		}
 
 		// We still hold a ref, so nothing should've expired
-		EXPECT_GE(allocator.allocationCount, JobCount);
+		EXPECT_GE(allocator.m_allocatedCount, JobCount);
 
-		int32_t previousCount = allocator.allocationCount;
+		uint64_t previousCount = allocator.m_allocatedCount;
 
 		// Lose our refs
 		jobs.clear();
-		EXPECT_EQ(allocator.allocationCount, previousCount - JobCount);
+		EXPECT_EQ(allocator.m_allocatedCount, previousCount - JobCount);
 
 		system.Shutdown();
 	}
 
-	EXPECT_EQ(allocator.allocationCount, 0);
+	EXPECT_EQ(allocator.m_allocatedCount, 0);
 }
 
 TEST(HeartJobSystem, Priorities)
