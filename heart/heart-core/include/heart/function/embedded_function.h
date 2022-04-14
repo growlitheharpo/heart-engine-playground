@@ -1,65 +1,29 @@
 #pragma once
 
+#include <heart/function/details_function_base.h>
+
 #include <heart/copy_move_semantics.h>
 
 #include <heart/stl/forward.h>
-#include <heart/stl/move.h>
 #include <heart/stl/type_traits/add_remove_ref_cv.h>
 #include <heart/stl/type_traits/aligned_storage.h>
 #include <heart/stl/type_traits/enable_if.h>
 
 #include <heart/debug/assert.h>
 
-namespace details
-{
-	template <typename R, typename... Args>
-	class HeartFunctionBase
-	{
-	public:
-		virtual R Call(Args&&... args) = 0;
-		virtual void Move(void* location) = 0;
-		virtual ~HeartFunctionBase() = default;
-	};
-
-	template <typename F, typename R, typename... Args>
-	class HeartFunctionImpl : public HeartFunctionBase<R, Args...>
-	{
-		static_assert(hrt::is_same_v<F, hrt::remove_reference_t<F>>);
-		F f;
-
-	public:
-		HeartFunctionImpl(F&& f) :
-			f(hrt::forward<F>(f))
-		{
-		}
-
-		~HeartFunctionImpl() = default;
-
-		R Call(Args&&... args) override
-		{
-			return f(hrt::forward<Args>(args)...);
-		}
-
-		void Move(void* location) override
-		{
-			new (location) HeartFunctionImpl<F, R, Args...>(hrt::move(f));
-		}
-	};
-}
-
 template <typename Sig, size_t Storage = 32>
-class HeartFunction;
+class HeartEmbeddedFunction;
 
 template <typename R, typename... Args, size_t Storage>
-class HeartFunction<R(Args...), Storage>
+class HeartEmbeddedFunction<R(Args...), Storage>
 {
 private:
-	using BaseType = details::HeartFunctionBase<R, Args...>;
+	using BaseType = heart_priv::HeartFunctionBase<R, Args...>;
 
 	using StorageType = hrt::aligned_storage_t<Storage>;
 
 	template <typename F>
-	using ImplType = details::HeartFunctionImpl<hrt::remove_reference_t<F>, R, Args...>;
+	using ImplType = heart_priv::HeartFunctionImpl<hrt::remove_reference_t<F>, R, Args...>;
 
 	bool m_set = false;
 	StorageType m_storage = {};
@@ -73,39 +37,39 @@ private:
 	static constexpr bool SizeCheck = (sizeof(ImplType<F>) <= sizeof(m_storage));
 
 public:
-	HeartFunction() = default;
+	HeartEmbeddedFunction() = default;
 
-	~HeartFunction()
+	~HeartEmbeddedFunction()
 	{
 		Clear();
 	}
 
-	DISABLE_COPY_SEMANTICS(HeartFunction);
+	DISABLE_COPY_SEMANTICS(HeartEmbeddedFunction);
 
-	HeartFunction(HeartFunction&& o) :
-		HeartFunction()
+	HeartEmbeddedFunction(HeartEmbeddedFunction&& o) :
+		HeartEmbeddedFunction()
 	{
 		Swap(o);
 	}
 
-	HeartFunction& operator=(HeartFunction&& o)
+	HeartEmbeddedFunction& operator=(HeartEmbeddedFunction&& o)
 	{
 		Swap(o);
 		return *this;
 	}
 
 	template <typename F, hrt::enable_if_t<SizeCheck<F>, void*> = nullptr>
-	HeartFunction(F f)
+	HeartEmbeddedFunction(F f)
 	{
 		Set(hrt::forward<F>(f));
 	}
 
-	void Swap(HeartFunction& other)
+	void Swap(HeartEmbeddedFunction& other)
 	{
 		if (m_set != other.m_set)
 		{
-			HeartFunction* wasSet;
-			HeartFunction* toSet;
+			HeartEmbeddedFunction* wasSet;
+			HeartEmbeddedFunction* toSet;
 
 			if (m_set)
 			{
@@ -124,7 +88,7 @@ public:
 		}
 		else
 		{
-			HeartFunction tmp;
+			HeartEmbeddedFunction tmp;
 
 			// Put "other" in tmp
 			tmp.Swap(other);

@@ -1,4 +1,4 @@
-#include <heart/function.h>
+#include <heart/function/embedded_function.h>
 
 #include <heart/types.h>
 
@@ -16,9 +16,9 @@ static int StaticFunction()
 	return SecretValue;
 }
 
-TEST(HeartFunction, GlobalFunctionPointer)
+TEST(HeartEmbeddedFunction, GlobalFunctionPointer)
 {
-	HeartFunction<int()> adapter1(&VisibleFunction);
+	HeartEmbeddedFunction<int()> adapter1(&VisibleFunction);
 	EXPECT_TRUE(adapter1);
 	EXPECT_FALSE(!adapter1);
 	EXPECT_TRUE(!!adapter1);
@@ -27,9 +27,9 @@ TEST(HeartFunction, GlobalFunctionPointer)
 	EXPECT_EQ(result, SecretValue);
 }
 
-TEST(HeartFunction, StaticFunctionPointer)
+TEST(HeartEmbeddedFunction, StaticFunctionPointer)
 {
-	HeartFunction<int()> adapter1(&StaticFunction);
+	HeartEmbeddedFunction<int()> adapter1(&StaticFunction);
 	EXPECT_TRUE(adapter1);
 	EXPECT_FALSE(!adapter1);
 	EXPECT_TRUE(!!adapter1);
@@ -38,9 +38,9 @@ TEST(HeartFunction, StaticFunctionPointer)
 	EXPECT_EQ(result, SecretValue);
 }
 
-TEST(HeartFunction, SwappableToEmpty)
+TEST(HeartEmbeddedFunction, SwappableToEmpty)
 {
-	HeartFunction<int()> adapter1(&VisibleFunction);
+	HeartEmbeddedFunction<int()> adapter1(&VisibleFunction);
 	EXPECT_TRUE(adapter1);
 	EXPECT_FALSE(!adapter1);
 	EXPECT_TRUE(!!adapter1);
@@ -48,7 +48,7 @@ TEST(HeartFunction, SwappableToEmpty)
 	int result1 = adapter1();
 	EXPECT_EQ(result1, SecretValue);
 
-	HeartFunction<int()> adapter2;
+	HeartEmbeddedFunction<int()> adapter2;
 	EXPECT_FALSE(adapter2);
 	EXPECT_TRUE(!adapter2);
 	EXPECT_FALSE(!!adapter2);
@@ -65,9 +65,9 @@ TEST(HeartFunction, SwappableToEmpty)
 	EXPECT_EQ(result1, result2);
 }
 
-TEST(HeartFunction, SwappableToFull)
+TEST(HeartEmbeddedFunction, SwappableToFull)
 {
-	HeartFunction<int()> adapter1(&VisibleFunction);
+	HeartEmbeddedFunction<int()> adapter1(&VisibleFunction);
 	EXPECT_TRUE(adapter1);
 	EXPECT_FALSE(!adapter1);
 	EXPECT_TRUE(!!adapter1);
@@ -75,7 +75,7 @@ TEST(HeartFunction, SwappableToFull)
 	int result1 = adapter1();
 	EXPECT_EQ(result1, SecretValue);
 
-	HeartFunction<int()> adapter2(&VisibleFunction);
+	HeartEmbeddedFunction<int()> adapter2(&VisibleFunction);
 	EXPECT_TRUE(adapter2);
 	EXPECT_FALSE(!adapter2);
 	EXPECT_TRUE(!!adapter2);
@@ -93,7 +93,7 @@ TEST(HeartFunction, SwappableToFull)
 	EXPECT_EQ(result1, result3);
 }
 
-TEST(HeartFunction, ComplexSwap)
+TEST(HeartEmbeddedFunction, ComplexSwap)
 {
 	static int moveCount = 0;
 
@@ -120,7 +120,7 @@ TEST(HeartFunction, ComplexSwap)
 		}
 	};
 
-	HeartFunction<int()> adapter1(UncopyableFunctor {});
+	HeartEmbeddedFunction<int()> adapter1(UncopyableFunctor {});
 	EXPECT_EQ(moveCount, 1);
 	EXPECT_TRUE(adapter1);
 	EXPECT_FALSE(!adapter1);
@@ -129,7 +129,7 @@ TEST(HeartFunction, ComplexSwap)
 	int result1 = adapter1();
 	EXPECT_EQ(result1, SecretValue);
 
-	HeartFunction<int()> adapter2(UncopyableFunctor {});
+	HeartEmbeddedFunction<int()> adapter2(UncopyableFunctor {});
 	EXPECT_EQ(moveCount, 2);
 	EXPECT_TRUE(adapter1);
 	EXPECT_FALSE(!adapter1);
@@ -147,12 +147,12 @@ TEST(HeartFunction, ComplexSwap)
 	EXPECT_EQ(result3, SecretValue);
 }
 
-TEST(HeartFunction, Moveable)
+TEST(HeartEmbeddedFunction, Moveable)
 {
-	HeartFunction<int()> adapter1(&StaticFunction);
+	HeartEmbeddedFunction<int()> adapter1(&StaticFunction);
 	EXPECT_TRUE(adapter1);
 
-	HeartFunction<int()> adapter2;
+	HeartEmbeddedFunction<int()> adapter2;
 	EXPECT_FALSE(adapter2);
 
 	adapter2 = hrt::move(adapter1);
@@ -165,9 +165,9 @@ TEST(HeartFunction, Moveable)
 	EXPECT_EQ(result, SecretValue);
 }
 
-TEST(HeartFunction, CapturelessLambda)
+TEST(HeartEmbeddedFunction, CapturelessLambda)
 {
-	HeartFunction<int()> adapter([]() {
+	HeartEmbeddedFunction<int()> adapter([]() {
 		return SecretValue;
 	});
 	EXPECT_TRUE(adapter);
@@ -178,11 +178,11 @@ TEST(HeartFunction, CapturelessLambda)
 	EXPECT_EQ(result, SecretValue);
 }
 
-TEST(HeartFunction, StatefulLambda)
+TEST(HeartEmbeddedFunction, StatefulLambda)
 {
 	int theSecret = SecretValue;
 
-	HeartFunction<int()> adapter([theSecret]() {
+	HeartEmbeddedFunction<int()> adapter([theSecret]() {
 		return theSecret;
 	});
 
@@ -194,7 +194,7 @@ TEST(HeartFunction, StatefulLambda)
 	EXPECT_EQ(result, SecretValue);
 }
 
-TEST(HeartFunction, NoCopyParameter)
+TEST(HeartEmbeddedFunction, NoCopyParameter)
 {
 	struct NoCopyType
 	{
@@ -211,7 +211,7 @@ TEST(HeartFunction, NoCopyParameter)
 
 	NoCopyType parameter;
 
-	HeartFunction<int(const NoCopyType&)> constRefAdapter([](const NoCopyType& p) {
+	HeartEmbeddedFunction<int(const NoCopyType&)> constRefAdapter([](const NoCopyType& p) {
 		return p.v;
 	});
 
@@ -222,7 +222,7 @@ TEST(HeartFunction, NoCopyParameter)
 	int result = constRefAdapter(parameter);
 	EXPECT_EQ(result, SecretValue);
 
-	HeartFunction<int(NoCopyType&)> mutableRefAdapter([](NoCopyType& p) {
+	HeartEmbeddedFunction<int(NoCopyType&)> mutableRefAdapter([](NoCopyType& p) {
 		p.v++;
 		return p.v;
 	});
@@ -236,7 +236,7 @@ TEST(HeartFunction, NoCopyParameter)
 	EXPECT_EQ(result, SecretValue + 1);
 }
 
-TEST(HeartFunction, CopyableParameter)
+TEST(HeartEmbeddedFunction, CopyableParameter)
 {
 	struct CopyableValue
 	{
@@ -256,7 +256,7 @@ TEST(HeartFunction, CopyableParameter)
 	CopyableValue parameter;
 	EXPECT_EQ(parameter.v, 0);
 
-	HeartFunction<int(CopyableValue)> adapter([](CopyableValue v) {
+	HeartEmbeddedFunction<int(CopyableValue)> adapter([](CopyableValue v) {
 		EXPECT_EQ(v.v, SecretValue);
 		return v.v;
 	});
@@ -269,7 +269,7 @@ TEST(HeartFunction, CopyableParameter)
 	EXPECT_EQ(result, SecretValue);
 }
 
-TEST(HeartFunction, MoveOnlyReturnValue)
+TEST(HeartEmbeddedFunction, MoveOnlyReturnValue)
 {
 	struct MoveOnlyType
 	{
@@ -289,7 +289,7 @@ TEST(HeartFunction, MoveOnlyReturnValue)
 		}
 	};
 
-	HeartFunction<MoveOnlyType()> adapter([]() {
+	HeartEmbeddedFunction<MoveOnlyType()> adapter([]() {
 		MoveOnlyType aValue;
 		EXPECT_EQ(aValue.v, 0);
 		return std::move(aValue);
@@ -303,7 +303,7 @@ TEST(HeartFunction, MoveOnlyReturnValue)
 	EXPECT_EQ(result.v, SecretValue);
 }
 
-TEST(HeartFunction, BigStorage)
+TEST(HeartEmbeddedFunction, BigStorage)
 {
 	struct BigFunctor
 	{
@@ -317,16 +317,16 @@ TEST(HeartFunction, BigStorage)
 
 	// Ensure it (correctly) fails to compile for large storage
 #if 0
-	HeartFunction<int(), 32> adapter(BigFunctor {});
+	HeartEmbeddedFunction<int(), 32> adapter(BigFunctor {});
 #endif
 
 	// Ensure it (correctly) fails to compile for something that *seems* like it should fit
 	// This fails because it doesn't include room for the vtable
 #if 0
-	HeartFunction<int(), sizeof(BigFunctor)> adapter(BigFunctor {});
+	HeartEmbeddedFunction<int(), sizeof(BigFunctor)> adapter(BigFunctor {});
 #endif
 
-	HeartFunction<int(), 2048> bigAdapter(BigFunctor {});
+	HeartEmbeddedFunction<int(), 2048> bigAdapter(BigFunctor {});
 	EXPECT_TRUE(bigAdapter);
 
 	int result = bigAdapter();
