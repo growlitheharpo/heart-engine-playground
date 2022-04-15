@@ -6,6 +6,8 @@
 #include <mutex>
 #include <unordered_map>
 
+#include <gtest/gtest.h>
+
 struct TestTrackingAllocator final : public HeartBaseAllocator
 {
 	using size_type = HeartBaseAllocator::size_type;
@@ -38,7 +40,11 @@ struct TestTrackingAllocator final : public HeartBaseAllocator
 
 		{
 			std::lock_guard lock(m_mapMutex);
-			if (auto iter = m_allocationMap.find(p); iter != m_allocationMap.end())
+
+			auto iter = m_allocationMap.find(p);
+			EXPECT_TRUE(iter != m_allocationMap.end());
+
+			if (iter != m_allocationMap.end())
 			{
 				m_allocatedSize -= iter->second;
 				m_allocationMap.erase(iter);
