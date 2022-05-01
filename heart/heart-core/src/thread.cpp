@@ -124,3 +124,8 @@ HeartThread::operator bool() const
 {
 	return (m_handle != nullptr);
 }
+
+void HeartExitThread(uint32_t exitCode)
+{
+	::ExitThread(DWORD(exitCode));
+}
