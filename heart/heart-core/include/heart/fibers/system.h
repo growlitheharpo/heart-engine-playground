@@ -12,6 +12,7 @@
 #pragma once
 
 #include <heart/fibers/fwd.h>
+#include <heart/fibers/mutex.h>
 #include <heart/fibers/work_unit.h>
 
 #include <heart/allocator.h>
@@ -48,7 +49,7 @@ private:
 	// the main thread can push work into it and the fiber thread(s)
 	// needs to both push and pull.
 	HeartFiberWorkUnit::Queue m_pendingQueue;
-	HeartMutex m_pendingQueueMutex;
+	HeartFiberMutex m_pendingQueueMutex;
 
 	// Flag to signal to the pumps that the system is shutting down.
 	std::atomic_bool m_exit = true;
@@ -60,7 +61,7 @@ private:
 	// Global entry pointer for fiber work units. Invokes the work unit's
 	// worker, which can yield as many times as it likes. When it eventually
 	// exits, passes execution of the fiber back to the pump.
-	static void HeartFiberStartRoutine(void* parameter);
+	static void HeartFiberStartRoutine();
 
 	// The pump routine. Keeps all fiber threads alive throughout the
 	// system's lifetime and is responsible for pulling work units for each
@@ -71,6 +72,11 @@ private:
 	// This can only be called from a thread which is already a fiber, so it is
 	// delegated to the pump for user work.
 	void InitializeWorkUnitNativeHandle(HeartFiberWorkUnit& unit);
+
+	// Release any resources allocated by the native fiber for this work unit.
+	// This must be called after the fiber has finished executing on all threads.
+	// Calling this e.g while the fiber is still in the process of yielding will crash.
+	void ReleaseWorkUnitNativeHandle(HeartFiberWorkUnit& unit);
 
 	// Finalize a work unit. Adds it to the destroy queue and passes execution
 	// to the pump.
@@ -111,7 +117,7 @@ public:
 			hrt::forward<F>(f));
 
 		{
-			HeartLockGuard lock(m_pendingQueueMutex);
+			HeartLockGuard lock(m_pendingQueueMutex, HeartFiberMutex::NeverYield {});
 			m_pendingQueue.PushBack(newWorkUnit);
 		}
 	}

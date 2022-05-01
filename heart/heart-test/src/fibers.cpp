@@ -15,6 +15,8 @@
 
 #include <gtest/gtest.h>
 
+#include "utils/tracking_allocator.h"
+
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -149,7 +151,7 @@ TEST(Fibers, FourThreads)
 	const int JobCount = 128;
 	std::atomic_int doneCount = 0;
 
-	std::mutex threadIdsMutex;
+	HeartFiberMutex threadIdsMutex;
 	std::vector<std::thread::id> threadIds;
 
 	int i = JobCount;
@@ -157,7 +159,7 @@ TEST(Fibers, FourThreads)
 	{
 		system.EnqueueFiber([&]() {
 			{
-				std::lock_guard lock(threadIdsMutex);
+				HeartLockGuard lock(threadIdsMutex, HeartFiberMutex::NeverYield {});
 				if (std::find(threadIds.begin(), threadIds.end(), std::this_thread::get_id()) == threadIds.end())
 				{
 					threadIds.push_back(std::this_thread::get_id());

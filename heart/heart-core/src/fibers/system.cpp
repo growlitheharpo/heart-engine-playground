@@ -17,7 +17,7 @@
 
 #include "heart/debug/assert.h"
 
-#include "priv/SlimWin32.h"
+#include "fibers/abi_context.h"
 
 #include <stdio.h>
 
@@ -44,29 +44,34 @@ void* HeartFiberSystem::HeartFiberThreadEntry(void* parameter)
 		HeartYield();
 	}
 
-	// This thread is now a fiber
-	void* nativeStartupHandle = ::ConvertThreadToFiberEx(NULL, FIBER_FLAG_FLOAT_SWITCH);
-
 	// Prepare the context for this thread
-	HeartFiberContext& threadContext = HeartFiberContext::Get();
-	threadContext.currentSystem = currentThread->system;
-	threadContext.pump.m_worker = []() { return HeartFiberContext::Get().currentSystem->PumpRoutine(); };
+	HeartFiberContext::Get().currentSystem = currentThread->system;
+	HeartFiberContext::Get().pump.m_worker = []() { return HeartFiberContext::Get().currentSystem->PumpRoutine(); };
 
 	// Tell the main thread we're done reading the parameter
 	currentThread->state = HeartFiberThreadEntryParam::Done;
 	currentThread = nullptr;
 
 	// Put the startup context into the destroy queue
-	auto* startupWorkUnit = threadContext.currentSystem->m_allocator.AllocateAndConstruct<HeartFiberWorkUnit>(HeartFiberWorkUnit::ConstructorSecret);
-	startupWorkUnit->m_nativeHandle = nativeStartupHandle;
-	threadContext.destroyQueue.PushBack(startupWorkUnit);
+	auto* startupAbi = HeartFiberContext::Get().currentSystem->m_allocator.AllocateAndConstruct<HeartFiberAbiContext>();
+	*startupAbi = {};
+	HeartFiberContext::Get().entryUnit.m_nativeHandle = startupAbi;
+	HeartFiberContext::Get().currentWorkUnit = &HeartFiberContext::Get().entryUnit;
+	startupAbi = nullptr;
 
 	// Initialize and execute the pump
-	threadContext.currentSystem->InitializeWorkUnitNativeHandle(threadContext.pump);
-	threadContext.currentSystem->NativeSwitchToFiberNoReturn(threadContext.pump);
+	HeartFiberContext::Get().currentSystem->InitializeWorkUnitNativeHandle(HeartFiberContext::Get().pump);
+	HeartFiberContext::Get().currentSystem->NativeSwitchToFiber(HeartFiberContext::Get().pump);
+
+	// We've returned from the pump, time to kill the thread.
+	HEART_ASSERT(HeartFiberContext::Get().currentSystem->m_exit == true);
+	HeartFiberContext::Get().currentSystem->ReleaseWorkUnitNativeHandle(HeartFiberContext::Get().pump);
+	HeartFiberContext::Get().currentSystem->ReleaseWorkUnitNativeHandle(HeartFiberContext::Get().entryUnit);
+
+	return nullptr;
 }
 
-void HeartFiberSystem::HeartFiberStartRoutine(void* parameter)
+void HeartFiberSystem::HeartFiberStartRoutine()
 {
 	// Get the work unit and system from the context
 	HeartFiberWorkUnit& workUnit = *HeartFiberContext::Get().currentWorkUnit;
@@ -78,7 +83,7 @@ void HeartFiberSystem::HeartFiberStartRoutine(void* parameter)
 	if (&workUnit == &HeartFiberContext::Get().pump)
 	{
 		// If the work unit was the pump, we're done. This will kill the thread.
-		return;
+		system->NativeSwitchToFiber(HeartFiberContext::Get().entryUnit);
 	}
 	else if (result == HeartFiberStatus::Complete)
 	{
@@ -101,7 +106,7 @@ HeartFiberStatus HeartFiberSystem::PumpRoutine()
 
 		bool pendingEmpty;
 		{
-			HeartLockGuard lock(m_pendingQueueMutex);
+			HeartLockGuard lock(m_pendingQueueMutex, HeartFiberMutex::NeverYield {});
 			pendingEmpty = m_pendingQueue.IsEmpty();
 		}
 
@@ -114,14 +119,14 @@ HeartFiberStatus HeartFiberSystem::PumpRoutine()
 		while (!HeartFiberContext::Get().destroyQueue.IsEmpty())
 		{
 			HeartFiberWorkUnit* unit = HeartFiberContext::Get().destroyQueue.PopFront();
-			::DeleteFiber(unit->m_nativeHandle);
+			ReleaseWorkUnitNativeHandle(*unit);
 			m_allocator.DestroyAndFree(unit);
 		}
 
 		// Grab our next work unit
 		HeartFiberWorkUnit* next = nullptr;
 		{
-			HeartLockGuard lock(m_pendingQueueMutex);
+			HeartLockGuard lock(m_pendingQueueMutex, HeartFiberMutex::NeverYield {});
 			next = m_pendingQueue.PopFront();
 		}
 
@@ -149,7 +154,43 @@ void HeartFiberSystem::InitializeWorkUnitNativeHandle(HeartFiberWorkUnit& unit)
 	// We can only create fibers from a fiber!
 	HEART_ASSERT(HeartFiberContext::Get().currentSystem != nullptr);
 
-	unit.m_nativeHandle = ::CreateFiberEx(0, 0, FIBER_FLAG_FLOAT_SWITCH, &HeartFiberStartRoutine, NULL);
+	// unit.m_nativeHandle = ::CreateFiberEx(0, 0, FIBER_FLAG_FLOAT_SWITCH, &HeartFiberStartRoutine, NULL);
+	constexpr uint32_t StackSize = 16u * 1024u;
+
+	HeartFiberAbiContext* ctx = m_allocator.AllocateAndConstruct<HeartFiberAbiContext>();
+	byte_t* stack = m_allocator.allocate<byte_t>(StackSize);
+	memset(ctx, 0, sizeof(HeartFiberAbiContext));
+	memset(stack, 0, StackSize);
+	ctx->allocated = stack;
+
+	// Stacks grow downward, point to the end of our buffer
+	stack = stack + StackSize;
+	// Win64 requires 16bit alignment of the stack
+	stack = (byte_t*)(uintptr_t(stack) & -16L);
+	// Win64 requires space for 4 64bit values on top of any actual arguments
+	stack -= 4 * sizeof(uint64_t);
+
+	ctx->rsp = uintptr_t(stack);
+	ctx->rbp = uintptr_t(stack);
+	ctx->rip = uintptr_t(&HeartFiberStartRoutine);
+
+	unit.m_nativeHandle = ctx;
+}
+
+void HeartFiberSystem::ReleaseWorkUnitNativeHandle(HeartFiberWorkUnit& unit)
+{
+	HEART_ASSERT(HeartFiberContext::Get().currentSystem != nullptr);
+
+	HeartFiberAbiContext* ctx = reinterpret_cast<HeartFiberAbiContext*>(unit.m_nativeHandle);
+	unit.m_nativeHandle = nullptr;
+
+	// Free the stack
+	m_allocator.deallocate(ctx->allocated);
+	ctx->allocated = nullptr;
+
+	// Free the actual abi context
+	m_allocator.DestroyAndFree<HeartFiberAbiContext>(ctx);
+	ctx = nullptr;
 }
 
 void HeartFiberSystem::CompleteWorkUnit(HeartFiberWorkUnit& unit)
@@ -169,7 +210,7 @@ void HeartFiberSystem::RequeueWorkUnit(HeartFiberWorkUnit& unit)
 void HeartFiberSystem::YieldUnit(HeartFiberWorkUnit& unit)
 {
 	{
-		HeartLockGuard lock(m_pendingQueueMutex);
+		HeartLockGuard lock(m_pendingQueueMutex, HeartFiberMutex::NeverYield {});
 		m_pendingQueue.PushBack(&unit);
 	}
 
@@ -178,17 +219,28 @@ void HeartFiberSystem::YieldUnit(HeartFiberWorkUnit& unit)
 
 void HeartFiberSystem::NativeSwitchToFiber(HeartFiberWorkUnit& target)
 {
+	// Get where we're coming from
+	HeartFiberWorkUnit* from = HeartFiberContext::Get().currentWorkUnit;
+	HeartFiberAbiContext* from_abi = reinterpret_cast<HeartFiberAbiContext*>(from->m_nativeHandle);
+
 	// Populate the context
 	HEART_ASSERT(HeartFiberContext::Get().currentSystem == this);
 	HeartFiberContext::Get().currentWorkUnit = &target;
 
 	// Execute
-	::SwitchToFiber(target.m_nativeHandle);
+	HeartFiberAbiContext* to_abi = reinterpret_cast<HeartFiberAbiContext*>(target.m_nativeHandle);
+	heart_swap_fiber_context(from_abi, to_abi);
 }
 
 void HeartFiberSystem::NativeSwitchToFiberNoReturn(HeartFiberWorkUnit& target)
 {
+	// Switch to the fiber. It should never return to us.
 	NativeSwitchToFiber(target);
+
+	// Uh oh. the fiber came back. Kill the thread with an error code.
+	// It should've exited via the ExitThread in the entry routine
+	HEART_ASSERT(false, "Error: fiber returned when it should not have!");
+	HeartExitThread(-1);
 }
 
 HeartFiberSystem::HeartFiberSystem(HeartBaseAllocator& allocator) :

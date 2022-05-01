@@ -28,6 +28,9 @@ private:
 	// until the thread exits. The pump executes HeartFiberSystem::PumpRoutine
 	HeartFiberWorkUnit pump;
 
+	// The entry unit. Switching back to this will kill the thread.
+	HeartFiberWorkUnit entryUnit;
+
 	// The currently executing work unit. If we're on a fiber, should
 	// never be null after the first switch to the pump
 	HeartFiberWorkUnit* currentWorkUnit;
