@@ -77,7 +77,7 @@ HeartFiberStatus MainGameLoop(EventManager& e, Renderer& r, uint64_t& frameNumbe
 	}
 }
 
-int WinMain()
+int mainEntry()
 {
 	Memory::Init();
 
@@ -85,8 +85,8 @@ int WinMain()
 	fiberSettings.threadCount = 1;
 	Memory::BasePoolAllocator<byte_t, Memory::Pool::Fibers, Memory::Period::Long> fiberAllocator;
 
-	HeartFiberSystem system(fiberAllocator);
-	system.Initialize(fiberSettings);
+	// HeartFiberSystem system(fiberAllocator);
+	// system.Initialize(fiberSettings);
 
 	Renderer& r = Renderer::Get();
 	EventManager& e = EventManager::Get();
@@ -94,7 +94,7 @@ int WinMain()
 	uint64_t frameLimit = 0;
 	uint64_t frameNumber = 0;
 
-	system.EnqueueFiber([&] {
+	//system.EnqueueFiber([&] {
 		auto commandLine = ParseCommandLine();
 
 		HeartSetRoot(commandLine["dataroot"].as<std::string>().c_str());
@@ -114,20 +114,23 @@ int WinMain()
 
 		InitializeGame();
 
-		return HeartFiberStatus::Complete;
-	});
+	//	return HeartFiberStatus::Complete;
+	//});
 
 	s_deltaClock.restart();
 
-	system.EnqueueFiber([&] {
+	/* system.EnqueueFiber([&] {
 		return MainGameLoop(e, r, frameNumber, frameLimit);
-	});
+	});*/
+	while (MainGameLoop(e, r, frameNumber, frameLimit) == HeartFiberStatus::Requeue)
+	{
+	}
 
 	// Put the "main thread" to sleep
 	s_exitEvent.Wait();
 	// We've woken up, time to shutdown the game
 
-	system.EnqueueFiber([&] {
+	//system.EnqueueFiber( [&] {
 		ShutdownGame();
 
 		sf::err() << "Succesfully ran " << frameNumber << " frames\n";
@@ -135,10 +138,30 @@ int WinMain()
 		e.Dispose();
 		r.Dispose();
 
-		return HeartFiberStatus::Complete;
-	});
+	//	return HeartFiberStatus::Complete;
+	//});
 
-	system.Shutdown();
+	// system.Shutdown();
 
+	return 0;
+}
+
+extern "C" void* manually_set_rsp(void* rsp);
+extern "C" void manually_restore_rsp(void* rsp);
+
+int WinMain()
+{
+	constexpr size_t StackSize = 2u * 1024u * 1024u;
+	byte_t* stackBottom = (byte_t*)malloc(StackSize);
+	byte_t* stackTop = stackBottom + StackSize;
+
+	stackTop = (byte_t*)(uintptr_t(stackTop) & -16L);
+	stackTop -= 64;
+
+	void* originalStack = manually_set_rsp(stackTop);
+	mainEntry();
+	manually_restore_rsp(originalStack);
+
+	free(stackBottom);
 	return 0;
 }
