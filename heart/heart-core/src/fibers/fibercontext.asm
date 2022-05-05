@@ -7,8 +7,34 @@
 ; for providing most of what needs to be done here
 ;
 PUBLIC heart_swap_fiber_context
+PUBLIC heart_verify_stack_pointer
 
 .code
+
+heart_verify_stack_pointer PROC
+
+	; Store our original stack pointer in r8 so we don't trash it
+	mov r8, rsp
+
+	; Adding 8h should give us a 16-byte alignment. It should be "misaligned"
+	; upon entry to a function.
+	add r8, 8h
+
+	; Save it off for comparison
+	mov rcx, r8
+
+	; Verify it's aligned
+	and r8, 0FFFFFFFFFFFFFFF0h
+	cmp r8, rcx
+	je EXIT
+
+	; Breakpoint if the stack was not aligned properly upon entry
+	int 3
+
+EXIT:
+	ret
+
+heart_verify_stack_pointer ENDP
 
 heart_swap_fiber_context PROC 
 
@@ -73,6 +99,7 @@ heart_swap_fiber_context PROC
 	push r8
 	xor rax, rax
 	ret
+
 heart_swap_fiber_context ENDP
 
 END

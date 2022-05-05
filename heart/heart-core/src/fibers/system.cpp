@@ -73,6 +73,9 @@ void* HeartFiberSystem::HeartFiberThreadEntry(void* parameter)
 
 void HeartFiberSystem::HeartFiberStartRoutine()
 {
+	// Verify that the fiber native code gave us a valid stack
+	HEART_FIBER_VERIFY_STACK();
+
 	// Get the work unit and system from the context
 	HeartFiberWorkUnit& workUnit = *HeartFiberContext::Get().currentWorkUnit;
 	HeartFiberSystem* system = HeartFiberContext::Get().currentSystem;
@@ -154,21 +157,34 @@ void HeartFiberSystem::InitializeWorkUnitNativeHandle(HeartFiberWorkUnit& unit)
 	// We can only create fibers from a fiber!
 	HEART_ASSERT(HeartFiberContext::Get().currentSystem != nullptr);
 
-	// unit.m_nativeHandle = ::CreateFiberEx(0, 0, FIBER_FLAG_FLOAT_SWITCH, &HeartFiberStartRoutine, NULL);
-	constexpr uint32_t StackSize = 16u * 1024u;
+	// TODO: Large stack and small stack fibers
+	// SFML requires a fairly deep stack (at least 256kb) so default to large for now
+	constexpr uint32_t StackSize = 1024u * 1024u;
 
 	HeartFiberAbiContext* ctx = m_allocator.AllocateAndConstruct<HeartFiberAbiContext>();
-	byte_t* stack = m_allocator.allocate<byte_t>(StackSize);
 	memset(ctx, 0, sizeof(HeartFiberAbiContext));
+
+	byte_t* stack = m_allocator.allocate<byte_t>(StackSize);
+#if !HEART_STRICT_PERF
 	memset(stack, 0, StackSize);
+#endif
+
 	ctx->allocated = stack;
 
 	// Stacks grow downward, point to the end of our buffer
 	stack = stack + StackSize;
-	// Win64 requires 16bit alignment of the stack
-	stack = (byte_t*)(uintptr_t(stack) & -16L);
-	// Win64 requires space for 4 64bit values on top of any actual arguments
 	stack -= 4 * sizeof(uint64_t);
+	if ((uintptr_t(stack) & 8L) != 8L)
+	{
+		// XXX: Windows requires that the stack is always 16-byte aligned... except
+		// during the PROLOG of a function, during which it expects it to be "misaligned"
+		// by 8 due to the push of the return pointer. It thus always emits code that
+		// offsets rsp by 8 + (x * 16). The end result is that if our stack pointer starts
+		// off properly aligned, the PROLOG of the StartRoutine misaligns it and causes
+		// horrible crashes later. So, we need to purposefully ensure it is *not* 16-byte
+		// aligned to start with.
+		stack -= 8;
+	}
 
 	ctx->rsp = uintptr_t(stack);
 	ctx->rbp = uintptr_t(stack);
@@ -209,12 +225,18 @@ void HeartFiberSystem::RequeueWorkUnit(HeartFiberWorkUnit& unit)
 
 void HeartFiberSystem::YieldUnit(HeartFiberWorkUnit& unit)
 {
+	// Verify upon leaving that we have a valid stack
+	HEART_FIBER_VERIFY_STACK();
+
 	{
 		HeartLockGuard lock(m_pendingQueueMutex, HeartFiberMutex::NeverYield {});
 		m_pendingQueue.PushBack(&unit);
 	}
 
 	NativeSwitchToFiber(HeartFiberContext::Get().pump);
+
+	// And verify upon coming back that we have a valid stack
+	HEART_FIBER_VERIFY_STACK();
 }
 
 void HeartFiberSystem::NativeSwitchToFiber(HeartFiberWorkUnit& target)

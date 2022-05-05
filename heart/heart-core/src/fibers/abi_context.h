@@ -10,6 +10,7 @@
 *
 */
 
+#include "heart/config.h"
 #include "heart/types.h"
 
 #include <xmmintrin.h>
@@ -42,3 +43,10 @@ struct HeartFiberAbiContext
 };
 
 extern "C" void heart_swap_fiber_context(HeartFiberAbiContext* from, HeartFiberAbiContext* to);
+extern "C" void heart_verify_stack_pointer();
+
+#if !HEART_STRICT_PERF
+#define HEART_FIBER_VERIFY_STACK heart_verify_stack_pointer
+#else
+#define HEART_FIBER_VERIFY_STACK do {} while(false)
+#endif
