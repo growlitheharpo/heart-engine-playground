@@ -70,6 +70,7 @@ heart_swap_fiber_context PROC
 	
 	; Load the target RIP into r8
 	mov r8, [rdx + 8 * 0]
+
 	; Load the new (old) stack pointer
 	mov rsp, [rdx + 8 * 1]
 
@@ -95,10 +96,8 @@ heart_swap_fiber_context PROC
 	movups xmm14, [rdx + 8 * 10 + 16 * 8]
 	movups xmm15, [rdx + 8 * 10 + 16 * 9]
 
-	; Push old RIP onto the stack for ret
-	push r8
-	xor rax, rax
-	ret
+	; Jump to our new execution point
+	jmp r8
 
 heart_swap_fiber_context ENDP
 

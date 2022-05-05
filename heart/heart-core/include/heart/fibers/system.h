@@ -12,7 +12,6 @@
 #pragma once
 
 #include <heart/fibers/fwd.h>
-#include <heart/fibers/mutex.h>
 #include <heart/fibers/work_unit.h>
 
 #include <heart/allocator.h>
@@ -49,7 +48,7 @@ private:
 	// the main thread can push work into it and the fiber thread(s)
 	// needs to both push and pull.
 	HeartFiberWorkUnit::Queue m_pendingQueue;
-	HeartFiberMutex m_pendingQueueMutex;
+	HeartMutex m_pendingQueueMutex;
 
 	// Flag to signal to the pumps that the system is shutting down.
 	std::atomic_bool m_exit = true;
@@ -117,7 +116,7 @@ public:
 			hrt::forward<F>(f));
 
 		{
-			HeartLockGuard lock(m_pendingQueueMutex, HeartFiberMutex::NeverYield {});
+			HeartLockGuard lock(m_pendingQueueMutex);
 			m_pendingQueue.PushBack(newWorkUnit);
 		}
 	}

@@ -17,36 +17,36 @@
 
 struct HeartFiberAbiContext
 {
-	uintptr_t rip;
-	uintptr_t rsp;
-	uintptr_t rbx;
-	uintptr_t rbp;
-	uintptr_t r12;
-	uintptr_t r13;
-	uintptr_t r14;
-	uintptr_t r15;
-	uintptr_t rdi;
-	uintptr_t rsi;
-	__m128 xmm6;
-	__m128 xmm7;
-	__m128 xmm8;
-	__m128 xmm9;
-	__m128 xmm10;
-	__m128 xmm11;
-	__m128 xmm12;
-	__m128 xmm13;
-	__m128 xmm14;
-	__m128 xmm15;
+	uintptr_t rip = 0;
+	uintptr_t rsp = 0;
+	uintptr_t rbx = 0;
+	uintptr_t rbp = 0;
+	uintptr_t r12 = 0;
+	uintptr_t r13 = 0;
+	uintptr_t r14 = 0;
+	uintptr_t r15 = 0;
+	uintptr_t rdi = 0;
+	uintptr_t rsi = 0;
+	__m128 xmm6 = {};
+	__m128 xmm7 = {};
+	__m128 xmm8 = {};
+	__m128 xmm9 = {};
+	__m128 xmm10 = {};
+	__m128 xmm11 = {};
+	__m128 xmm12 = {};
+	__m128 xmm13 = {};
+	__m128 xmm14 = {};
+	__m128 xmm15 = {};
 
 	// Extra
-	byte_t* allocated;
+	byte_t* allocated = nullptr;
 };
 
 extern "C" void heart_swap_fiber_context(HeartFiberAbiContext* from, HeartFiberAbiContext* to);
 extern "C" void heart_verify_stack_pointer();
 
 #if !HEART_STRICT_PERF
-#define HEART_FIBER_VERIFY_STACK heart_verify_stack_pointer
+#define HEART_FIBER_VERIFY_STACK() heart_verify_stack_pointer()
 #else
-#define HEART_FIBER_VERIFY_STACK do {} while(false)
+#define HEART_FIBER_VERIFY_STACK() ((void)0)
 #endif

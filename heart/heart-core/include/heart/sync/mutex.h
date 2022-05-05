@@ -15,8 +15,6 @@
 
 #include <heart/debug/assert.h>
 
-#include <heart/stl/forward.h>
-
 class HeartMutex
 {
 private:
@@ -69,11 +67,10 @@ private:
 	bool m_owns = false;
 
 public:
-	template <typename... LockArgs>
-	HeartUniqueLock(MutexT& mutex, LockArgs... args) :
+	HeartUniqueLock(MutexT& mutex) :
 		m_mutex(&mutex), m_owns(false)
 	{
-		Lock(hrt::forward<LockArgs>(args)...);
+		Lock();
 	}
 
 	HeartUniqueLock(MutexT& mutex, HeartLockMethod::DeferT) noexcept :
@@ -81,11 +78,10 @@ public:
 	{
 	}
 
-	template <typename... LockArgs>
-	HeartUniqueLock(MutexT& mutex, HeartLockMethod::TryLockT, LockArgs... args) :
+	HeartUniqueLock(MutexT& mutex, HeartLockMethod::TryLockT) :
 		m_mutex(&mutex), m_owns(false)
 	{
-		TryLock(hrt::forward<LockArgs>(args)...);
+		TryLock();
 	}
 
 	HeartUniqueLock(MutexT& mutex, HeartLockMethod::AdoptT) noexcept :
@@ -127,23 +123,21 @@ public:
 		}
 	}
 
-	template <typename... LockArgs>
-	void Lock(LockArgs... args)
+	void Lock()
 	{
 		HEART_ASSERT(m_mutex != nullptr);
 		HEART_ASSERT(!m_owns);
 
-		m_mutex->LockExclusive(hrt::forward<LockArgs>(args)...);
+		m_mutex->LockExclusive();
 		m_owns = true;
 	}
 
-	template <typename... LockArgs>
-	bool TryLock(LockArgs... args)
+	bool TryLock()
 	{
 		HEART_ASSERT(m_mutex != nullptr);
 		HEART_ASSERT(!m_owns);
 
-		m_owns = m_mutex->TryLockExclusive(hrt::forward<LockArgs>(args)...);
+		m_owns = m_mutex->TryLockExclusive();
 		return m_owns;
 	}
 
@@ -298,9 +292,8 @@ private:
 	HeartUniqueLock<MutexT> m_innerLock;
 
 public:
-	template <typename... LockArgs>
-	HeartLockGuard(MutexT& m, LockArgs... args) :
-		m_innerLock(m, hrt::forward<LockArgs>(args)...)
+	HeartLockGuard(MutexT& m) :
+		m_innerLock(m)
 	{
 		HEART_ASSERT(m_innerLock.OwnsLock());
 	}

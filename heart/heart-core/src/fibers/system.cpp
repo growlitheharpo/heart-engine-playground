@@ -52,18 +52,16 @@ void* HeartFiberSystem::HeartFiberThreadEntry(void* parameter)
 	currentThread->state = HeartFiberThreadEntryParam::Done;
 	currentThread = nullptr;
 
-	// Put the startup context into the destroy queue
+	// Allocate a startup abi so that the system has something to jump away from
 	auto* startupAbi = HeartFiberContext::Get().currentSystem->m_allocator.AllocateAndConstruct<HeartFiberAbiContext>();
-	*startupAbi = {};
 	HeartFiberContext::Get().entryUnit.m_nativeHandle = startupAbi;
 	HeartFiberContext::Get().currentWorkUnit = &HeartFiberContext::Get().entryUnit;
-	startupAbi = nullptr;
 
 	// Initialize and execute the pump
 	HeartFiberContext::Get().currentSystem->InitializeWorkUnitNativeHandle(HeartFiberContext::Get().pump);
 	HeartFiberContext::Get().currentSystem->NativeSwitchToFiber(HeartFiberContext::Get().pump);
 
-	// We've returned from the pump, time to kill the thread.
+	// We've returned from the pump, time to cleanup and kill the thread.
 	HEART_ASSERT(HeartFiberContext::Get().currentSystem->m_exit == true);
 	HeartFiberContext::Get().currentSystem->ReleaseWorkUnitNativeHandle(HeartFiberContext::Get().pump);
 	HeartFiberContext::Get().currentSystem->ReleaseWorkUnitNativeHandle(HeartFiberContext::Get().entryUnit);
@@ -109,7 +107,7 @@ HeartFiberStatus HeartFiberSystem::PumpRoutine()
 
 		bool pendingEmpty;
 		{
-			HeartLockGuard lock(m_pendingQueueMutex, HeartFiberMutex::NeverYield {});
+			HeartLockGuard lock(m_pendingQueueMutex);
 			pendingEmpty = m_pendingQueue.IsEmpty();
 		}
 
@@ -129,7 +127,7 @@ HeartFiberStatus HeartFiberSystem::PumpRoutine()
 		// Grab our next work unit
 		HeartFiberWorkUnit* next = nullptr;
 		{
-			HeartLockGuard lock(m_pendingQueueMutex, HeartFiberMutex::NeverYield {});
+			HeartLockGuard lock(m_pendingQueueMutex);
 			next = m_pendingQueue.PopFront();
 		}
 
@@ -159,22 +157,17 @@ void HeartFiberSystem::InitializeWorkUnitNativeHandle(HeartFiberWorkUnit& unit)
 
 	// TODO: Large stack and small stack fibers
 	// SFML requires a fairly deep stack (at least 256kb) so default to large for now
-	constexpr uint32_t StackSize = 1024u * 1024u;
+	constexpr uint32_t StackSize = 1u * Meg;
+	byte_t* stackStart = m_allocator.allocate<byte_t>(StackSize);
 
 	HeartFiberAbiContext* ctx = m_allocator.AllocateAndConstruct<HeartFiberAbiContext>();
-	memset(ctx, 0, sizeof(HeartFiberAbiContext));
+	ctx->allocated = stackStart;
 
-	byte_t* stack = m_allocator.allocate<byte_t>(StackSize);
-#if !HEART_STRICT_PERF
-	memset(stack, 0, StackSize);
-#endif
-
-	ctx->allocated = stack;
-
-	// Stacks grow downward, point to the end of our buffer
-	stack = stack + StackSize;
-	stack -= 4 * sizeof(uint64_t);
-	if ((uintptr_t(stack) & 8L) != 8L)
+	// Stacks grow downward, point to the end of our buffer, and "allocate"
+	// required Windows "red zone" space of 4 64bit values
+	byte_t* stackEnd = stackStart + StackSize;
+	byte_t* rsp = stackEnd - (4 * sizeof(uint64_t));
+	if ((uintptr_t(rsp) & 8L) != 8L)
 	{
 		// XXX: Windows requires that the stack is always 16-byte aligned... except
 		// during the PROLOG of a function, during which it expects it to be "misaligned"
@@ -183,11 +176,21 @@ void HeartFiberSystem::InitializeWorkUnitNativeHandle(HeartFiberWorkUnit& unit)
 		// off properly aligned, the PROLOG of the StartRoutine misaligns it and causes
 		// horrible crashes later. So, we need to purposefully ensure it is *not* 16-byte
 		// aligned to start with.
-		stack -= 8;
+		rsp -= 8;
 	}
 
-	ctx->rsp = uintptr_t(stack);
-	ctx->rbp = uintptr_t(stack);
+#if !HEART_STRICT_PERF
+	// Zero the whole buffer if we're not in strict perf
+	memset(stackStart, 0, StackSize);
+#else
+	// Zero just the area between our stack pointer and the end if we're in release
+	// This isn't strictly necessary, but debugging is already hard enough in
+	// optimized builds, we don't need a nonsense garbage stack to contend with too.
+	memset(rsp, 0, stackEnd - rsp);
+#endif
+
+	ctx->rsp = uintptr_t(rsp);
+	ctx->rbp = uintptr_t(rsp);
 	ctx->rip = uintptr_t(&HeartFiberStartRoutine);
 
 	unit.m_nativeHandle = ctx;
@@ -229,7 +232,7 @@ void HeartFiberSystem::YieldUnit(HeartFiberWorkUnit& unit)
 	HEART_FIBER_VERIFY_STACK();
 
 	{
-		HeartLockGuard lock(m_pendingQueueMutex, HeartFiberMutex::NeverYield {});
+		HeartLockGuard lock(m_pendingQueueMutex);
 		m_pendingQueue.PushBack(&unit);
 	}
 
@@ -260,7 +263,7 @@ void HeartFiberSystem::NativeSwitchToFiberNoReturn(HeartFiberWorkUnit& target)
 	NativeSwitchToFiber(target);
 
 	// Uh oh. the fiber came back. Kill the thread with an error code.
-	// It should've exited via the ExitThread in the entry routine
+	// It should've swapped back to the pump or the entry fiber!
 	HEART_ASSERT(false, "Error: fiber returned when it should not have!");
 	HeartExitThread(-1);
 }

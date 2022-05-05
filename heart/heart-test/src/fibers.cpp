@@ -151,7 +151,7 @@ TEST(Fibers, FourThreads)
 	const int JobCount = 128;
 	std::atomic_int doneCount = 0;
 
-	HeartFiberMutex threadIdsMutex;
+	std::mutex threadIdsMutex;
 	std::vector<std::thread::id> threadIds;
 
 	int i = JobCount;
@@ -159,7 +159,7 @@ TEST(Fibers, FourThreads)
 	{
 		system.EnqueueFiber([&]() {
 			{
-				HeartLockGuard lock(threadIdsMutex, HeartFiberMutex::NeverYield {});
+				std::lock_guard lock(threadIdsMutex);
 				if (std::find(threadIds.begin(), threadIds.end(), std::this_thread::get_id()) == threadIds.end())
 				{
 					threadIds.push_back(std::this_thread::get_id());
@@ -183,4 +183,47 @@ TEST(Fibers, FourThreads)
 	EXPECT_EQ(doneCount, JobCount);
 
 	system.Shutdown();
+}
+
+TEST(Fibers, Allocation)
+{
+	TestTrackingAllocator allocator;
+
+	{
+		HeartFiberSystem::Settings settings;
+		settings.threadCount = 4;
+
+		HeartFiberSystem system(allocator);
+		system.Initialize(settings);
+
+		const int JobCount = 128;
+		std::atomic_int doneCount = 0;
+
+		std::mutex threadIdsMutex;
+		std::vector<std::thread::id> threadIds;
+
+		int i = JobCount;
+		while (i--)
+		{
+			system.EnqueueFiber([&]() {
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+				doneCount++;
+
+				return HeartFiberStatus::Complete;
+			});
+		}
+
+		while (doneCount < JobCount)
+			std::this_thread::yield();
+
+		// With so many long-running jobs, we expect every thread to have been hit
+		EXPECT_EQ(threadIds.size(), settings.threadCount);
+
+		// And they should've all finished
+		EXPECT_EQ(doneCount, JobCount);
+
+		system.Shutdown();
+	}
+
+	EXPECT_EQ(allocator.m_allocatedCount, 0);
 }
