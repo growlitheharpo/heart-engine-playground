@@ -15,6 +15,8 @@
 
 #include <gtest/gtest.h>
 
+#include "utils/tracking_allocator.h"
+
 #include <mutex>
 #include <thread>
 #include <vector>

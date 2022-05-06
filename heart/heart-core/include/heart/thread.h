@@ -74,3 +74,5 @@ public:
 		return !!t;
 	}
 };
+
+[[noreturn]] void HeartExitThread(uint32_t exitCode);

@@ -60,17 +60,28 @@ private:
 	// Global entry pointer for fiber work units. Invokes the work unit's
 	// worker, which can yield as many times as it likes. When it eventually
 	// exits, passes execution of the fiber back to the pump.
-	static void HeartFiberStartRoutine(void* parameter);
+	static void HeartFiberStartRoutine(void*);
 
 	// The pump routine. Keeps all fiber threads alive throughout the
 	// system's lifetime and is responsible for pulling work units for each
 	// thread from the queue
 	HeartFiberStatus PumpRoutine();
 
+	// Sets up the entry fiber, if necessary. Called from thread entry and nowhere else.
+	void InitializeEntryFiber();
+
+	// Releases the entry fiber, if necessary. Called from thread entry and nowhere else.
+	void ReleaseEntryFiber();
+
 	// Prepare a work unit for actual execution by creating a native fiber for it.
 	// This can only be called from a thread which is already a fiber, so it is
 	// delegated to the pump for user work.
 	void InitializeWorkUnitNativeHandle(HeartFiberWorkUnit& unit);
+
+	// Release any resources allocated by the native fiber for this work unit.
+	// This must be called after the fiber has finished executing on all threads.
+	// Calling this e.g while the fiber is still in the process of yielding will crash.
+	void ReleaseWorkUnitNativeHandle(HeartFiberWorkUnit& unit);
 
 	// Finalize a work unit. Adds it to the destroy queue and passes execution
 	// to the pump.

@@ -47,6 +47,9 @@ struct TestTrackingAllocator final : public HeartBaseAllocator
 
 	void RawDeallocate(void* p, size_type n = 1) override
 	{
+		if (p == nullptr)
+			return;
+
 		--m_allocatedCount;
 
 		{
