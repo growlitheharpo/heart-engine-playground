@@ -11,22 +11,11 @@
 */
 #pragma once
 
-#if !defined(HEART_STRICT_PERF)
-#if defined(NDEBUG)
-#define HEART_STRICT_PERF 1
-#else
-#define HEART_STRICT_PERF 0
-#endif
-#endif
+#include "heart/config.h"
 
-#if !defined(HEART_INCLUDE_DEBUG_STRINGS)
-#if defined(NDEBUG)
-#define HEART_INCLUDE_DEBUG_STRINGS 0
+#if !HEART_STRICT_PERF && !HEART_USE_OS_FIBERS
+extern "C" void heart_verify_stack_pointer();
+#define HEART_FIBER_VERIFY_STACK() heart_verify_stack_pointer()
 #else
-#define HEART_INCLUDE_DEBUG_STRINGS 1
-#endif
-#endif
-
-#if !defined(HEART_USE_OS_FIBERS)
-#define HEART_USE_OS_FIBERS 0
+#define HEART_FIBER_VERIFY_STACK() ((void)0)
 #endif
