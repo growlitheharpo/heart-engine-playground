@@ -11,6 +11,9 @@
 #define WIN32_EXTRA_LEAN
 #endif
 
+#pragma warning(push)
+#pragma warning(disable : 4005)
+
 #define NOIME
 #define NOWINRES
 #define NOGDICAPMASKS
@@ -50,11 +53,12 @@
 #define NOPROFILER
 #define NODEFERWINDOWPOS
 #define NOMCX
-#define NOIME
 #define NOPROXYSTUB
 #define NOIMAGE
 #define NO
 #define NOTAPE
 #define ANSI_ONLY
+
+#pragma warning(pop)
 
 #include <Windows.h>
