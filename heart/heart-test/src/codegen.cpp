@@ -11,10 +11,14 @@
 */
 #include <heart/deserialization/deserialization.h>
 
+static_assert(HEART_HAS_DESERIALIZATION_SUPPORT == 1, "HEART_HAS_DESERIALIZATION_SUPPORT is required to run codegen test.");
+
 #include "codegen.h"
 #include "gen/gen.h"
 
 #include <rapidjson/document.h>
+
+#include <entt/meta/container.hpp>
 
 #include <gtest/gtest.h>
 
