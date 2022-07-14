@@ -44,13 +44,14 @@ void TileManager::PlaceTile(uint32_t tileKey, float x, float y)
 	auto& sheet = m_spritesheets[sheetIndex];
 	auto& tile = sheet.spritelist[tileIndex];
 
-	auto newTile = create_multi_component<TransformComponent, DrawableComponent, TileTag>();
+	auto newTile = GetRegistry().create();
+	GetRegistry().emplace<TileTag>(newTile);
 
-	auto& pos = std::get<1>(newTile);
+	auto& pos = GetRegistry().emplace<TransformComponent>(newTile);
 	pos.position.x = x;
 	pos.position.y = y;
 
-	auto& draw = std::get<2>(newTile);
+	auto& draw = GetRegistry().emplace<DrawableComponent>(newTile);
 	draw.texture = nullptr; // the tile manager cleans up its textures
 	draw.sprite = new sf::Sprite(sheet.texture, sf::IntRect(tile.x, tile.y, tile.width, tile.height));
 }

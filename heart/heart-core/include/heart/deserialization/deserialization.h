@@ -11,6 +11,7 @@
 */
 #pragma once
 
+#include <heart/config.h>
 #include <heart/debug/assert.h>
 #include <heart/types.h>
 
@@ -20,13 +21,25 @@
 
 #include <heart/stl/type_traits.h>
 
+#if HEART_HAS_ENTT
 #include <entt/core/hashed_string.hpp>
 #include <entt/meta/container.hpp>
 #include <entt/meta/factory.hpp>
 #include <entt/meta/meta.hpp>
 #include <entt/meta/resolve.hpp>
+#endif
 
+#if HEART_HAS_RAPIDJSON
 #include <rapidjson/document.h>
+#endif
+
+#if HEART_HAS_ENTT && HEART_HAS_RAPIDJSON
+#define HEART_HAS_DESERIALIZATION_SUPPORT 1
+#else
+#define HEART_HAS_DESERIALIZATION_SUPPORT 0
+#endif
+
+#if HEART_HAS_DESERIALIZATION_SUPPORT
 
 namespace entt
 {
@@ -168,3 +181,23 @@ namespace heart_priv
 #define SERIALIZE_FIELD_ALIAS(type_name, field) .data<&type_name ::field, entt::as_ref_t>(#field##_hs)
 #define SERIALIZE_FUNCTION_ALIAS(type_name, function) .func<&type_name ::function, entt::as_ref_t>(#function##_hs)
 #define END_SERIALIZE_TYPE(type_name) ;
+
+#else
+
+template <typename T1, typename T2>
+bool HeartDeserializeObject(T1& outObject, T2& node)
+{
+	return false;
+}
+
+#define BEGIN_SERIALIZE_TYPE(type_name)
+#define BEGIN_SERIALIZE_TYPE_ADDITIVE(type_name)
+#define SERIALIZE_SELF_ACCESS(type_name, setter, getter)
+#define SERIALIZE_CONVERSION(type_name, convert)
+#define SERIALIZE_FIELD(type_name, field)
+#define SERIALIZE_FUNCTION(type_name, function)
+#define SERIALIZE_FIELD_ALIAS(type_name, field)
+#define SERIALIZE_FUNCTION_ALIAS(type_name, function)
+#define END_SERIALIZE_TYPE(type_name) ;
+
+#endif

@@ -151,8 +151,8 @@ void InitializeGame()
 		// Create the background
 		fence.Wait(2);
 		{
-			auto bg = create_multi_component<TransformComponent, DrawableComponent>();
-			auto& drawable = std::get<2>(bg);
+			auto bg = s_registry.create();
+			auto& drawable = s_registry.emplace<DrawableComponent>(bg);
 
 			drawable.texture = new sf::Texture();
 			drawable.texture->loadFromMemory(bgTextureBuffer.data(), bgTextureBuffer.size());
@@ -160,7 +160,7 @@ void InitializeGame()
 			drawable.sprite = new sf::Sprite(*drawable.texture);
 			drawable.z = -10.0f;
 
-			auto& tf = std::get<1>(bg);
+			auto& tf = s_registry.emplace<TransformComponent>(bg);
 			tf.position = sf::Vector2f(0.0f, -250.0f);
 		}
 
@@ -169,9 +169,12 @@ void InitializeGame()
 		{
 			fence.Wait(4);
 
-			auto player = create_multi_component<PlayerTag, InputStatusComponent, TransformComponent, DrawableComponent>();
-			auto& drawable = std::get<4>(player);
+			auto player = s_registry.create();
+			s_registry.emplace<PlayerTag>(player);
+			s_registry.emplace<InputStatusComponent>(player);
+			s_registry.emplace<TransformComponent>(player);
 
+			auto& drawable = s_registry.emplace<DrawableComponent>(player);
 			drawable.texture = new sf::Texture();
 			drawable.texture->loadFromMemory(playerTextureBuffer.data(), playerTextureBuffer.size());
 
@@ -181,8 +184,10 @@ void InitializeGame()
 
 	// Create our origin marker
 	{
-		auto originMarker = create_multi_component<TransformComponent, DrawableComponent>();
-		auto& drawable = std::get<2>(originMarker);
+		auto originMarker = s_registry.create();
+		s_registry.emplace<TransformComponent>(originMarker);
+
+		auto& drawable = s_registry.emplace<DrawableComponent>(originMarker);
 
 		sf::Image i;
 		i.create(2, 2, sf::Color::Magenta);

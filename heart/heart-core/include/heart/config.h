@@ -30,3 +30,13 @@
 #if !defined(HEART_USE_OS_FIBERS)
 #define HEART_USE_OS_FIBERS 0
 #endif
+
+// Assume we've been provided rapidjson and entt
+// If this fails, the owner is required to set these to false
+#if !defined(HEART_HAS_ENTT)
+#define HEART_HAS_ENTT 1
+#endif
+
+#if !defined(HEART_HAS_RAPIDJSON)
+#define HEART_HAS_RAPIDJSON 1
+#endif
