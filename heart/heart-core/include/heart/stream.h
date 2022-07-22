@@ -34,6 +34,10 @@ private:
 	}
 
 public:
+	struct EnforceAddressof
+	{
+	};
+
 	template <typename P>
 	HeartStreamWriter(P* buffer, BufferSizeT size, BufferSizeT& head) :
 		m_buffer(reinterpret_cast<uint8_t*>(buffer)),
@@ -59,6 +63,19 @@ public:
 			return false;
 
 		memcpy(m_buffer + *m_head, &v, sizeof(v));
+		*m_head += BufferSizeT(sizeof(v));
+		return true;
+	}
+
+	template <typename T, hrt::enable_if_t<hrt::is_trivially_copyable_v<T>, void*> = nullptr>
+	bool Write(T v, EnforceAddressof)
+	{
+		static_assert(sizeof(v) < std::numeric_limits<BufferSizeT>::max(), "Value of this type will *never* fit in storage!");
+
+		if (!Check(sizeof(v)))
+			return false;
+
+		memcpy(m_buffer + *m_head, std::addressof(v), sizeof(v));
 		*m_head += BufferSizeT(sizeof(v));
 		return true;
 	}
