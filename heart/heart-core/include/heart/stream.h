@@ -75,6 +75,11 @@ public:
 		*m_head += BufferSizeT(sizeof(T) * count);
 		return true;
 	}
+
+	void* GetCurrentHead() const
+	{
+		return m_buffer + *m_head;
+	}
 };
 
 template <typename BufferSizeT = size_t>
