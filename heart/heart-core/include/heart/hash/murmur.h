@@ -206,3 +206,23 @@ constexpr uint32_t HeartMurmurHash3(std::string_view string, uint32_t seed = Hea
 {
 	return HeartMurmurHash3(string.data(), string.size(), seed);
 }
+
+constexpr uint32_t HeartMurmurHash3(std::u8string_view string, uint32_t seed = HeartMurmurHash3DefaultSeed)
+{
+	return HeartMurmurHash3(string.data(), string.size(), seed);
+}
+
+constexpr uint32_t HeartMurmurHash3(std::u16string_view string, uint32_t seed = HeartMurmurHash3DefaultSeed)
+{
+	return HeartMurmurHash3(string.data(), string.size(), seed);
+}
+
+constexpr uint32_t HeartMurmurHash3(std::u32string_view string, uint32_t seed = HeartMurmurHash3DefaultSeed)
+{
+	return HeartMurmurHash3(string.data(), string.size(), seed);
+}
+
+constexpr uint32_t HeartMurmurHash3(std::wstring_view string, uint32_t seed = HeartMurmurHash3DefaultSeed)
+{
+	return HeartMurmurHash3(string.data(), string.size(), seed);
+}
