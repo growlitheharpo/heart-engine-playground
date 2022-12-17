@@ -130,6 +130,9 @@ function include_entt(should_link)
 
 	filter { "configurations:Release" }
 		defines { "ENTT_DISABLE_ASSERT=1" }
+
+		-- hack! remove this
+		defines { "_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING=1" }
 	filter {}
 end
 
