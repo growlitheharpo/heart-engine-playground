@@ -128,6 +128,9 @@ function include_entt(should_link)
 		export_include_root .. "entt/src/",
 	}
 
+	-- hack! remove this
+	defines { "_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING=1" }
+
 	filter { "configurations:Release" }
 		defines { "ENTT_DISABLE_ASSERT=1" }
 	filter {}
