@@ -10,8 +10,11 @@
 *
 */
 #include <heart/fibers/context.h>
+#include <heart/fibers/mutex.h>
 #include <heart/fibers/status.h>
 #include <heart/fibers/system.h>
+
+#include <heart/sync/mutex.h>
 
 #include <gtest/gtest.h>
 
@@ -183,4 +186,54 @@ TEST(Fibers, FourThreads)
 	EXPECT_EQ(doneCount, JobCount);
 
 	system.Shutdown();
+}
+
+TEST(HeartFiberMutex, ExclusiveLock)
+{
+	HeartFiberSystem::Settings settings;
+	settings.threadCount = 2;
+
+	HeartFiberSystem system;
+	system.Initialize(settings);
+
+	HeartFiberMutex mutex;
+	mutex.LockExclusive(HeartFiberMutex::NeverYield);
+
+	EXPECT_FALSE(mutex.TryLockExclusive()) << "HeartFiberMutex should not support recursive locking";
+
+	system.EnqueueFiber([&]() {
+		EXPECT_FALSE(mutex.TryLockExclusive()) << "HeartFiberMutex should not support recursive locking";
+		return HeartFiberStatus::Complete;
+	});
+
+	system.Shutdown();
+
+	mutex.Unlock();
+}
+
+TEST(HeartFiberMutex, LockGuard)
+{
+	HeartFiberSystem::Settings settings;
+	settings.threadCount = 2;
+
+	HeartFiberSystem system;
+	system.Initialize(settings);
+
+	HeartFiberMutex mutex;
+
+	{
+		HeartLockGuard lock(mutex, HeartFiberMutex::NeverYield);
+
+		EXPECT_FALSE(mutex.TryLockExclusive()) << "HeartFiberMutex should not support recursive locking";
+
+		system.EnqueueFiber([&]() {
+			EXPECT_FALSE(mutex.TryLockExclusive()) << "HeartFiberMutex should not support recursive locking";
+			return HeartFiberStatus::Complete;
+		});
+
+		system.Shutdown();
+	}
+
+	EXPECT_TRUE(mutex.TryLockExclusive());
+	mutex.Unlock();
 }

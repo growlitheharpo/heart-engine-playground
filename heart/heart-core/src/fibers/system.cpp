@@ -104,15 +104,15 @@ void HeartFiberSystem::HeartFiberStartRoutine(void*)
 HeartFiberStatus HeartFiberSystem::PumpRoutine()
 {
 	auto canExit = [&]() {
+		if (!m_exit)
+			return false;
+
 		bool destroyEmpty = HeartFiberContext::Get().destroyQueue.IsEmpty();
+		if (!destroyEmpty)
+			return false;
 
-		bool pendingEmpty;
-		{
-			HeartLockGuard lock(m_pendingQueueMutex);
-			pendingEmpty = m_pendingQueue.IsEmpty();
-		}
-
-		return destroyEmpty && pendingEmpty && m_exit;
+		HeartLockGuard lock(m_pendingQueueMutex);
+		return m_pendingQueue.IsEmpty();
 	};
 
 	while (!canExit())
