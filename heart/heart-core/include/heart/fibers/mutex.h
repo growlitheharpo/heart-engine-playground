@@ -12,25 +12,22 @@
 #pragma once
 
 #include <heart/types.h>
+#include <heart/util/tag_type.h>
 
 #include <atomic>
 
 class HeartFiberMutex
 {
 public:
-	struct YieldToFiber
-	{
-	};
+	HEART_DECLARE_TAG_TYPE(YieldToFiber);
 
-	struct NeverYield
-	{
-	};
+	HEART_DECLARE_TAG_TYPE(NeverYield);
 
 	HeartFiberMutex() = default;
 
-	void LockExclusive(YieldToFiber);
+	void LockExclusive(YieldToFiberT);
 
-	void LockExclusive(NeverYield);
+	void LockExclusive(NeverYieldT);
 
 	bool TryLockExclusive();
 

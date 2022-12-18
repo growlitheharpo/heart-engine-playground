@@ -19,7 +19,7 @@
 constexpr static std::memory_order ExchangeMemoryOrder = std::memory_order_seq_cst;
 constexpr static std::memory_order FenceMemoryOrder = std::memory_order_seq_cst;
 
-void HeartFiberMutex::LockExclusive(YieldToFiber)
+void HeartFiberMutex::LockExclusive(YieldToFiberT)
 {
 	while (value.exchange(LockedValue, ExchangeMemoryOrder) != UnlockedValue)
 	{
@@ -28,7 +28,7 @@ void HeartFiberMutex::LockExclusive(YieldToFiber)
 	std::atomic_thread_fence(FenceMemoryOrder);
 }
 
-void HeartFiberMutex::LockExclusive(NeverYield)
+void HeartFiberMutex::LockExclusive(NeverYieldT)
 {
 	while (value.exchange(LockedValue, ExchangeMemoryOrder) != UnlockedValue)
 	{
