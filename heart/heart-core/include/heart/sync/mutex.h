@@ -12,6 +12,7 @@
 #pragma once
 
 #include <heart/copy_move_semantics.h>
+#include <heart/util/tag_type.h>
 
 #include <heart/debug/assert.h>
 
@@ -43,20 +44,11 @@ public:
 
 struct HeartLockMethod
 {
-	struct DeferT
-	{
-	};
-	constexpr static DeferT Defer = {};
+	HEART_DECLARE_TAG_TYPE(Defer);
 
-	struct AdoptT
-	{
-	};
-	constexpr static AdoptT Adopt = {};
+	HEART_DECLARE_TAG_TYPE(Adopt);
 
-	struct TryLockT
-	{
-	};
-	constexpr static TryLockT TryLock = {};
+	HEART_DECLARE_TAG_TYPE(TryLock);
 };
 
 template <typename MutexT>

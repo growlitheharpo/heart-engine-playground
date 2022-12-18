@@ -19,6 +19,7 @@
 #include <heart/sync/condition_variable.h>
 #include <heart/sync/mutex.h>
 #include <heart/thread.h>
+#include <heart/util/tag_type.h>
 
 #include <atomic>
 
@@ -73,10 +74,7 @@ private:
 
 	// Because we use make_shared, our constructor must be public.
 	// We use this secret to ensure only the job system can construct a job.
-	struct ConstructorSecretType
-	{
-	};
-	static constexpr ConstructorSecretType ConstructorSecret = {};
+	HEART_DECLARE_TAG_TYPE(ConstructorSecret);
 
 	mutable std::atomic<uint32_t> useCount = 0;
 
@@ -94,7 +92,7 @@ private:
 
 public:
 	template <typename F>
-	HeartJob(ConstructorSecretType, HeartBaseAllocator& a, F&& f, uint32_t m) :
+	HeartJob(ConstructorSecretT, HeartBaseAllocator& a, F&& f, uint32_t m) :
 		worker(hrt::forward<F>(f)),
 		allocator(a),
 		mask(m),

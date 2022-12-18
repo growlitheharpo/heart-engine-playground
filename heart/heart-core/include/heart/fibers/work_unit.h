@@ -15,6 +15,7 @@
 
 #include <heart/function/embedded_function.h>
 #include <heart/memory/intrusive_list.h>
+#include <heart/util/tag_type.h>
 
 #include <heart/stl/forward.h>
 
@@ -24,10 +25,7 @@ public:
 	using WorkerFunction = HeartEmbeddedFunction<HeartFiberStatus(), 96>;
 
 private:
-	struct ConstructorSecretType
-	{
-	};
-	static constexpr ConstructorSecretType ConstructorSecret = {};
+	HEART_DECLARE_TAG_TYPE(ConstructorSecret);
 	friend class HeartFiberContext;
 	friend class HeartFiberSystem;
 
@@ -40,13 +38,13 @@ private:
 	WorkerFunction m_worker = {};
 
 public:
-	HeartFiberWorkUnit(ConstructorSecretType) :
+	HeartFiberWorkUnit(ConstructorSecretT) :
 		HeartFiberWorkUnit()
 	{
 	}
 
 	template <typename F>
-	HeartFiberWorkUnit(ConstructorSecretType, F&& f) :
+	HeartFiberWorkUnit(ConstructorSecretT, F&& f) :
 		m_nativeHandle(nullptr),
 		m_worker(hrt::forward<F>(f))
 	{
