@@ -12,16 +12,10 @@
 #include "heart/jobs/system.h"
 
 #include "heart/sleep.h"
+#include "heart/thread/bootstrap.h"
 
 #include <algorithm>
 #include <thread>
-
-struct ThreadUserData
-{
-	HeartJobSystem* system = nullptr;
-	HeartJobPriority lowestPriority = HeartJobPriority::Normal;
-	std::atomic_bool started = false;
-};
 
 HeartJobSystem::Settings HeartJobSystem::GetDefaultSettings()
 {
@@ -43,22 +37,6 @@ HeartJobSystem::Settings HeartJobSystem::GetDefaultSettings()
 	defaultSettings.threadCount = uint8_t(std::clamp(coreCount - ReservedCount, MinimumCount, MaximumCount));
 	defaultSettings.threadPriority = HeartThread::Priority::High;
 	return defaultSettings;
-}
-
-void* HeartJobSystem::ThreadEntryPoint(void* p)
-{
-	ThreadUserData* userData = (ThreadUserData*)p;
-
-	HeartJobSystem* s = userData->system;
-	HeartJobPriority pri = userData->lowestPriority;
-
-	// Once we store true in `started`, the userData itself is no longer valid
-	// and the thread that provided it is free to reuse the memory.
-	userData->started.store(true, std::memory_order_release);
-	userData = nullptr;
-
-	s->ThreadWorker(pri);
-	return nullptr;
 }
 
 HeartJobSystem::HeartJobSystem(HeartBaseAllocator& allocator) :
@@ -83,17 +61,9 @@ void HeartJobSystem::Initialize(Settings s)
 	m_workerThreads.Reserve(threadCount);
 	for (int i = 0; i < threadCount; ++i)
 	{
-		ThreadUserData ud;
-		ud.system = this;
-		ud.lowestPriority = i < urgentThreadCount ? HeartJobPriority::Urgent : HeartJobPriority::Normal;
-
-		HeartThread& thread = m_workerThreads.EmplaceBack(&ThreadEntryPoint, &ud, s.threadPriority);
+		auto lowestPriority = i < urgentThreadCount ? HeartJobPriority::Urgent : HeartJobPriority::Normal;
+		HeartThread& thread = m_workerThreads.EmplaceBack(HeartThreadMemberBootstrap(this, &HeartJobSystem::ThreadWorker, lowestPriority));
 		thread.SetName("HeartJobSystem Thread");
-
-		while (!ud.started.load(std::memory_order_relaxed))
-		{
-			HeartYield();
-		}
 	}
 }
 

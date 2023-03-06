@@ -1,4 +1,4 @@
-/* Copyright (C) 2022 James Keats
+/* Copyright (C) 2023 James Keats
 *
 * This file is part of Heart, a collection of game engine technologies.
 *
@@ -9,13 +9,20 @@
 * https://github.com/growlitheharpo/heart-engine-playground
 *
 */
-#pragma once
 
-#include <heart/fibers/fwd.h>
+#include "heart/fibers/work_unit.h"
 
-enum class HeartFiberWorkUnitStatus : uint8_t
+#include "heart/allocator.h"
+
+void HeartFiberWorkUnit::IncrementRef() const
 {
-	Pending,
-	Failure,
-	Success,
-};
+	++m_useCount;
+}
+
+void HeartFiberWorkUnit::DecrementRef() const
+{
+	if (--m_useCount == 0 && m_allocator != nullptr)
+	{
+		m_allocator->DestroyAndFree(this);
+	}
+}

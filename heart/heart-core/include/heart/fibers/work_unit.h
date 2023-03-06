@@ -13,16 +13,21 @@
 
 #include <heart/fibers/fwd.h>
 
+#include <heart/fibers/status.h>
 #include <heart/function/embedded_function.h>
 #include <heart/memory/intrusive_list.h>
 #include <heart/util/tag_type.h>
 
 #include <heart/stl/forward.h>
 
+#include <atomic>
+
+struct HeartBaseAllocator;
+
 class HeartFiberWorkUnit
 {
 public:
-	using WorkerFunction = HeartEmbeddedFunction<HeartFiberStatus(), 96>;
+	using WorkerFunction = HeartEmbeddedFunction<HeartFiberResult(), 96>;
 
 private:
 	HEART_DECLARE_TAG_TYPE(ConstructorSecret);
@@ -37,17 +42,40 @@ private:
 
 	WorkerFunction m_worker = {};
 
+	mutable std::atomic<HeartFiberWorkUnitStatus> m_status = HeartFiberWorkUnitStatus::Pending;
+
+	mutable std::atomic<uint32> m_useCount = 0;
+
+	HeartBaseAllocator* m_allocator = nullptr;
+
 public:
-	HeartFiberWorkUnit(ConstructorSecretT) :
-		HeartFiberWorkUnit()
+	HeartFiberWorkUnit(ConstructorSecretT, HeartBaseAllocator* allocator = nullptr) :
+		HeartFiberWorkUnit(ConstructorSecretT {}, allocator, WorkerFunction {})
 	{
 	}
 
 	template <typename F>
-	HeartFiberWorkUnit(ConstructorSecretT, F&& f) :
+	HeartFiberWorkUnit(ConstructorSecretT, HeartBaseAllocator* allocator, F&& f) :
 		m_nativeHandle(nullptr),
-		m_worker(hrt::forward<F>(f))
+		m_worker(hrt::forward<F>(f)),
+		m_status(HeartFiberWorkUnitStatus::Pending),
+		m_useCount(0),
+		m_allocator(allocator)
 	{
+	}
+
+	void IncrementRef() const;
+
+	void DecrementRef() const;
+
+	uint32 GetRefCount() const
+	{
+		return m_useCount;
+	}
+
+	HeartFiberWorkUnitStatus GetStatus() const
+	{
+		return m_status;
 	}
 
 	typedef HeartIntrusiveList<HeartFiberWorkUnit, &HeartFiberWorkUnit::m_link> Queue;

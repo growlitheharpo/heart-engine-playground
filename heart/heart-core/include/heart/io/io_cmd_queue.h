@@ -15,7 +15,7 @@
 
 #include <heart/sync/condition_variable.h>
 #include <heart/sync/mutex.h>
-#include <heart/thread.h>
+#include <heart/thread/thread.h>
 
 #include <heart/stl/vector.h>
 
@@ -35,8 +35,6 @@ private:
 	hrt::vector<HeartThread> m_threads;
 	HeartMutex m_mutex;
 	HeartConditionVariable m_cv;
-
-	static void* ThreadEntryPoint(void*);
 
 	void ThreadThink();
 

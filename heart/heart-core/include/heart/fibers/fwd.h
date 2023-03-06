@@ -16,4 +16,9 @@
 class HeartFiberWorkUnit;
 class HeartFiberContext;
 class HeartFiberSystem;
-enum class HeartFiberStatus : uint8_t;
+enum class HeartFiberResult : uint8_t;
+enum class HeartFiberWorkUnitStatus : uint8;
+
+template <typename T>
+class HeartIntrusivePtr;
+using HeartFiberWorkUnitRef = HeartIntrusivePtr<HeartFiberWorkUnit>;

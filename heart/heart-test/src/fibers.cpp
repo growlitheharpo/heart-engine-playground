@@ -11,7 +11,7 @@
 */
 #include <heart/fibers/context.h>
 #include <heart/fibers/mutex.h>
-#include <heart/fibers/status.h>
+#include <heart/fibers/result.h>
 #include <heart/fibers/system.h>
 
 #include <heart/sync/mutex.h>
@@ -40,10 +40,10 @@ TEST(Fibers, SingleWorkUnit)
 
 	static int32_t someData = 0;
 
-	system.EnqueueFiber([]() {
+	system.EnqueueWork([]() {
 		EXPECT_EQ(someData, 0);
 		someData = 1;
-		return HeartFiberStatus::Complete;
+		return HeartFiberResult::Success;
 	});
 
 	system.Shutdown();
@@ -60,14 +60,14 @@ TEST(Fibers, MultiWorkUnit)
 
 	auto worker = []() {
 		++someData;
-		return HeartFiberStatus::Complete;
+		return HeartFiberResult::Success;
 	};
 
-	system.EnqueueFiber(worker);
-	system.EnqueueFiber(worker);
-	system.EnqueueFiber(worker);
-	system.EnqueueFiber(worker);
-	system.EnqueueFiber(worker);
+	system.EnqueueWork(worker);
+	system.EnqueueWork(worker);
+	system.EnqueueWork(worker);
+	system.EnqueueWork(worker);
+	system.EnqueueWork(worker);
 
 	system.Shutdown();
 
@@ -93,7 +93,7 @@ TEST(Fibers, YieldingWorkUnit)
 
 	static State state = None;
 
-	system.EnqueueFiber([]() {
+	system.EnqueueWork([]() {
 		EXPECT_EQ(state, None);
 		state = Job1Waiting;
 
@@ -106,17 +106,17 @@ TEST(Fibers, YieldingWorkUnit)
 		EXPECT_EQ(state, Job2Yielding);
 
 		state = Job1Finished;
-		return HeartFiberStatus::Complete;
+		return HeartFiberResult::Success;
 	});
 
-	system.EnqueueFiber([]() {
+	system.EnqueueWork([]() {
 		EXPECT_EQ(state, Job1Yielding);
 
 		state = Job2Yielding;
 		HeartFiberContext::Yield();
 
 		state = Job2Finished;
-		return HeartFiberStatus::Complete;
+		return HeartFiberResult::Success;
 	});
 	job2Queued = true;
 
@@ -130,13 +130,13 @@ TEST(Fibers, Requeue)
 	system.Initialize({});
 
 	std::atomic<int32_t> counter = 0;
-	system.EnqueueFiber([&]() {
+	system.EnqueueWork([&]() {
 		if (++counter < 5)
 		{
-			return HeartFiberStatus::Requeue;
+			return HeartFiberResult::Retry;
 		}
 
-		return HeartFiberStatus::Complete;
+		return HeartFiberResult::Success;
 	});
 
 	system.Shutdown();
@@ -160,7 +160,7 @@ TEST(Fibers, FourThreads)
 	int i = JobCount;
 	while (i--)
 	{
-		system.EnqueueFiber([&]() {
+		system.EnqueueWork([&]() {
 			{
 				std::lock_guard lock(threadIdsMutex);
 				if (std::find(threadIds.begin(), threadIds.end(), std::this_thread::get_id()) == threadIds.end())
@@ -172,7 +172,7 @@ TEST(Fibers, FourThreads)
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			doneCount++;
 
-			return HeartFiberStatus::Complete;
+			return HeartFiberResult::Success;
 		});
 	}
 
@@ -201,9 +201,9 @@ TEST(HeartFiberMutex, ExclusiveLock)
 
 	EXPECT_FALSE(mutex.TryLockExclusive()) << "HeartFiberMutex should not support recursive locking";
 
-	system.EnqueueFiber([&]() {
+	system.EnqueueWork([&]() {
 		EXPECT_FALSE(mutex.TryLockExclusive()) << "HeartFiberMutex should not support recursive locking";
-		return HeartFiberStatus::Complete;
+		return HeartFiberResult::Success;
 	});
 
 	system.Shutdown();
@@ -226,9 +226,9 @@ TEST(HeartFiberMutex, LockGuard)
 
 		EXPECT_FALSE(mutex.TryLockExclusive()) << "HeartFiberMutex should not support recursive locking";
 
-		system.EnqueueFiber([&]() {
+		system.EnqueueWork([&]() {
 			EXPECT_FALSE(mutex.TryLockExclusive()) << "HeartFiberMutex should not support recursive locking";
-			return HeartFiberStatus::Complete;
+			return HeartFiberResult::Success;
 		});
 
 		system.Shutdown();
@@ -236,4 +236,30 @@ TEST(HeartFiberMutex, LockGuard)
 
 	EXPECT_TRUE(mutex.TryLockExclusive());
 	mutex.Unlock();
+}
+
+TEST(Fibers, ShouldNotLeakMemory)
+{
+	TestTrackingAllocator allocator;
+
+	{
+		HeartFiberSystem system(allocator);
+
+		system.Initialize({});
+
+		static int32_t someData = 0;
+
+		system.EnqueueWork([]() {
+			EXPECT_EQ(someData, 0);
+			someData = 1;
+			return HeartFiberResult::Success;
+		});
+
+		system.Shutdown();
+
+		EXPECT_EQ(someData, 1);
+	}
+
+	EXPECT_EQ(allocator.m_allocatedCount, 0);
+	EXPECT_EQ(allocator.m_allocatedSize, 0);
 }

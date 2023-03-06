@@ -21,7 +21,7 @@
 
 #include <heart/file.h>
 
-#include <heart/fibers/status.h>
+#include <heart/fibers/result.h>
 #include <heart/fibers/system.h>
 #include <heart/sync/event.h>
 
@@ -48,7 +48,7 @@ bool EscapeKeyHitEvent(sf::Event e)
 	return true;
 }
 
-HeartFiberStatus MainGameLoop(EventManager& e, Renderer& r, uint64_t& frameNumber, uint64_t frameLimit)
+HeartFiberResult MainGameLoop(EventManager& e, Renderer& r, uint64_t& frameNumber, uint64_t frameLimit)
 {
 	e.Process();
 
@@ -68,12 +68,12 @@ HeartFiberStatus MainGameLoop(EventManager& e, Renderer& r, uint64_t& frameNumbe
 
 	if (!s_shutdown && frameNumber < frameLimit)
 	{
-		return HeartFiberStatus::Requeue;
+		return HeartFiberResult::Retry;
 	}
 	else
 	{
 		s_exitEvent.Set();
-		return HeartFiberStatus::Complete;
+		return HeartFiberResult::Success;
 	}
 }
 
@@ -94,7 +94,7 @@ int WinMain()
 	uint64_t frameLimit = 0;
 	uint64_t frameNumber = 0;
 
-	system.EnqueueFiber([&] {
+	system.EnqueueWork([&] {
 		auto commandLine = ParseCommandLine();
 
 		HeartSetRoot(commandLine["dataroot"].as<std::string>().c_str());
@@ -114,12 +114,12 @@ int WinMain()
 
 		InitializeGame();
 
-		return HeartFiberStatus::Complete;
+		return HeartFiberResult::Success;
 	});
 
 	s_deltaClock.restart();
 
-	system.EnqueueFiber([&] {
+	system.EnqueueWork([&] {
 		return MainGameLoop(e, r, frameNumber, frameLimit);
 	});
 
@@ -127,7 +127,7 @@ int WinMain()
 	s_exitEvent.Wait();
 	// We've woken up, time to shutdown the game
 
-	system.EnqueueFiber([&] {
+	system.EnqueueWork([&] {
 		ShutdownGame();
 
 		sf::err() << "Succesfully ran " << frameNumber << " frames\n";
@@ -135,7 +135,7 @@ int WinMain()
 		e.Dispose();
 		r.Dispose();
 
-		return HeartFiberStatus::Complete;
+		return HeartFiberResult::Success;
 	});
 
 	system.Shutdown();

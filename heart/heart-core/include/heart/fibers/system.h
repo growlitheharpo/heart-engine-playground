@@ -16,11 +16,12 @@
 
 #include <heart/allocator.h>
 #include <heart/memory/intrusive_list.h>
+#include <heart/memory/intrusive_ptr.h>
 #include <heart/memory/vector.h>
 #include <heart/sync/mutex.h>
+#include <heart/thread/thread.h>
 
 #include <heart/sleep.h>
-#include <heart/thread.h>
 
 #include <atomic>
 
@@ -55,7 +56,7 @@ private:
 
 private:
 	// Static entry pointer for threads which will become fibers.
-	static void* HeartFiberThreadEntry(void* parameter);
+	void HeartFiberThreadEntry();
 
 	// Global entry pointer for fiber work units. Invokes the work unit's
 	// worker, which can yield as many times as it likes. When it eventually
@@ -65,7 +66,7 @@ private:
 	// The pump routine. Keeps all fiber threads alive throughout the
 	// system's lifetime and is responsible for pulling work units for each
 	// thread from the queue
-	HeartFiberStatus PumpRoutine();
+	HeartFiberResult PumpRoutine();
 
 	// Sets up the entry fiber, if necessary. Called from thread entry and nowhere else.
 	void InitializeEntryFiber();
@@ -115,15 +116,22 @@ public:
 	// Add a work unit to the fiber system. Will be executed at some later point.
 	// F must be movable but is not required to be copyable.
 	template <typename F>
-	void EnqueueFiber(F&& f)
+	HeartFiberWorkUnitRef EnqueueWork(F&& f)
 	{
 		HeartFiberWorkUnit* newWorkUnit = m_allocator.AllocateAndConstruct<HeartFiberWorkUnit>(
 			HeartFiberWorkUnit::ConstructorSecret,
+			&m_allocator,
 			hrt::forward<F>(f));
 
 		{
 			HeartLockGuard lock(m_pendingQueueMutex);
+
+			// We manually increment the ref count here. This is the "queue ref"
+			// since the queue itself holds raw pointers, not intrusive pointers
+			newWorkUnit->IncrementRef();
 			m_pendingQueue.PushBack(newWorkUnit);
 		}
+
+		return HeartFiberWorkUnitRef(newWorkUnit);
 	}
 };

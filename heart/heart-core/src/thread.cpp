@@ -9,7 +9,7 @@
 * https://github.com/growlitheharpo/heart-engine-playground
 *
 */
-#include "heart/thread.h"
+#include "heart/thread/thread.h"
 
 #include "heart/debug/assert.h"
 

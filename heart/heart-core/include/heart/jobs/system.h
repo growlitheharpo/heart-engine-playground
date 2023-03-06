@@ -18,7 +18,7 @@
 #include <heart/memory/vector.h>
 #include <heart/sync/condition_variable.h>
 #include <heart/sync/mutex.h>
-#include <heart/thread.h>
+#include <heart/thread/thread.h>
 #include <heart/util/tag_type.h>
 
 #include <atomic>
@@ -161,7 +161,6 @@ private:
 
 private:
 	// Thread entry point and workers for the job system threads
-	static void* ThreadEntryPoint(void* p);
 	void ThreadWorker(HeartJobPriority lowestPriority);
 
 	// Insert a new job into the queue. Do NOT hold the mutex when calling this.
