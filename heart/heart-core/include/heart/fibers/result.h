@@ -1,4 +1,4 @@
-/* Copyright (C) 2022 James Keats
+/* Copyright (C) 2023 James Keats
 *
 * This file is part of Heart, a collection of game engine technologies.
 *
@@ -13,9 +13,9 @@
 
 #include <heart/fibers/fwd.h>
 
-enum class HeartFiberWorkUnitStatus : uint8_t
+enum class HeartFiberResult : uint8_t
 {
-	Pending,
 	Failure,
 	Success,
+	Retry,
 };

@@ -12,62 +12,40 @@
 #include "heart/fibers/system.h"
 
 #include "heart/fibers/context.h"
+#include "heart/fibers/result.h"
 #include "heart/fibers/status.h"
 #include "heart/fibers/work_unit.h"
 
 #include "heart/debug/assert.h"
+#include "heart/thread/bootstrap.h"
 
 #include "fibers/native_impl.h"
 
 #include <stdio.h>
 
-struct HeartFiberThreadEntryParam
+void HeartFiberSystem::HeartFiberThreadEntry()
 {
-	enum State
-	{
-		Setup,
-		Ready,
-		Done,
-	};
-
-	std::atomic<State> state = State::Setup;
-
-	HeartFiberSystem* system = nullptr;
-};
-
-void* HeartFiberSystem::HeartFiberThreadEntry(void* parameter)
-{
-	// Wait for the main thread to fully populate the parameter
-	auto currentThread = (HeartFiberThreadEntryParam*)parameter;
-	while (currentThread->state < HeartFiberThreadEntryParam::Ready)
-	{
-		HeartYield();
-	}
-
 	// Prepare the context for this thread
-	HeartFiberContext::Get().currentSystem = currentThread->system;
+	HeartFiberContext::Get().currentSystem = this;
 	HeartFiberContext::Get().pump.m_worker = []() { return HeartFiberContext::Get().currentSystem->PumpRoutine(); };
 
-	// Tell the main thread we're done reading the parameter
-	currentThread->state = HeartFiberThreadEntryParam::Done;
-	currentThread = nullptr;
-
 	// Allocate a startup abi so that the system has something to jump away from
-	HeartFiberContext::Get().currentSystem->InitializeEntryFiber();
+	InitializeEntryFiber();
 	HeartFiberContext::Get().currentWorkUnit = &HeartFiberContext::Get().entryUnit;
 
 	// Initialize and execute the pump
-	HeartFiberContext::Get().currentSystem->InitializeWorkUnitNativeHandle(HeartFiberContext::Get().pump);
-	HeartFiberContext::Get().currentSystem->NativeSwitchToFiber(HeartFiberContext::Get().pump);
+	InitializeWorkUnitNativeHandle(HeartFiberContext::Get().pump);
+	NativeSwitchToFiber(HeartFiberContext::Get().pump);
 
 	// We've returned from the pump, time to cleanup and kill the thread.
-	HEART_ASSERT(HeartFiberContext::Get().currentSystem->m_exit == true);
-	HeartFiberContext::Get().currentSystem->ReleaseWorkUnitNativeHandle(HeartFiberContext::Get().pump);
+	HEART_ASSERT(m_exit == true);
+	ReleaseWorkUnitNativeHandle(HeartFiberContext::Get().pump);
 
 	// Release the entry fiber - actual behavior is implementation-dependent (since we're currently *on* it).
-	HeartFiberContext::Get().currentSystem->ReleaseEntryFiber();
+	ReleaseEntryFiber();
 
-	return nullptr;
+	// We're done
+	HeartExitThread(0);
 }
 
 void HeartFiberSystem::HeartFiberStartRoutine(void*)
@@ -80,15 +58,17 @@ void HeartFiberSystem::HeartFiberStartRoutine(void*)
 	HeartFiberSystem* system = HeartFiberContext::Get().currentSystem;
 
 	// Begin execution of the work unit.
-	HeartFiberStatus result = workUnit.m_worker();
+	HeartFiberResult result = workUnit.m_worker();
 
 	if (&workUnit == &HeartFiberContext::Get().pump)
 	{
 		// If the work unit was the pump, we're done. This will kill the thread.
 		system->NativeSwitchToFiber(HeartFiberContext::Get().entryUnit);
 	}
-	else if (result == HeartFiberStatus::Complete)
+	else if (result == HeartFiberResult::Success || result == HeartFiberResult::Failure)
 	{
+		workUnit.m_status = (result == HeartFiberResult::Success) ? HeartFiberWorkUnitStatus::Success : HeartFiberWorkUnitStatus::Failure;
+
 		// Otherwise, if it completed, tell the system it's done.
 		// The system will handle switching to the pump.
 		system->CompleteWorkUnit(workUnit);
@@ -101,7 +81,7 @@ void HeartFiberSystem::HeartFiberStartRoutine(void*)
 	}
 }
 
-HeartFiberStatus HeartFiberSystem::PumpRoutine()
+HeartFiberResult HeartFiberSystem::PumpRoutine()
 {
 	auto canExit = [&]() {
 		if (!m_exit)
@@ -122,7 +102,11 @@ HeartFiberStatus HeartFiberSystem::PumpRoutine()
 		{
 			HeartFiberWorkUnit* unit = HeartFiberContext::Get().destroyQueue.PopFront();
 			ReleaseWorkUnitNativeHandle(*unit);
-			m_allocator.DestroyAndFree(unit);
+
+			// We manually decrement the ref count here. This is the "queue ref"
+			// since the queue itself holds raw pointers, not intrusive pointers.
+			unit->DecrementRef();
+			unit = nullptr;
 		}
 
 		// Grab our next work unit
@@ -148,7 +132,7 @@ HeartFiberStatus HeartFiberSystem::PumpRoutine()
 		}
 	}
 
-	return HeartFiberStatus::Complete;
+	return HeartFiberResult::Success;
 }
 
 void HeartFiberSystem::CompleteWorkUnit(HeartFiberWorkUnit& unit)
@@ -160,7 +144,7 @@ void HeartFiberSystem::CompleteWorkUnit(HeartFiberWorkUnit& unit)
 
 void HeartFiberSystem::RequeueWorkUnit(HeartFiberWorkUnit& unit)
 {
-	EnqueueFiber(hrt::move(unit.m_worker));
+	EnqueueWork(hrt::move(unit.m_worker));
 
 	CompleteWorkUnit(unit);
 }
@@ -211,20 +195,11 @@ void HeartFiberSystem::Initialize(Settings s)
 	m_threads.Reserve(s.threadCount);
 	for (uint32_t i = 0; i < s.threadCount; ++i)
 	{
-		HeartFiberThreadEntryParam param;
-		param.system = this;
-
-		HeartThread& thread = m_threads.EmplaceBack(HeartThread(&HeartFiberThreadEntry, &param));
-		param.state = HeartFiberThreadEntryParam::Ready;
+		HeartThread& thread = m_threads.EmplaceBack(HeartThreadMemberBootstrap(this, &HeartFiberSystem::HeartFiberThreadEntry));
 
 		char buffer[64];
 		sprintf_s(buffer, "HeartFiber Thread %u", i + 1);
 		thread.SetName(buffer);
-
-		while (param.state < HeartFiberThreadEntryParam::Done)
-		{
-			HeartYield();
-		}
 	}
 }
 

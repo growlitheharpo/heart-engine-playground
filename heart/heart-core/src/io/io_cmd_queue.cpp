@@ -18,6 +18,7 @@
 #include "heart/stream.h"
 
 #include "heart/sync/fence.h"
+#include "heart/thread/bootstrap.h"
 
 #include <algorithm>
 #include <iterator>
@@ -30,7 +31,7 @@ IoCmdQueue::IoCmdQueue(int threadCount)
 {
 	threadCount = std::max(threadCount, 1);
 	std::generate_n(std::back_inserter(m_threads), threadCount, [this]() {
-		HeartThread t(&ThreadEntryPoint, this);
+		HeartThread t = HeartThreadMemberBootstrap(this, &IoCmdQueue::ThreadThink);
 		t.SetName("IoCmdQueue Thread");
 		return hrt::move(t);
 	});
@@ -265,11 +266,4 @@ void IoCmdQueue::ProcessCmdPage(CmdPage& page)
 		}
 		}
 	}
-}
-
-void* IoCmdQueue::ThreadEntryPoint(void* p)
-{
-	IoCmdQueue* q = (IoCmdQueue*)p;
-	q->ThreadThink();
-	return nullptr;
 }

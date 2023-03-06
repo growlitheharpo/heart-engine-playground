@@ -25,6 +25,7 @@
 namespace heart_priv
 {
 	// Currently in heart_priv because it is massively lacking in functionality
+	// but there is code in heart that wants a vector with HeartAllocator support
 
 	template <typename T>
 	class HeartVector
